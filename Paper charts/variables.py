@@ -43,10 +43,10 @@ plot_theme = p9.theme(axis_text_x=p9.element_text(size=24),
               legend_text=p9.element_text(size=24),  # Adjust the size as needed
               panel_background=p9.element_rect(fill='white'),
               plot_background=p9.element_rect(fill='white'),
-              panel_border=p9.element_line(color='black', size=1),
+              panel_border=p9.element_rect(color='black', size=1),
               panel_grid_major=p9.element_line(color='black', size=0.5),
               panel_grid_minor=p9.element_line(color='black', size=0.25, linetype='dashed'),
-              axis_line=p9.element_line(color='black', size=1),
+              axis_line=p9.element_line(color='white', size=1),
               strip_text=p9.element_text(size=24),
               figure_size=(20, 6))
 

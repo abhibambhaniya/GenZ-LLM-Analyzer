@@ -122,7 +122,7 @@ def get_configs(name, return_full = False, get_model_config=False):
             hidden_size=4096, num_attention_heads=32, num_ffi = 2,
             intermediate_size=11008, num_decoder_layers=32
             )
-    elif name.lower() == 'llama3_7b':
+    elif name.lower() == 'llama3_8b':
         model_config = ModelConfig(
             hidden_size=4096, num_attention_heads=32,
             num_key_value_heads=8, num_ffi = 2,
