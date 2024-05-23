@@ -37,7 +37,7 @@ def get_offload_system(system, total_memory_req, debug):
             print(f'New BW:{new_offchip_BW}')
     return system
 
-def get_inference_system(system_name='A100_40GB_GPU', bits='bf16'):
+def get_inference_system(system_name='A100_40GB_GPU', bits='bf16', ceff=1, meff=1):
     ################################################################################################## # 
     ### System Declaration
     ################################################################################################## # 
@@ -51,23 +51,8 @@ def get_inference_system(system_name='A100_40GB_GPU', bits='bf16'):
             per_chip_memory = system_name.get('Memory_size',2000)
             C2C_BW = system_name.get('ICN',150)
             C2C_LL = system_name.get('ICN_LL',2)
-
-        else:
-            _unused_keys = [ k for k in system_name.keys() if k not in ['Flops', 'Memory', 'ICN', 'real_values']]
-            if len(_unused_keys) > 0:
-                warnings.warn(f"Following keys of system_name are not used: {_unused_keys}")
-
-            _missing_keys = [ k for k in ['Flops', 'Memory', 'ICN'] if k not in system_name.keys()]
-            if len(_missing_keys) > 0:
-                warnings.warn(f"Following keys of system_name are missing: {_missing_keys}") 
-
-            NUM_FLOPS = FLOPS_dict[system_name.get('Flops', 2)] 
-            OFFCHIP_MEM_BW = Memory_bw_dict[system_name.get('Memory',2)] 
-            per_chip_memory = Memory_size_dict[system_name.get('Memory',2)]
-            C2C_BW = ICN_BW_dict[system_name.get('ICN',2)]
-            C2C_LL = 1.9
     else:
         raise TypeError('System should be weight str or dict with Flops,Memory, ICN values') 
     
-    return System(unit,frequency=1000 , flops=NUM_FLOPS, off_chip_mem_size=(per_chip_memory*1024),
+    return System(unit,frequency=1000 , flops=NUM_FLOPS, off_chip_mem_size=(per_chip_memory*1024), compute_efficiency=ceff, memory_efficiency=meff,
                      offchip_mem_bw=OFFCHIP_MEM_BW, bits=bits, external_mem_bw=offload_bw, interchip_mem_bw=C2C_BW, interchip_link_latency=C2C_LL)

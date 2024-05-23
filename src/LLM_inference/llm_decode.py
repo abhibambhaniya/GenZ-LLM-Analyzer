@@ -25,9 +25,9 @@ unit = Unit()
 
 def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     output_tokens = 0, FLAT = True,  Bb = 4 ,           ## Only for Decode
-    system_name = 'A100_40GB_GPU', bits='bf16', debug= False, model_profilling = False,  
+    system_name = 'A100_40GB_GPU', system_eff = 1, bits='bf16', debug= False, model_profilling = False,  
     tensor_parallel = 1, pipeline_parallel = 1, time_breakdown = False, return_model_df=False,
-    model_offload = False):
+    model_offload = False, ceff = None, meff = None):
     
     ################################################################################################## # 
     ### Model parsing
@@ -47,7 +47,7 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     ### System Declaration
     ################################################################################################## # 
 
-    system = get_inference_system(system_name = system_name, bits = bits)
+    system = get_inference_system(system_name = system_name, bits = bits, ceff=system_eff if ceff is None else ceff, meff=system_eff if meff is None else meff)
     
     ################################################################################################## # 
     ### Model Characterization Calculation
