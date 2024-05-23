@@ -25,7 +25,7 @@ unit = Unit()
 
 def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     output_tokens = 0, FLAT = True,         ## Only for prefill
-    system_name = 'A100-40GB', bits='bf16', debug= False, model_profilling = False, 
+    system_name = 'A100_40GB_GPU', bits='bf16', debug= False, model_profilling = False, 
     tensor_parallel = 1, pipeline_parallel = 1, time_breakdown = False, return_model_df=False,
     model_offload = False):
     
@@ -84,6 +84,7 @@ def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     summary_table[f'MACs ({unit.unit_flop})'] = summary_table[f'MACs ({unit.unit_flop})'].apply(lambda x: x*num_layers_per_pipeline_stage)
     summary_table[f'Total Data ({unit.unit_mem})'] = summary_table[f'Total Data ({unit.unit_mem})'].apply(lambda x: x*num_layers_per_pipeline_stage)
     summary_table[f'Model Weights ({unit.unit_mem})'] = model_weights       ## In MB
+    summary_table[f'Unused Weights ({unit.unit_mem})'] = 0       ## In MB
     summary_table[f'KV Cache ({unit.unit_mem})'] = kv_cache                 ## In MB
     summary_table[f'AR data ({unit.unit_mem})'] = unit.raw_to_unit( total_all_reduce_data, 'M')      ## In MB
     summary_table[f'Pipe data  ({unit.unit_mem})'] = unit.raw_to_unit( total_pipe_data, 'M')         ## In MB

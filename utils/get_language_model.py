@@ -75,95 +75,95 @@ class ModelConfig():
       
 
 
-## TODO:(Instead of doing this; make a class of model config and return it as output.)
 def get_configs(name, return_full = False, get_model_config=False):
-    if  name.lower() == 'gpt-2' or name.lower() == 'opt_125m':      ## ViT,GPT-2 also has same
+    name = name.lower()
+    if  name in ['gpt-2', 'opt_125m']:      ## ViT,GPT-2 also has same
         model_config = ModelConfig(
         hidden_size=768, num_attention_heads=12, num_ffi = 1,
         intermediate_size=4*768, num_decoder_layers=12,
         )
-    elif name.lower() == 'opt_350m' :
+    elif name == 'opt_350m' :
         model_config = ModelConfig(
         hidden_size=1024, num_attention_heads=16, num_ffi = 1,
         intermediate_size=4*1024, num_decoder_layers=24,
         )
-    elif name.lower() == 'gpt-3_1b' or name.lower() == 'opt_1b' :
+    elif name == 'gpt-3_1b' or name == 'opt_1b' :
         model_config = ModelConfig(
         hidden_size=2048, num_attention_heads=32, num_ffi = 1,
         intermediate_size=4*2048, num_decoder_layers=24,
         )
-    elif name.lower() == 'gpt-3_7b' or name.lower() == 'opt_7b' :
+    elif name == 'gpt-3_7b' or name == 'opt_7b' :
         model_config = ModelConfig(
         hidden_size=4096, num_attention_heads=32, num_ffi = 1,
         intermediate_size=4*4096, num_decoder_layers=32,
         )
-    elif name.lower() == 'gpt-3_13b':
+    elif name == 'gpt-3_13b':
         model_config = ModelConfig(
         hidden_size=5140, num_attention_heads=40, num_ffi = 1,
         intermediate_size=4*5140, num_decoder_layers=40,
         )
-    elif name.lower() == 'gpt-3' or name.lower() == 'opt_175b':
+    elif name == 'gpt-3' or name == 'opt_175b':
         model_config = ModelConfig(
         hidden_size=12288, num_attention_heads=96, num_ffi = 1,
         intermediate_size=4*12288, num_decoder_layers=96,
         )
-    elif name.lower() == 'palm':
+    elif name == 'palm':
         model_config = ModelConfig(
             hidden_size=18432, num_attention_heads=48, num_ffi = 1,
             intermediate_size=4*18432, num_decoder_layers=118
             )
-    elif name.lower() == 'gemma_7b':
+    elif name == 'gemma_7b':
         model_config = ModelConfig(
             hidden_size=3072, num_attention_heads=12, num_ffi = 2,
             intermediate_size=24576, num_decoder_layers=28, head_dim=256
             )
-    elif name.lower() == 'llama_7b':
+    elif name == 'llama_7b':
         model_config = ModelConfig(
             hidden_size=4096, num_attention_heads=32, num_ffi = 2,
             intermediate_size=11008, num_decoder_layers=32
             )
-    elif name.lower() == 'llama3_8b':
+    elif name == 'llama3_8b':
         model_config = ModelConfig(
             hidden_size=4096, num_attention_heads=32,
             num_key_value_heads=8, num_ffi = 2,
             intermediate_size=14336, num_decoder_layers=32,
             )
-    elif name.lower() == 'llama_13b':
+    elif name == 'llama_13b':
         model_config = ModelConfig(
             hidden_size=5120, num_attention_heads=40, num_ffi = 2,
             intermediate_size=13824, num_decoder_layers=40
             )
-    elif name.lower() == 'llama_33b':
+    elif name == 'llama_33b':
         model_config = ModelConfig(
             hidden_size=6656, num_attention_heads=52, num_ffi = 2,
             intermediate_size=17888, num_decoder_layers=60
             )
-    elif name.lower() == 'opt_30b':
+    elif name == 'opt_30b':
         model_config = ModelConfig(
             hidden_size=7168, num_attention_heads=56, 
             intermediate_size=4*7168, num_decoder_layers=48,
             )
-    elif name.lower() == 'llama_70b':
+    elif name == 'llama_70b':
         model_config = ModelConfig(
             hidden_size=8192, num_attention_heads=64, 
             num_key_value_heads=8, num_ffi = 2,
             intermediate_size=28672, num_decoder_layers=80,
             )
-    elif name.lower() == 'mixtral_7x8':
+    elif name == 'mixtral_7x8':
         model_config = ModelConfig(
             hidden_size=4096, num_attention_heads=32, 
             num_key_value_heads=8, num_ffi = 2,
             intermediate_size=14336, num_decoder_layers=32,
             expert_top_k=2, num_experts=8, moe_layer_freq=1
             )
-    elif name.lower() == 'dbrx':
+    elif name == 'dbrx':
         model_config = ModelConfig(
             hidden_size=6144, num_attention_heads=48, 
             num_key_value_heads=8, num_ffi = 2,
             intermediate_size=10752, num_decoder_layers=40,
             expert_top_k=4, num_experts=16, moe_layer_freq=1
             )
-    elif name.lower() == 'gpt-4':
+    elif name == 'gpt-4':
         x = 84
         model_config = ModelConfig(
             hidden_size=84*128, num_attention_heads=84, 
@@ -171,14 +171,14 @@ def get_configs(name, return_full = False, get_model_config=False):
             intermediate_size=4*84*128, num_decoder_layers=128,
             expert_top_k=2, num_experts=16, moe_layer_freq=1
             )
-    elif name.lower() == 'grok-1':
+    elif name == 'grok-1':
         model_config = ModelConfig(
             hidden_size=6144, num_attention_heads=48, 
             num_key_value_heads=8, num_ffi = 1,
             intermediate_size=8*6144, num_decoder_layers=64,
             expert_top_k=2, num_experts=8, moe_layer_freq=1
             )
-    elif name.lower() == 'super_llm':
+    elif name == 'super_llm':
         x = 108
         model_config = ModelConfig(
             hidden_size=x*128, num_attention_heads=x, 
