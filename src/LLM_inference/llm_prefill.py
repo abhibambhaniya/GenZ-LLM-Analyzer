@@ -47,7 +47,7 @@ def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     ### System Declaration
     ################################################################################################## # 
 
-    system = get_inference_system(system_name = system_name, bits = bits, ceff=system_eff if ceff is None else ceff, meff=system_eff if meff is None else meff)
+    system = get_inference_system(system_name = system_name, bits = bits, ceff=system_eff, meff=system_eff)
    
     ################################################################################################## # 
     ### Model Characterization Calculation
