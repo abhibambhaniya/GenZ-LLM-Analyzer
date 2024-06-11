@@ -83,6 +83,13 @@ Check the TODOs below for what's next and stay tuned! Any contributions or feedb
 If you use GenZ in your work, please cite:
 
 ```
-
+@misc{bambhaniya2024demystifying,
+      title={Demystifying Platform Requirements for Diverse LLM Inference Use Cases}, 
+      author={Abhimanyu Bambhaniya and Ritik Raj and Geonhwa Jeong and Souvik Kundu and Sudarshan Srinivasan and Midhilesh Elavazhagan and Madhu Kumar and Tushar Krishna},
+      year={2024},
+      eprint={2406.01698},
+      archivePrefix={arXiv},
+      primaryClass={cs.AR}
+}
 ```
 
