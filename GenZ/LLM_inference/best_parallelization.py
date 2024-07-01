@@ -8,15 +8,15 @@ for _ in range(5):
         sys.path.insert(0,module_path)
     if os.path.basename(module_path) =='roofline':
         break
-from src.unit import Unit
-from src.operators import *
+from GenZ.unit import Unit
+from GenZ.operators import *
 
-from src.operator_base import op_type_dicts
-from src.system import System
+from GenZ.operator_base import op_type_dicts
+from GenZ.system import System
 import pandas as pd
-from src.analye_model import *
+from GenZ.analye_model import *
 import warnings
-from src.LLM_inference import decode_moddeling, prefill_moddeling
+from GenZ.LLM_inference import decode_moddeling, prefill_moddeling
 from paretoset import paretoset
 import itertools
 

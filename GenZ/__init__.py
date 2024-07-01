@@ -14,3 +14,4 @@ from .system import System
 from .unit import Unit
 from .analye_model import get_model_df, get_summary_table
 from .collective_times import get_AR_time, get_message_pass_time
+from .get_language_model import ModelConfig,get_configs,create_inference_moe_prefix_model,create_inference_moe_decode_model

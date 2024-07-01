@@ -8,14 +8,14 @@ for _ in range(1):
     if module_path not in sys.path:
         sys.path.insert(0,module_path)
 
-from src.unit import Unit
-from src.operators import *
-import src.operators as operators
-from src.operator_base import op_type_dicts
-from src.system import System
+from GenZ.unit import Unit
+from GenZ.operators import *
+import GenZ.operators as operators
+from GenZ.operator_base import op_type_dicts
+from GenZ.system import System
 import pandas as pd
 import os
-from utils.get_language_model import *
+from GenZ.get_language_model import *
 
 def get_attn_index(df):
     ret = []

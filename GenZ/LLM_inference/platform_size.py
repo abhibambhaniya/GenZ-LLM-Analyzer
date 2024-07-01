@@ -1,5 +1,5 @@
 import numpy as np
-from src.LLM_inference import decode_moddeling, prefill_moddeling, get_best_parallization_strategy, get_inference_system 
+from GenZ.LLM_inference import decode_moddeling, prefill_moddeling, get_best_parallization_strategy, get_inference_system 
 
 def get_minimum_system_size(
         stage='decode', model='llama_7b', max_batch_size = 1, beam_size = 1,

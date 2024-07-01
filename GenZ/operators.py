@@ -1,5 +1,5 @@
 import numpy as np
-from src.operator_base import Operator
+from GenZ.operator_base import Operator
 
 class FC(Operator):
     def __init__(self, dim, density):

@@ -1,8 +1,8 @@
 from collections import OrderedDict
 from typing import Optional
-from src.unit import Unit
+from GenZ.unit import Unit
 import warnings
-from src.system import System
+from GenZ.system import System
 
 from Systems.system_configs import *
 
@@ -43,7 +43,7 @@ def get_inference_system(system_name='A100_40GB_GPU', bits='bf16', ceff=1, meff=
     ################################################################################################## # 
     if isinstance(system_name, str):
         system_name = globals()[system_name] 
-        
+    
     if isinstance(system_name, dict):
         if system_name.get('real_values',False) == True:
             NUM_FLOPS = system_name.get('Flops', 320)
@@ -51,6 +51,8 @@ def get_inference_system(system_name='A100_40GB_GPU', bits='bf16', ceff=1, meff=
             per_chip_memory = system_name.get('Memory_size',2000)
             C2C_BW = system_name.get('ICN',150)
             C2C_LL = system_name.get('ICN_LL',2)
+    elif isinstance(system_name, System): 
+        return system_name
     else:
         raise TypeError('System should be weight str or dict with Flops,Memory, ICN values') 
     

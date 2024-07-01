@@ -2,7 +2,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-from src.unit import Unit
+from GenZ.unit import Unit
 
 unit = Unit()
 

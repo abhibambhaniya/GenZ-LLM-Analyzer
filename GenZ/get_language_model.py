@@ -32,6 +32,7 @@ class ModelConfig():
     """
     def __init__(
         self,
+        model = 'dummy',
         vocab_size=32000,
         hidden_size=4096,
         intermediate_size=11008,
@@ -45,8 +46,10 @@ class ModelConfig():
         hidden_act="silu",
         num_experts = 1,
         expert_top_k = 1,
+        max_model_len = 128000,
         **kwargs,
     ):
+        self.model = model
         self.vocab_size = vocab_size
         self.hidden_size = hidden_size
         self.intermediate_size = intermediate_size
@@ -68,6 +71,9 @@ class ModelConfig():
         self.moe_layer_freq = moe_layer_freq    ## If n, than every nth value is moe layer.
         self.num_experts = num_experts
         self.expert_top_k = expert_top_k
+        
+        self.max_model_len = max_model_len             ## TODO:Put real values
+
         super().__init__(**kwargs)
 
     def __str__(self):
@@ -78,86 +84,86 @@ class ModelConfig():
 def get_configs(name, return_full = False, get_model_config=False):
     name = name.lower()
     if  name in ['gpt-2', 'opt_125m']:      ## ViT,GPT-2 also has same
-        model_config = ModelConfig(
+        model_config = ModelConfig(model='facebook/opt-125M',
         hidden_size=768, num_attention_heads=12, num_ffi = 1,
         intermediate_size=4*768, num_decoder_layers=12,
         )
     elif name == 'opt_350m' :
-        model_config = ModelConfig(
+        model_config = ModelConfig(model='facebook/OPT-350M',
         hidden_size=1024, num_attention_heads=16, num_ffi = 1,
         intermediate_size=4*1024, num_decoder_layers=24,
         )
     elif name == 'gpt-3_1b' or name == 'opt_1b' :
-        model_config = ModelConfig(
+        model_config = ModelConfig(model='facebook/OPT-1B',
         hidden_size=2048, num_attention_heads=32, num_ffi = 1,
         intermediate_size=4*2048, num_decoder_layers=24,
         )
     elif name == 'gpt-3_7b' or name == 'opt_7b' :
-        model_config = ModelConfig(
+        model_config = ModelConfig(model='facebook/OPT-7B',
         hidden_size=4096, num_attention_heads=32, num_ffi = 1,
         intermediate_size=4*4096, num_decoder_layers=32,
         )
-    elif name == 'gpt-3_13b':
-        model_config = ModelConfig(
+    elif name == 'opt_13b':
+        model_config = ModelConfig(model='facebook/OPT-13B',
         hidden_size=5140, num_attention_heads=40, num_ffi = 1,
         intermediate_size=4*5140, num_decoder_layers=40,
         )
     elif name == 'gpt-3' or name == 'opt_175b':
-        model_config = ModelConfig(
+        model_config = ModelConfig(model='openai/GPT3-175B',
         hidden_size=12288, num_attention_heads=96, num_ffi = 1,
         intermediate_size=4*12288, num_decoder_layers=96,
         )
     elif name == 'palm':
-        model_config = ModelConfig(
+        model_config = ModelConfig(model='google/palm',
             hidden_size=18432, num_attention_heads=48, num_ffi = 1,
             intermediate_size=4*18432, num_decoder_layers=118
             )
     elif name == 'gemma_7b':
-        model_config = ModelConfig(
+        model_config = ModelConfig(model='google/gemma-7B',
             hidden_size=3072, num_attention_heads=12, num_ffi = 2,
             intermediate_size=24576, num_decoder_layers=28, head_dim=256
             )
     elif name == 'llama_7b':
-        model_config = ModelConfig(
+        model_config = ModelConfig(model='meta-llama/Llama-2-7B',
             hidden_size=4096, num_attention_heads=32, num_ffi = 2,
             intermediate_size=11008, num_decoder_layers=32
             )
     elif name == 'llama3_8b':
-        model_config = ModelConfig(
+        model_config = ModelConfig(model='meta-llama/Llama-3-8B',
             hidden_size=4096, num_attention_heads=32,
             num_key_value_heads=8, num_ffi = 2,
             intermediate_size=14336, num_decoder_layers=32,
             )
     elif name == 'llama_13b':
-        model_config = ModelConfig(
+        model_config = ModelConfig(model='meta-llama/Llama-2-13B',
             hidden_size=5120, num_attention_heads=40, num_ffi = 2,
             intermediate_size=13824, num_decoder_layers=40
             )
     elif name == 'llama_33b':
-        model_config = ModelConfig(
+        model_config = ModelConfig(model='meta-llama/Llama-33B',
             hidden_size=6656, num_attention_heads=52, num_ffi = 2,
             intermediate_size=17888, num_decoder_layers=60
             )
     elif name == 'opt_30b':
-        model_config = ModelConfig(
+        model_config = ModelConfig(model='facebook/opt-30B',
             hidden_size=7168, num_attention_heads=56, 
             intermediate_size=4*7168, num_decoder_layers=48,
             )
     elif name == 'llama_70b':
-        model_config = ModelConfig(
+        model_config = ModelConfig(model='meta-llama/Llama-2-70B',
             hidden_size=8192, num_attention_heads=64, 
             num_key_value_heads=8, num_ffi = 2,
             intermediate_size=28672, num_decoder_layers=80,
             )
     elif name == 'mixtral_7x8':
-        model_config = ModelConfig(
+        model_config = ModelConfig(model='mistralai/Mixtral-8x7B',
             hidden_size=4096, num_attention_heads=32, 
             num_key_value_heads=8, num_ffi = 2,
             intermediate_size=14336, num_decoder_layers=32,
             expert_top_k=2, num_experts=8, moe_layer_freq=1
             )
     elif name == 'dbrx':
-        model_config = ModelConfig(
+        model_config = ModelConfig(model='databricks/dbrx-base',
             hidden_size=6144, num_attention_heads=48, 
             num_key_value_heads=8, num_ffi = 2,
             intermediate_size=10752, num_decoder_layers=40,
@@ -165,14 +171,14 @@ def get_configs(name, return_full = False, get_model_config=False):
             )
     elif name == 'gpt-4':
         x = 84
-        model_config = ModelConfig(
+        model_config = ModelConfig(model='openai/GPT-4',
             hidden_size=84*128, num_attention_heads=84, 
             num_key_value_heads=84, num_ffi = 1,
             intermediate_size=4*84*128, num_decoder_layers=128,
             expert_top_k=2, num_experts=16, moe_layer_freq=1
             )
     elif name == 'grok-1':
-        model_config = ModelConfig(
+        model_config = ModelConfig(model='xai-org/grok-1',
             hidden_size=6144, num_attention_heads=48, 
             num_key_value_heads=8, num_ffi = 1,
             intermediate_size=8*6144, num_decoder_layers=64,
@@ -180,7 +186,7 @@ def get_configs(name, return_full = False, get_model_config=False):
             )
     elif name == 'super_llm':
         x = 108
-        model_config = ModelConfig(
+        model_config = ModelConfig(model='SuperLLM-10T',
             hidden_size=x*128, num_attention_heads=x, 
             num_key_value_heads=x, num_ffi = 2,
             intermediate_size=4*x*128, num_decoder_layers=128,
