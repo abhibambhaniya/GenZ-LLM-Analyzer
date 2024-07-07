@@ -83,8 +83,35 @@ class ModelConfig():
 
 def get_configs(name, return_full = False, get_model_config=False):
     name = name.lower()
-    if  name in ['gpt-2', 'opt_125m']:      ## ViT,GPT-2 also has same
+    if  name == 'opt_125m':
+        # https://huggingface.co/facebook/opt-125m/blob/main/config.json
         model_config = ModelConfig(model='facebook/opt-125M',
+        hidden_size=768, num_attention_heads=12, num_ffi = 1,
+        intermediate_size=4*768, num_decoder_layers=12,
+        )
+    elif  name == 'phi3mini':
+        # https://huggingface.co/microsoft/Phi-3-mini-128k-instruct/blob/main/config.json
+        model_config = ModelConfig(model='microsoft/Phi-3-mini',
+        hidden_size=3072, num_attention_heads=32, num_ffi = 2,
+        intermediate_size=8192, num_decoder_layers=32,
+        )
+    elif  name == 'phi3small':
+        # https://huggingface.co/microsoft/Phi-3-small-128k-instruct/blob/main/config.json
+        model_config = ModelConfig(model='microsoft/Phi-3-small',
+        hidden_size=4096, num_attention_heads=32, num_ffi = 2,
+        num_key_value_heads=8, head_dim=128,
+        intermediate_size=14336, num_decoder_layers=32,
+        )
+    elif  name == 'phi3medium':
+        # https://huggingface.co/microsoft/Phi-3-medium-4k-instruct/blob/main/config.json
+        model_config = ModelConfig(model='microsoft/Phi-3-medium',
+        hidden_size=5120, num_attention_heads=40, num_ffi = 2,
+        num_key_value_heads=10, head_dim=128,
+        intermediate_size=17920, num_decoder_layers=40,
+        )
+    elif  name == 'gpt-2':
+        # https://huggingface.co/openai-community/gpt2/blob/main/config.json
+        model_config = ModelConfig(model='openai/gpt2',
         hidden_size=768, num_attention_heads=12, num_ffi = 1,
         intermediate_size=4*768, num_decoder_layers=12,
         )
@@ -118,31 +145,63 @@ def get_configs(name, return_full = False, get_model_config=False):
             hidden_size=18432, num_attention_heads=48, num_ffi = 1,
             intermediate_size=4*18432, num_decoder_layers=118
             )
+    elif  name == 'falcon7b':
+        # https://huggingface.co/tiiuae/falcon-7b-instruct/blob/main/config.json
+        model_config = ModelConfig(model='tiiuae/falcon-7b-instruct',
+        hidden_size=4544, num_attention_heads=71, num_ffi = 1,
+        num_key_value_heads=71, head_dim=64,
+        intermediate_size=4544*4, num_decoder_layers=32,
+        )
+    elif name == 'gemma_2b':
+        # https://huggingface.co/google/gemma-2b-it/blob/main/config.json
+        model_config = ModelConfig(model='google/gemma-2B',
+            hidden_size=2048, num_attention_heads=8, num_ffi = 2,
+            intermediate_size=16384, num_decoder_layers=18, head_dim=256
+            )
     elif name == 'gemma_7b':
+        # https://huggingface.co/google/gemma-7b-it/blob/main/config.json
         model_config = ModelConfig(model='google/gemma-7B',
-            hidden_size=3072, num_attention_heads=12, num_ffi = 2,
+            hidden_size=3072, num_attention_heads=16, num_ffi = 2,
             intermediate_size=24576, num_decoder_layers=28, head_dim=256
             )
+    elif name == 'gemma2_9b':
+        # https://huggingface.co/google/gemma-2-9b/blob/main/config.json
+        model_config = ModelConfig(model='google/gemma-2-9B',
+            hidden_size=3584, num_attention_heads=16, num_ffi = 2,
+            num_key_value_heads=8, head_dim=256,
+            intermediate_size=14336, num_decoder_layers=42, 
+            )
+    elif name == 'gemma2_27b':
+        # https://huggingface.co/google/gemma-2-27b-it/blob/main/config.json
+        model_config = ModelConfig(model='google/gemma-2-27B',
+            hidden_size=4608, num_attention_heads=32, num_ffi = 2,
+            num_key_value_heads=16, head_dim=128,
+            intermediate_size=36864, num_decoder_layers=46,
+            )
     elif name == 'llama_7b':
+        # https://huggingface.co/meta-llama/Llama-2-7b-hf/blob/main/config.json
         model_config = ModelConfig(model='meta-llama/Llama-2-7B',
             hidden_size=4096, num_attention_heads=32, num_ffi = 2,
             intermediate_size=11008, num_decoder_layers=32
             )
     elif name == 'llama3_8b':
+        # https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct/blob/main/config.json
         model_config = ModelConfig(model='meta-llama/Llama-3-8B',
             hidden_size=4096, num_attention_heads=32,
             num_key_value_heads=8, num_ffi = 2,
             intermediate_size=14336, num_decoder_layers=32,
             )
     elif name == 'llama_13b':
+        # https://huggingface.co/meta-llama/Llama-2-13b-hf/blob/main/config.json
         model_config = ModelConfig(model='meta-llama/Llama-2-13B',
             hidden_size=5120, num_attention_heads=40, num_ffi = 2,
             intermediate_size=13824, num_decoder_layers=40
             )
     elif name == 'llama_33b':
+        # https://huggingface.co/Secbone/llama-33B-instructed/blob/main/config.json
         model_config = ModelConfig(model='meta-llama/Llama-33B',
             hidden_size=6656, num_attention_heads=52, num_ffi = 2,
-            intermediate_size=17888, num_decoder_layers=60
+            intermediate_size=17920, num_decoder_layers=60
             )
     elif name == 'opt_30b':
         model_config = ModelConfig(model='facebook/opt-30B',
@@ -150,12 +209,21 @@ def get_configs(name, return_full = False, get_model_config=False):
             intermediate_size=4*7168, num_decoder_layers=48,
             )
     elif name == 'llama_70b':
+        # https://huggingface.co/meta-llama/Llama-2-70b-hf/blob/main/config.json
         model_config = ModelConfig(model='meta-llama/Llama-2-70B',
             hidden_size=8192, num_attention_heads=64, 
             num_key_value_heads=8, num_ffi = 2,
             intermediate_size=28672, num_decoder_layers=80,
             )
+    elif name == 'mistral_7b':
+        # https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2/blob/main/config.json
+        model_config = ModelConfig(model='mistralai/Mistral-7B',
+            hidden_size=4096, num_attention_heads=32, 
+            num_key_value_heads=8, num_ffi = 2,
+            intermediate_size=14336, num_decoder_layers=32,
+            )
     elif name == 'mixtral_7x8':
+        # https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1/blob/main/config.json
         model_config = ModelConfig(model='mistralai/Mixtral-8x7B',
             hidden_size=4096, num_attention_heads=32, 
             num_key_value_heads=8, num_ffi = 2,
@@ -163,6 +231,7 @@ def get_configs(name, return_full = False, get_model_config=False):
             expert_top_k=2, num_experts=8, moe_layer_freq=1
             )
     elif name == 'dbrx':
+        # https://huggingface.co/databricks/dbrx-base/blob/main/config.json
         model_config = ModelConfig(model='databricks/dbrx-base',
             hidden_size=6144, num_attention_heads=48, 
             num_key_value_heads=8, num_ffi = 2,
@@ -170,7 +239,6 @@ def get_configs(name, return_full = False, get_model_config=False):
             expert_top_k=4, num_experts=16, moe_layer_freq=1
             )
     elif name == 'gpt-4':
-        x = 84
         model_config = ModelConfig(model='openai/GPT-4',
             hidden_size=84*128, num_attention_heads=84, 
             num_key_value_heads=84, num_ffi = 1,
@@ -178,6 +246,7 @@ def get_configs(name, return_full = False, get_model_config=False):
             expert_top_k=2, num_experts=16, moe_layer_freq=1
             )
     elif name == 'grok-1':
+        # https://huggingface.co/xai-org/grok-1/blob/main/RELEASE
         model_config = ModelConfig(model='xai-org/grok-1',
             hidden_size=6144, num_attention_heads=48, 
             num_key_value_heads=8, num_ffi = 1,
