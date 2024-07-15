@@ -253,6 +253,14 @@ def get_configs(name, return_full = False, get_model_config=False):
             intermediate_size=8*6144, num_decoder_layers=64,
             expert_top_k=2, num_experts=8, moe_layer_freq=1
             )
+    elif name == 'glm-9b':
+        # https://huggingface.co/THUDM/glm-4-9b-chat/blob/main/config.json
+        model_config = ModelConfig(model='THUDM/glm-4-9b-chat',
+            hidden_size=4096, num_attention_heads=32, 
+            num_key_value_heads=2, num_ffi = 2,
+            intermediate_size=13696, num_decoder_layers=40,
+            max_model_len=131072, vocab_size=151552,
+            )
     elif name == 'super_llm':
         x = 108
         model_config = ModelConfig(model='SuperLLM-10T',
