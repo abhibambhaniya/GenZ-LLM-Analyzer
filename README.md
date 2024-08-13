@@ -13,7 +13,7 @@ Generative LLM Analyzer
 
 ## Overview
 
-GenZ to designed to simply the relationship between the hardware platform used for serving Large Language Models(LLMs) and inference serving metrics like latency and memory.
+GenZ to designed to simplify the relationship between the hardware platform used for serving Large Language Models(LLMs) and inference serving metrics like latency and memory.
 
 Running an LLM on hardware has three key component.
 - Model : The LLM model architecture and corresponding parameters like number of layers, layer dimension etc.
