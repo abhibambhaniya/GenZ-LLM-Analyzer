@@ -6,32 +6,34 @@ import plotly.express as px
 
 from IPython.display import clear_output, display
 
-import os, sys, warnings
-script_dir = os.getcwd()
-module_path = script_dir
-for _ in range(1):
-    module_path = os.path.abspath(os.path.join(module_path, '../'))
-    if module_path not in sys.path:
-        sys.path.insert(0,module_path)
-        
+import warnings
+
 from GenZ import decode_moddeling, prefill_moddeling, get_configs
 import pandas as pd
 from tqdm import tqdm
 
-from Systems.system_configs import *
+from Systems.system_configs import system_configs
 
 
 # Define the function to generate the demand curve
-def generate_demand_curve(system_box, system_eff, num_nodes_slider,
+def generate_demand_curve(graph_type, system_box, system_eff, num_nodes_slider,
                         model_box, quantization_box, batch_slider,
                         input_token_slider, output_token_slider, beam_size,
                         flops, mem_bw, mem_cap,icn_bw):
     warnings.filterwarnings("ignore")
-    clear_output(wait=True)
+    clear_output()
     if system_box == 'Custom':
         system_box = {'Flops': flops, 'Memory_size': mem_cap, 'Memory_BW': mem_bw, 'ICN': icn_bw , 'real_values':True}  
     else:
-        system_box = globals()[system_box] 
+        if isinstance(system_box, str) and system_box in system_configs:
+            system_box = system_configs[system_box]
+        elif not isinstance(system_box, dict):
+            raise ValueError(f'System mentioned:{system_box} not present in predefined systems. Please use systems from Systems/system_configs')
+
+    # ('1. ISO-HW: Model vs Throughput', 1), 
+    # ('2. ISO-HW: Model vs Latency (TTFT, TPOT)', 2),
+    # ('3. ISO-HW, ISO-Model: Batch vs Throughput/Latency', 3)
+    # ('4. ISO-Usecase, Multiple HW, Throuput vs Latency', 4)
 
     data = []
     mem_size_data = []
@@ -68,12 +70,17 @@ def generate_demand_curve(system_box, system_eff, num_nodes_slider,
     data_df = pd.DataFrame(data, columns = ['Model', 'Stage','Batch', 'Latency(ms)', 'Tokens/s', 'GEMM Time', 'Attn Time', 'Communication Time'])
     chip_req_df = pd.DataFrame(mem_size_data, columns = ['Model', 'NPU memory','Batch', 'Beam size', 'Input Tokens', 'Output Tokens', 'Min. Chips'])
     if len(data) == 0 :
-        display(chip_req_df)
-        # return chip_req_df
+        # display(chip_req_df)
+        return chip_req_df
     else:
         data_df['Stage'] = pd.Categorical(data_df['Stage'], categories=['Prefill','Decode'])
         
-        fig = px.line(data_df, x="Batch", y="Tokens/s",  line_group="Model", color="Model", facet_row='Stage', 
+        if graph_type == 1:
+            fig = px.line(data_df, x="Batch", y="Tokens/s",  line_group="Model", color="Model", facet_row='Stage', 
+                    labels={"Batch": "Batch", "Tokens/s": "Tokens/s", "Model": "Model"},
+                    width=1200, height=600, markers=True)
+        elif graph_type == 3:
+            fig = px.line(data_df, x="Batch", y="Tokens/s",  line_group="Model", color="Model", facet_row='Stage', 
                     labels={"Batch": "Batch", "Tokens/s": "Tokens/s", "Model": "Model"},
                     width=1200, height=600, markers=True)
 
@@ -89,13 +96,14 @@ def generate_demand_curve(system_box, system_eff, num_nodes_slider,
 
         # # Customize facet labels
         fig.update_layout(
-            font_color="black",
-            title_font_color="black",
-            legend_title_font_color="black",
+            # font_color="black",
+            # title_font_color="black",
+            # legend_title_font_color="black",
             font_size=24
         )
 
-        # return fig
+        return fig
         # fig.show()
-        display(fig)
+        # display(fig)
+        # display(data_df)
 

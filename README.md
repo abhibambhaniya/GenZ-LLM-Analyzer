@@ -40,6 +40,12 @@ GenZ can help computer architects understand trends which can help in designing 
 ### Installation
 
 ```sh
+pip install genz-llm
+````
+
+or
+
+```sh
 git clone abhibambhaniya/genz.git
 cd genz
 pip install -r requirements.txt

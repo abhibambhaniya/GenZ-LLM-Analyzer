@@ -1,13 +1,4 @@
 from .utils import ModdelingOutput, get_inference_system, get_offload_system
-import os, sys
-script_dir = os.getcwd()
-module_path = script_dir
-for _ in range(5):
-    module_path = os.path.abspath(os.path.join(module_path, '../'))
-    if module_path not in sys.path:
-        sys.path.insert(0,module_path)
-    if os.path.basename(module_path) =='roofline':
-        break
 from GenZ.unit import Unit
 from GenZ.operators import *
 
@@ -20,8 +11,6 @@ from GenZ.LLM_inference import decode_moddeling, prefill_moddeling
 from paretoset import paretoset
 import itertools
 
-data_path = os.path.join(module_path,"data")
-model_path = os.path.join(data_path,"model")
 unit = Unit()
 
 def factors(n):

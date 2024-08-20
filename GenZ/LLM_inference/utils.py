@@ -4,7 +4,7 @@ from GenZ.unit import Unit
 import warnings
 from GenZ.system import System
 
-from Systems.system_configs import *
+from Systems.system_configs import system_configs
 
 offload_bw = 128 
 
@@ -42,8 +42,10 @@ def get_inference_system(system_name='A100_40GB_GPU', bits='bf16', ceff=1, meff=
     ### System Declaration
     ################################################################################################## # 
     if isinstance(system_name, str):
-        system_name = globals()[system_name] 
-    
+        if system_name in system_configs:
+            system_name = system_configs[system_name]
+        else:
+            raise ValueError(f'System mentioned:{system_name} not present in predefined systems. Please use systems from Systems/system_configs')
     if isinstance(system_name, dict):
         if system_name.get('real_values',False) == True:
             NUM_FLOPS = system_name.get('Flops', 320)

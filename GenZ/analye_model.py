@@ -1,13 +1,3 @@
-import os, sys
-script_dir = os.path.dirname(__file__)
-module_path = script_dir
-for _ in range(1):
-    if os.path.basename(module_path) =='roofline':
-        break
-    module_path = os.path.abspath(os.path.join(module_path, '../'))
-    if module_path not in sys.path:
-        sys.path.insert(0,module_path)
-
 from GenZ.unit import Unit
 from GenZ.operators import *
 import GenZ.operators as operators
@@ -93,12 +83,12 @@ def analysis_model(model_dims, system=None, unit=Unit(), densities = None,interm
     return df
 
 
-def get_model_df(model, system, unit, batch_size=1, data_path='./', sparse=False, intermediate_on_chip=False,
+def get_model_df(model, system, unit, batch_size=1, data_path="/tmp/data/", sparse=False, intermediate_on_chip=False,
                  beam_size=1, beam_merge=False, model_characterstics=False):
     m_file_path = os.path.join(data_path,"model")
     sparsity_file_path = os.path.join(data_path,"sparsity")
-    m_file = os.path.join(m_file_path, model + ".csv")
-    density_file = os.path.join(sparsity_file_path, model + ".csv")
+    m_file = os.path.join(m_file_path, model)
+    density_file = os.path.join(sparsity_file_path, model)
     df = pd.read_csv(m_file)
     model_defs = df.to_numpy()
     batch_sizes = np.ones((len(model_defs), 1)) * batch_size                    # Batch size has been fixed to 1.

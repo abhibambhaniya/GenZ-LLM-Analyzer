@@ -1,13 +1,4 @@
 from .utils import ModdelingOutput, get_inference_system, get_offload_system
-import os, sys
-script_dir = os.getcwd()
-module_path = script_dir
-for _ in range(5):
-    module_path = os.path.abspath(os.path.join(module_path, '../'))
-    if module_path not in sys.path:
-        sys.path.insert(0,module_path)
-    if os.path.basename(module_path) =='roofline':
-        break
 from GenZ.unit import Unit
 from GenZ.operators import *
 
@@ -19,8 +10,6 @@ import warnings
 from GenZ.collective_times import *
 from GenZ.utils.plot_rooflines import *
 
-data_path = os.path.join(module_path,"data")
-model_path = os.path.join(data_path,"model")
 unit = Unit()
 
 def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
@@ -54,9 +43,9 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     ################################################################################################## # 
     # if is_moe:
     model_decode = create_inference_moe_decode_model(input_sequence_length=input_tokens,output_gen_tokens = output_tokens , 
-                                        name=model,data_path=data_path,  tensor_parallel=tensor_parallel)
+                                        name=model,  tensor_parallel=tensor_parallel)
 
-    model_df = get_model_df(model_decode, system, unit, batch_size*Bb, data_path, intermediate_on_chip=FLAT , beam_merge= (Bb > 1), beam_size= Bb, model_characterstics = True)
+    model_df = get_model_df(model_decode, system, unit, batch_size*Bb, intermediate_on_chip=FLAT , beam_merge= (Bb > 1), beam_size= Bb, model_characterstics = True)
     summary_table = get_summary_table(model_df,system,unit, model_characterstics = True)
     summary_table_cols = [f'MACs ({unit.unit_flop})', f'Total Data ({unit.unit_mem})']
     ## Drop columns not is list
@@ -123,8 +112,8 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     ### First token generation time
     ################################################################################################## # 
     model_decode = create_inference_moe_decode_model(input_sequence_length=input_tokens,output_gen_tokens = 0 , 
-                                        name=model,data_path=data_path, Hkv=Hkv, tensor_parallel=tensor_parallel, beam_merge= (Bb > 1), beam_size = Bb)
-    model_df = get_model_df(model_decode, system, unit, batch_size*Bb, data_path, intermediate_on_chip=FLAT, beam_merge= (Bb > 1), beam_size= Bb )
+                                        name=model, Hkv=Hkv, tensor_parallel=tensor_parallel, beam_merge= (Bb > 1), beam_size = Bb)
+    model_df = get_model_df(model_decode, system, unit, batch_size*Bb, intermediate_on_chip=FLAT, beam_merge= (Bb > 1), beam_size= Bb )
     summary_table = get_summary_table(model_df,system,unit)
 
     if debug:
@@ -137,9 +126,9 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     ### Last token generation time
     ################################################################################################## # 
     model_decode = create_inference_moe_decode_model(input_sequence_length=input_tokens,output_gen_tokens = output_tokens , 
-                                        name=model,data_path=data_path, Hkv=Hkv, tensor_parallel=tensor_parallel, beam_merge= (Bb > 1), beam_size = Bb)
+                                        name=model, Hkv=Hkv, tensor_parallel=tensor_parallel, beam_merge= (Bb > 1), beam_size = Bb)
 
-    model_df = get_model_df(model_decode, system, unit, batch_size*Bb, data_path, intermediate_on_chip=FLAT , beam_merge= (Bb > 1), beam_size= Bb)
+    model_df = get_model_df(model_decode, system, unit, batch_size*Bb,  intermediate_on_chip=FLAT , beam_merge= (Bb > 1), beam_size= Bb)
     summary_table = get_summary_table(model_df,system,unit)
     if return_model_df:
         return model_df, summary_table
