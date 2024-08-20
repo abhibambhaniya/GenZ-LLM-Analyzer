@@ -86,7 +86,7 @@ Check the TODOs below for what's next and stay tuned! Any contributions or feedb
 
 ## Citation
 
-If you use GenZ in your work, please cite:
+If you use GenZ in your [paper](https://arxiv.org/abs/2406.01698), please cite:
 
 ```
 @misc{bambhaniya2024demystifying,

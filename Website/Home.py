@@ -3,6 +3,12 @@ import time
 st.set_page_config(
     page_title="Hello",
     page_icon="👋",
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': 'https://github.com/abhibambhaniya/GenZ-LLM-Analyzer/issues',
+        'Report a bug': "https://github.com/abhibambhaniya/GenZ-LLM-Analyzer/issues",
+        'About': "https://github.com/abhibambhaniya/GenZ-LLM-Analyzer/blob/main/README.md"
+    }
 )
 
 st.write("# Welcome to GenZ-LLM Analyzer! 👋")
