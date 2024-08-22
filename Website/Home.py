@@ -1,8 +1,8 @@
 import streamlit as st
 import time
 st.set_page_config(
-    page_title="Hello",
-    page_icon="👋",
+    page_title="GenZ-LLM Analyzer",
+    page_icon="🔬",
     initial_sidebar_state="expanded",
     menu_items={
         'Get Help': 'https://github.com/abhibambhaniya/GenZ-LLM-Analyzer/issues',
@@ -115,3 +115,31 @@ If you use GenZ in your [paper](https://arxiv.org/abs/2406.01698), please cite:
 ```
 """
 )
+
+
+st.session_state.models = [
+        'meta-llama/Llama-2-7B',
+        'meta-llama/Meta-Llama-3.1-8B',
+        'meta-llama/Llama-2-13B',
+        'meta-llama/Llama-2-70B',
+        'meta-llama/Meta-Llama-3.1-405B',
+        'google/gemma-2B',
+        'google/gemma-7B',
+        'google/gemma-2-9B',
+        'google/gemma-2-27B',
+        'mistralai/mistral-7B',
+        'mistralai/Mixtral-8x7B',
+        'microsoft/phi3mini',
+        'microsoft/phi3small',
+        'microsoft/phi3medium',
+        'databricks/dbrx-base',
+        'xai-org/grok-1',
+        'openai/gpt-3',
+        'openai/gpt-4',
+        'facebook/opt-125m',
+        'facebook/opt-350m',
+        'facebook/opt-1.3b',
+        'facebook/opt-175b',
+        ]
+
+st.session_state.systems = ['A100_40GB_GPU', 'A100_80GB_GPU', 'H100_GPU','GH200_GPU', 'TPUv4','TPUv5e', 'MI300X', 'Gaudi3', 'Custom']

@@ -12,7 +12,8 @@ from Systems.system_configs import system_configs
 
 st.set_page_config(
     page_title="Model Comparisons",
-    page_icon="🧊",
+    page_icon="🔬",
+
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={
@@ -69,15 +70,16 @@ def generate_demand_curve(system_box, system_eff, num_nodes_slider,
                     memory_req =  decode_summary_table['Model Weights (MB)'].values[0] + decode_summary_table['KV Cache (MB)'].values[0] 
 
                     mem_size_data.append([model, total_memory, batch_size, beam_size, input_token_slider, output_token_slider, np.ceil(memory_req/total_memory)])
-    
+
     data_df = pd.DataFrame(data, columns = ['Model', 'Stage','Batch', 'Latency(ms)', 'Tokens/s', 'GEMM Time', 'Attn Time', 'Communication Time'])
     chip_req_df = pd.DataFrame(mem_size_data, columns = ['Model', 'NPU memory','Batch', 'Beam size', 'Input Tokens', 'Output Tokens', 'Min. Chips'])
     if len(data) == 0 :
         return chip_req_df
     else:
         data_df['Stage'] = pd.Categorical(data_df['Stage'], categories=['Prefill','Decode'])
-        
-        fig = px.line(data_df, x="Batch", y="Tokens/s",  line_group="Model", color="Model", facet_row='Stage', 
+
+        fig = px.line(data_df, x="Batch", y="Tokens/s",  line_group="Model", color="Model", 
+                    facet_row='Stage', facet_row_spacing = 0.1,
                     labels={"Batch": "Batch", "Tokens/s": "Tokens/s", "Model": "Model"},
                     width=1200, height=600, markers=True)
 
@@ -87,14 +89,21 @@ def generate_demand_curve(system_box, system_eff, num_nodes_slider,
         fig.update_yaxes(title_font=dict(size=24))
 
         # Customize tick labels
-        fig.update_xaxes(tickfont=dict(size=24))
+        fig.update_xaxes(tickfont=dict(size=24), linecolor='white',)
         fig.update_yaxes(tickfont=dict(size=24))
-        fig.update_yaxes(matches=None)
+        fig.update_yaxes(matches=None, linecolor='white',)
 
         # # Customize facet labels
         fig.update_layout(
-            font_size=24
-        )
+            font_size=24,
+            # plot_bgcolor='rgb(127,127,127)',
+            legend = dict(font = dict(family = "Courier", size = 24)),
+            legend_title = dict(font = dict(family = "Courier", size = 24))
+            )
+        fig.update_traces(marker=dict(size=12,
+                        line=dict(width=4,)),
+                    # selector=dict(mode='markers')
+                    )
 
         return fig
 
@@ -107,31 +116,9 @@ def main():
 
     with col1:
         st.header("Model")
-        models = [
-        'meta-llama/Llama-2-7B',
-        'meta-llama/Meta-Llama-3.1-8B',
-        'meta-llama/Llama-2-13B',
-        'meta-llama/Llama-2-70B',
-        'meta-llama/Meta-Llama-3.1-405B',
-        'google/gemma-2B',
-        'google/gemma-7B',
-        'google/gemma-2-9B',
-        'google/gemma-2-27B',
-        'mistralai/mistral-7B',
-        'mistralai/Mixtral-8x7B',
-        'microsoft/phi3mini',
-        'microsoft/phi3small',
-        'microsoft/phi3medium',
-        'databricks/dbrx-base',
-        'xai-org/grok-1',
-        'openai/gpt-3',
-        'openai/gpt-4',
-        'facebook/opt-125m',
-        'facebook/opt-350m',
-        'facebook/opt-1.3b',
-        'facebook/opt-175b',
-        ]
-        selected_models = st.multiselect("Models:", models, default=models[0])
+        if 'models' not in st.session_state:
+            st.switch_page("Home.py")
+        selected_models = st.multiselect("Models:", st.session_state.models, default=st.session_state.models[0])
         st.markdown("""
             <style>
                 .stMultiSelect [data-baseweb=select] span{
@@ -140,7 +127,7 @@ def main():
                 }
             </style>
             """, unsafe_allow_html=True)
-        quantization = st.selectbox("Quantization:", ['bf16', 'int8', 'int4', 'int2', 'fp32'])
+        quantization = st.selectbox("Quantization:", ['fp8', 'bf16', 'int8', 'int4', 'int2', 'fp32'])
 
     with col2:
         st.header("Use case")
@@ -167,27 +154,29 @@ def main():
         input_tokens = st.number_input("Input Tokens:", value=used_input_tokens)
         output_tokens = st.number_input("Output Tokens:", value=used_output_tokens)
 
-
-
-    
     with col3:
         st.header("HW System")
-
-        systems = ['A100_40GB_GPU', 'A100_80GB_GPU', 'H100_GPU','GH200_GPU', 'TPUv4','TPUv5e', 'MI300X', 'Gaudi3', 'Custom']
-        selected_system = st.selectbox("System:", systems)
+        if 'systems' not in st.session_state:
+            st.switch_page("Home.py")
+        selected_system = st.selectbox("System:", st.session_state.systems)
         nodes = st.number_input("# Nodes:", value=2, step=1)
         system_efficiency = st.slider("System Efficiency:", min_value=0.0, max_value=1.0, value=0.80, step=0.01)
-        
+
         if selected_system in system_configs:
             current_system_config = system_configs[selected_system]
             used_flops = current_system_config.get('Flops', '')
             used_mem_bw = current_system_config.get('Memory_BW', '')
             used_mem_cap = current_system_config.get('Memory_size', '')
             used_icn_bw = current_system_config.get('ICN', '')
-        flops = st.number_input("FLOPS(T):", value=used_flops)
-        mem_bw = st.number_input("MEM BW(TB/s):", value=used_mem_bw)
+        else:
+            used_flops = 312
+            used_mem_bw = 1600
+            used_mem_cap = 40
+            used_icn_bw = 150
+        flops = st.number_input("FLOPS (TOPS):", value=used_flops)
+        mem_bw = st.number_input("MEM BW (TB/s):", value=used_mem_bw)
         mem_cap = st.number_input("Mem Capacity (GBs):", value=used_mem_cap)
-        icn_bw = st.number_input("ICN BW(GB/s):", value=used_icn_bw)
+        icn_bw = st.number_input("ICN BW (GB/s):", value=used_icn_bw)
 
     # Create Plotly bar chart
     if selected_models:
@@ -202,7 +191,7 @@ def main():
             output_token_slider=output_tokens,
             beam_size = beam_size
             )
-        
+
         if isinstance(fig, pd.DataFrame):
             st.write("Number of nodes is insufficient, please increase the nodes to fit the model")
             st.dataframe(fig)
