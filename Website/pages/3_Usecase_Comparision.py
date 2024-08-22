@@ -63,14 +63,14 @@ def generate_usecase_comparison(graph_type, system,
                             input_tokens = input_tokens, output_tokens = output_tokens, FLAT = True,
                             system_name = system, system_eff=system['eff'],
                             bits=quantization,
-                            tensor_parallel = system['nodes'], debug=False, model_profilling=True)
+                            debug=False, model_profilling=True)
             total_memory = int(system.get('Memory_size'))*1024  ## per device memory
             memory_req =  decode_summary_table['Model Weights (MB)'].values[0] + decode_summary_table['KV Cache (MB)'].values[0]
 
             mem_size_data.append([usecase_name, total_memory, batch_size, beam_size, input_tokens, output_tokens, np.ceil(memory_req/total_memory)])
 
     data_df = pd.DataFrame(data, columns = ['Usecase', 'TTFT(ms)', 'TPOT(ms)', 'E2E Latency(ms)','Decode Tokens/s', 'Prefill GEMM Time', 'Prefill Attn Time', 'Prefill Communication Time', 'Decode GEMM Time', 'Decode Attn Time', 'Decode Communication Time'])
-    chip_req_df = pd.DataFrame(mem_size_data, columns = ['System', 'Current Memory','Batch', 'Beam size', 'Input Tokens', 'Output Tokens', 'Min. Chips Required'])
+    chip_req_df = pd.DataFrame(mem_size_data, columns = ['System', 'Current Memory (MB)','Batch', 'Beam size', 'Input Tokens', 'Output Tokens', 'Min. Chips Required'])
     # 1. TTFT vs Decode Throughput
     # 2. TTFT
     # 3. Decode Throughput

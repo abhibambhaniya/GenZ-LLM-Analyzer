@@ -61,7 +61,7 @@ def generate_system_comparision(graph_type, system_list,
                             input_tokens = input_tokens, output_tokens = output_tokens, FLAT = True,
                             system_name = system, system_eff=system['eff'],
                             bits=quantization,
-                            tensor_parallel = system['nodes'], debug=False, model_profilling=True)
+                            debug=False, model_profilling=True)
             total_memory = int(system.get('Memory_size'))*1024  ## per device memory
             memory_req =  decode_summary_table['Model Weights (MB)'].values[0] + decode_summary_table['KV Cache (MB)'].values[0]
 
