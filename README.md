@@ -1,6 +1,8 @@
 # GenZ
 Generative LLM Analyzer
 
+Try GenZ without any setup: [GenZ-LLM-Analyzer](https://genz-llm-analyzer.streamlit.app/)
+
   - [Overview](#overview)
   - [Installation](#installation)
   - [Example](#Examples)
