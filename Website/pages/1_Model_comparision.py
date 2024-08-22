@@ -74,42 +74,50 @@ def generate_demand_curve(system_box, system_eff, num_nodes_slider,
 
     data_df = pd.DataFrame(data, columns = ['Model', 'Stage','Batch', 'Latency(ms)', 'Tokens/s', 'GEMM Time', 'Attn Time', 'Communication Time'])
     chip_req_df = pd.DataFrame(mem_size_data, columns = ['Model', 'NPU memory','Batch', 'Beam size', 'Input Tokens', 'Output Tokens', 'Min. Chips'])
-    if len(data) == 0 :
+
+    data_df['Stage'] = pd.Categorical(data_df['Stage'], categories=['Prefill','Decode'])
+
+    fig = px.line(data_df, x="Batch", y="Tokens/s",  line_group="Model", color="Model", 
+                facet_row='Stage', facet_row_spacing = 0.1,
+                labels={"Batch": "Batch", "Tokens/s": "Tokens/s", "Model": "Model"},
+                width=1200, height=600, markers=True)
+
+
+    # Customize axis labels
+    fig.update_xaxes(title_font=dict(size=24))
+    fig.update_yaxes(title_font=dict(size=24))
+
+    # Customize tick labels
+    fig.update_xaxes(tickfont=dict(size=24), linecolor='white',)
+    fig.update_yaxes(tickfont=dict(size=24))
+    fig.update_yaxes(matches=None, linecolor='white',)
+
+    # # Customize facet labels
+    fig.update_layout(
+        font_size=24,
+        # plot_bgcolor='rgb(127,127,127)',
+        legend = dict(font = dict(family = "Courier", size = 24),
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="right",
+                    x=1
+                ),
+        legend_title = dict(font = dict(family = "Courier", size = 24))
+
+
+        )
+    fig.update_traces(marker=dict(size=12,
+                    line=dict(width=4,)),
+                # selector=dict(mode='markers')
+                )
+
+    if len(mem_size_data) == 0:
+        return fig
+    elif len(data) == 0:
         return chip_req_df
     else:
-        data_df['Stage'] = pd.Categorical(data_df['Stage'], categories=['Prefill','Decode'])
-
-        fig = px.line(data_df, x="Batch", y="Tokens/s",  line_group="Model", color="Model", 
-                    facet_row='Stage', facet_row_spacing = 0.1,
-                    labels={"Batch": "Batch", "Tokens/s": "Tokens/s", "Model": "Model"},
-                    width=1200, height=600, markers=True)
-
-
-        # Customize axis labels
-        fig.update_xaxes(title_font=dict(size=24))
-        fig.update_yaxes(title_font=dict(size=24))
-
-        # Customize tick labels
-        fig.update_xaxes(tickfont=dict(size=24), linecolor='white',)
-        fig.update_yaxes(tickfont=dict(size=24))
-        fig.update_yaxes(matches=None, linecolor='white',)
-
-        # # Customize facet labels
-        fig.update_layout(
-            font_size=24,
-            # plot_bgcolor='rgb(127,127,127)',
-            legend = dict(font = dict(family = "Courier", size = 24)),
-            legend_title = dict(font = dict(family = "Courier", size = 24))
-            )
-        fig.update_traces(marker=dict(size=12,
-                        line=dict(width=4,)),
-                    # selector=dict(mode='markers')
-                    )
-
-        return fig
-
-
-
+        return fig, chip_req_df
 
 def main():
 
@@ -128,7 +136,7 @@ def main():
                 }
             </style>
             """, unsafe_allow_html=True)
-        quantization = st.selectbox("Quantization:", ['fp8', 'bf16', 'int8', 'int4', 'int2', 'fp32'])
+        quantization = st.selectbox("Quantization:", ['fp8', 'bf16', 'int8', 'int4', 'int2', 'f32'])
 
     with col2:
         st.header("Use case")
@@ -181,7 +189,7 @@ def main():
 
     # Create Plotly bar chart
     if selected_models:
-        fig = generate_demand_curve(
+        outputs = generate_demand_curve(
             system_box = {'Flops': flops, 'Memory_BW': mem_bw, 'Memory_size': mem_cap, 'ICN': icn_bw , 'real_values':True},
             system_eff = system_efficiency,
             num_nodes_slider = nodes,
@@ -193,11 +201,16 @@ def main():
             beam_size = beam_size
             )
 
-        if isinstance(fig, pd.DataFrame):
+        if isinstance(outputs, pd.DataFrame):
             st.write("Number of nodes is insufficient, please increase the nodes to fit the model")
-            st.dataframe(fig)
+            st.dataframe(outputs)
+        elif isinstance(outputs, go.Figure):
+            st.plotly_chart(outputs)
         else:
-            st.plotly_chart(fig)
+            st.plotly_chart(outputs[0])
+            st.write("Number of nodes is insufficient, please increase the nodes to fit the model")
+            st.dataframe(outputs[1])
+
 
     # Display some calculated metrics
     # st.subheader("Calculated Metrics")

@@ -125,13 +125,21 @@ def generate_usecase_comparison(graph_type, system,
     # # Customize facet labels
     fig.update_layout(
         font_size=24,
-        legend = dict(font = dict(family = "Courier", size = 24)),
+        legend = dict(font = dict(family = "Courier", size = 24),
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        ),
         legend_title = dict(font = dict(family = "Courier", size = 24))
         )
 
 
-    if len(mem_size_data) == 0 :
+    if len(mem_size_data) == 0:
         return fig
+    elif len(data) == 0:
+        return chip_req_df
     else:
         return fig, chip_req_df
 
@@ -166,7 +174,7 @@ def main():
                 }
             </style>
             """, unsafe_allow_html=True)
-        quantization = st.selectbox("Quantization:", ['fp8', 'bf16', 'int8', 'int4', 'int2', 'fp32'])
+        quantization = st.selectbox("Quantization:", ['fp8', 'bf16', 'int8', 'int4', 'int2', 'f32'])
 
     # with col3:
     st.header("HW System")
@@ -276,12 +284,15 @@ def main():
             quantization = quantization,
             usecase_list = st.session_state.usecase_list,
             )
-        if isinstance(outputs, tuple):
-            st.plotly_chart(outputs[0])
-            st.write("Number of nodes is insufficient for these systems, please increase the nodes to fit the model")
-            st.dataframe(outputs[1])
-        else:
+        if isinstance(outputs, pd.DataFrame):
+            st.write("Number of nodes is insufficient, please increase the nodes to fit the model")
+            st.dataframe(outputs)
+        elif isinstance(outputs, go.Figure):
             st.plotly_chart(outputs)
+        else:
+            st.plotly_chart(outputs[0])
+            st.write("Number of nodes is insufficient, please increase the nodes to fit the model")
+            st.dataframe(outputs[1])
 
     # Display some calculated metrics
     # st.subheader("Calculated Metrics")
