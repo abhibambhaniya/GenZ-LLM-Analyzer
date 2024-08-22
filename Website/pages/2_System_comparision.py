@@ -31,6 +31,7 @@ st.sidebar.subheader("3. Make a list of various HW Systems to compare")
 
 st.sidebar.info(
     "This app is maintained by Abhimanyu Bambhaniya. ")
+st.sidebar.info("If this app helps you, consider giving it a star! [⭐️](https://github.com/abhibambhaniya/GenZ-LLM-Analyzer)")
 
 st.title("Compare various System Performance")
 # Define the function to generate the demand curve

@@ -31,8 +31,9 @@ st.sidebar.subheader("3. Select HW System to run on")
 st.sidebar.info(
     "This app is maintained by Abhimanyu Bambhaniya. ")
 
+st.sidebar.info("If this app helps you, consider giving it a star! [⭐️](https://github.com/abhibambhaniya/GenZ-LLM-Analyzer)")
 st.title("Compare various Model Performance")
-    
+
 # Define the function to generate the demand curve
 def generate_demand_curve(system_box, system_eff, num_nodes_slider,
                         model_box, quantization_box, batch_slider,
@@ -47,7 +48,7 @@ def generate_demand_curve(system_box, system_eff, num_nodes_slider,
         for model in model_box:
             if batch_size <= batch_slider:
                 model_name = get_configs(model).model
-                try: 
+                try:
                     prefill_outputs = prefill_moddeling(model = model, batch_size = batch_size,
                                             input_tokens = input_token_slider, output_tokens = output_token_slider, FLAT = True,
                                             system_name = system_box, system_eff = system_eff,

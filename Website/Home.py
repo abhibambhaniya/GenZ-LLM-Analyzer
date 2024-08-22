@@ -10,6 +10,7 @@ st.set_page_config(
         'About': "https://github.com/abhibambhaniya/GenZ-LLM-Analyzer/blob/main/README.md"
     }
 )
+st.sidebar.info("If this app helps you, consider giving it a star! [⭐️](https://github.com/abhibambhaniya/GenZ-LLM-Analyzer)")
 
 st.write("# Welcome to GenZ-LLM Analyzer! 👋")
 
@@ -51,28 +52,6 @@ GenZ can help computer architects understand trends which can help in designing 
 - if each node's total HBM bandwidth increases/decreases by 10\%, what would the impact on inference latency be? 
 - By how much should the chip-to-chip communication network be improved? 
 
-
-### Installation
-
-```sh
-pip install genz-llm
-````
-
-or
-
-```sh
-git clone abhibambhaniya/genz.git
-cd genz
-pip install -r requirements.txt
-```
-
-## Examples
-
-Refere to notebook/LLM_inference_perf.ipynb and notebook/LLM_memory_analysis.ipynb to get familiar with the setup.
-
-
-
-
 ## Parallelism Scheme
 GenZ supports Tensor Parallelism (TP), Pipeline Parallelism (PP) accross large platforms with multiple NPUs.
 
@@ -99,13 +78,22 @@ Check the TODOs below for what's next and stay tuned! Any contributions or feedb
 - [ ] Support LoRA
 - [ ] Add different kind of quantization for weights/KV/activations.
 
-## Citation
+## Appreciation and Citation
+"""
+)
 
+github_button = """
+If a project helps you, please give it a star! [⭐️](https://github.com/abhibambhaniya/GenZ-LLM-Analyzer)
+"""
+st.markdown(github_button, unsafe_allow_html=True)
+
+st.markdown(
+    """
 If you use GenZ in your [paper](https://arxiv.org/abs/2406.01698), please cite:
 
 ```
 @misc{bambhaniya2024demystifying,
-      title={Demystifying Platform Requirements for Diverse LLM Inference Use Cases}, 
+      title={Demystifying Platform Requirements for Diverse LLM Inference Use Cases},
       author={Abhimanyu Bambhaniya and Ritik Raj and Geonhwa Jeong and Souvik Kundu and Sudarshan Srinivasan and Midhilesh Elavazhagan and Madhu Kumar and Tushar Krishna},
       year={2024},
       eprint={2406.01698},
