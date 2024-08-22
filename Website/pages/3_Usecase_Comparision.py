@@ -12,7 +12,7 @@ from tqdm import tqdm
 from Systems.system_configs import system_configs
 
 st.set_page_config(
-    page_title="System Comparisons",
+    page_title="Usecase Comparisons",
     page_icon="🔬",
 
     layout="wide",
@@ -24,7 +24,7 @@ st.set_page_config(
     }
 )
 
-st.sidebar.title("System comparisons")
+st.sidebar.title("Usecase comparisons")
 st.sidebar.subheader("1. Select the LLM Model")
 st.sidebar.subheader("2. Select the use-case")
 st.sidebar.subheader("3. Make a list of various HW Systems to compare")
@@ -32,17 +32,19 @@ st.sidebar.subheader("3. Make a list of various HW Systems to compare")
 st.sidebar.info(
     "This app is maintained by Abhimanyu Bambhaniya. ")
 
-st.title("Compare various System Performance")
+st.title("Compare various Usecase Performance")
 # Define the function to generate the demand curve
-def generate_system_comparision(graph_type, system_list,
-                        model, quantization, batch_size,
-                        input_tokens, output_tokens, beam_size,
+def generate_usecase_comparison(graph_type, system,
+                        model, quantization,
+                        usecase_list
                         ):
     warnings.filterwarnings("ignore")
 
     data = []
     mem_size_data = []
-    for system in system_list:
+    for usecase in usecase_list:
+        usecase_name = usecase['name']
+        batch_size, beam_size, input_tokens, output_tokens = usecase['batch_size'], usecase['beam_size'], usecase['input_tokens'], usecase['output_tokens']
         try:
             prefill_outputs = prefill_moddeling(model = model, batch_size = batch_size,
                                     input_tokens = input_tokens, output_tokens = output_tokens, FLAT = True,
@@ -54,7 +56,7 @@ def generate_system_comparision(graph_type, system_list,
                                     system_name = system, system_eff=system['eff'],
                                     bits=quantization,
                                     tensor_parallel = system['nodes'], debug=False)
-            data.append([system['name'],  prefill_outputs['Latency'],  decode_outputs['Latency'], prefill_outputs['Latency'] + decode_outputs['Latency']*output_tokens, decode_outputs['Throughput']] + prefill_outputs['Runtime_breakdown'] + decode_outputs['Runtime_breakdown'])
+            data.append([usecase_name,  prefill_outputs['Latency'],  decode_outputs['Latency'], prefill_outputs['Latency'] + decode_outputs['Latency']*output_tokens, decode_outputs['Throughput']] + prefill_outputs['Runtime_breakdown'] + decode_outputs['Runtime_breakdown'])
         except:
             # ValueError
             decode_outputs, decode_summary_table = decode_moddeling(model = model, batch_size = batch_size, Bb = beam_size ,
@@ -65,9 +67,9 @@ def generate_system_comparision(graph_type, system_list,
             total_memory = int(system.get('Memory_size'))*1024  ## per device memory
             memory_req =  decode_summary_table['Model Weights (MB)'].values[0] + decode_summary_table['KV Cache (MB)'].values[0]
 
-            mem_size_data.append([system['name'], total_memory, batch_size, beam_size, input_tokens, output_tokens, np.ceil(memory_req/total_memory)])
+            mem_size_data.append([usecase_name, total_memory, batch_size, beam_size, input_tokens, output_tokens, np.ceil(memory_req/total_memory)])
 
-    data_df = pd.DataFrame(data, columns = ['System', 'TTFT(ms)', 'TPOT(ms)', 'E2E Latency(ms)','Decode Tokens/s', 'Prefill GEMM Time', 'Prefill Attn Time', 'Prefill Communication Time', 'Decode GEMM Time', 'Decode Attn Time', 'Decode Communication Time'])
+    data_df = pd.DataFrame(data, columns = ['Usecase', 'TTFT(ms)', 'TPOT(ms)', 'E2E Latency(ms)','Decode Tokens/s', 'Prefill GEMM Time', 'Prefill Attn Time', 'Prefill Communication Time', 'Decode GEMM Time', 'Decode Attn Time', 'Decode Communication Time'])
     chip_req_df = pd.DataFrame(mem_size_data, columns = ['System', 'Current Memory','Batch', 'Beam size', 'Input Tokens', 'Output Tokens', 'Min. Chips Required'])
     # 1. TTFT vs Decode Throughput
     # 2. TTFT
@@ -75,7 +77,7 @@ def generate_system_comparision(graph_type, system_list,
     # 4. Total Time
 
     if graph_type == 'First Token Latency vs. Output Generation Throughput':
-        fig = px.scatter(data_df, x="Decode Tokens/s", y="TTFT(ms)", color="System",
+        fig = px.scatter(data_df, x="Decode Tokens/s", y="TTFT(ms)", color="Usecase",
                     # labels={"Batch": "Batch", "Tokens/s": "Tokens/s", "Model": "Model"},
                     width=1200, height=600)
         # Update layout to add quadrant colors
@@ -104,11 +106,11 @@ def generate_system_comparision(graph_type, system_list,
         fig.update_traces(marker=dict(size=20))
 
     elif graph_type == 'First Token Latency':
-        fig = px.bar(data_df, x="System", y="TTFT(ms)")
+        fig = px.bar(data_df, x="Usecase", y="TTFT(ms)")
     elif graph_type == 'Output Generation Throughput':
-        fig = px.bar(data_df, x="System", y="Decode Tokens/s")
+        fig = px.bar(data_df, x="Usecase", y="Decode Tokens/s")
     elif graph_type == 'Total Response Time':
-        fig = px.bar(data_df, x="System", y="E2E Latency(ms)")
+        fig = px.bar(data_df, x="Usecase", y="E2E Latency(ms)")
 
     # Customize axis labels
     fig.update_xaxes(title_font=dict(size=24))
@@ -165,9 +167,41 @@ def main():
             """, unsafe_allow_html=True)
         quantization = st.selectbox("Quantization:", ['fp8', 'bf16', 'int8', 'int4', 'int2', 'fp32'])
 
+    # with col3:
+    st.header("HW System")
+    if 'systems' not in st.session_state:
+        st.switch_page("Home.py")
 
+    col1, col2, col3, col4, col5, col6, col7 = st.columns([1,1,1,1,1,1,1])
+    with col1:
+        selected_system = st.selectbox("System:", st.session_state.systems)
+    with col2:
+        nodes = st.number_input("# Nodes:", value=2, step=1)
+    with col3:
+        system_efficiency = st.slider("System Efficiency:", min_value=0.0, max_value=1.0, value=0.80, step=0.01)
+    if selected_system in system_configs:
+        current_system_config = system_configs[selected_system]
+        used_flops = current_system_config.get('Flops', '')
+        used_mem_bw = current_system_config.get('Memory_BW', '')
+        used_mem_cap = current_system_config.get('Memory_size', '')
+        used_icn_bw = current_system_config.get('ICN', '')
+    else:
+        used_flops = 312
+        used_mem_bw = 1600
+        used_mem_cap = 40
+        used_icn_bw = 150
+    with col4:
+        flops = st.number_input("FLOPS(T):", value=used_flops)
+    with col5:
+        mem_bw = st.number_input("MEM BW(TB/s):", value=used_mem_bw)
+    with col6:
+        mem_cap = st.number_input("Mem Capacity (GBs):", value=used_mem_cap)
+    with col7:
+        icn_bw = st.number_input("ICN BW(GB/s):", value=used_icn_bw)
+
+    system = { 'Flops': flops, 'Memory_BW': mem_bw, 'Memory_size': mem_cap, 'ICN': icn_bw , 'nodes':nodes, 'eff':system_efficiency, 'real_values':True}
     st.header("Use case")
-    col1, col2, col3, col4, col5 = st.columns([3,1,2,1,1])
+    col1, col2, col3, col4, col5, col6 = st.columns([3,1,2,1,1,1])
     with col1:
         use_case = st.selectbox("Usecases:", ['Ques-Ans', 'Text Summarization', 'Chatbots', 'Code Gen.', 'Custom'])
         if 'Ques-Ans' == use_case:
@@ -186,6 +220,11 @@ def main():
             used_beam_size = 4
             used_input_tokens = 20000
             used_output_tokens = 50
+        else:
+            use_case = st.text_input("Use Case:")
+            used_beam_size = 4
+            used_input_tokens = 1000
+            used_output_tokens = 200
     with col2:
         batch_size = st.number_input("Batch Size:", value=8, step=1,min_value=1)
     with col3:
@@ -194,77 +233,25 @@ def main():
         input_tokens = st.number_input("Input Tokens:", value=used_input_tokens)
     with col5:
         output_tokens = st.number_input("Output Tokens:", value=used_output_tokens)
-
-    # with col3:
-    st.header("HW System")
-    if 'systems' not in st.session_state:
-        st.switch_page("Home.py")
-
-    col1, col2, col3, col4, col5, col6, col7, col8 = st.columns([1,1,1,1,1,1,1,1])
-    with col1:
-        selected_system = st.selectbox("System:", st.session_state.systems)
-        if selected_system == 'Custom':
-            system_name = st.text_input("System Name:")
-    with col2:
-        nodes = st.number_input("# Nodes:", value=2, step=1)
-    with col3:
-        system_efficiency = st.slider("System Efficiency:", min_value=0.0, max_value=1.0, value=0.80, step=0.01)
-    if selected_system in system_configs:
-        current_system_config = system_configs[selected_system]
-        system_name = selected_system
-        used_flops = current_system_config.get('Flops', '')
-        used_mem_bw = current_system_config.get('Memory_BW', '')
-        used_mem_cap = current_system_config.get('Memory_size', '')
-        used_icn_bw = current_system_config.get('ICN', '')
-    else:
-        used_flops = 312
-        used_mem_bw = 1600
-        used_mem_cap = 40
-        used_icn_bw = 150
-    with col4:
-        flops = st.number_input("FLOPS(T):", value=used_flops)
-    with col5:
-        mem_bw = st.number_input("MEM BW(TB/s):", value=used_mem_bw)
-    with col6:
-        mem_cap = st.number_input("Mem Capacity (GBs):", value=used_mem_cap)
-    with col7:
-        icn_bw = st.number_input("ICN BW(GB/s):", value=used_icn_bw)
     # Initialize the list in session state if it doesn't exist
-    if 'system_list' not in st.session_state:
-        st.session_state.system_list = [
-            {'name':'A100_80GB_GPU',
-            'Flops': system_configs['A100_80GB_GPU'].get('Flops', ''),
-            'Memory_BW': system_configs['A100_80GB_GPU'].get('Memory_BW', ''),
-            'Memory_size': system_configs['A100_80GB_GPU'].get('Memory_size', ''),
-            'ICN': system_configs['A100_80GB_GPU'].get('ICN', '') , 'nodes':1, 'eff':0.8, 'real_values':True},
-            {'name':'H100_GPU', 'Flops': system_configs['H100_GPU'].get('Flops', ''),
-            'Memory_BW': system_configs['H100_GPU'].get('Memory_BW', ''),
-            'Memory_size': system_configs['H100_GPU'].get('Memory_size', ''),
-            'ICN': system_configs['H100_GPU'].get('ICN', '') , 'nodes':1, 'eff':0.8, 'real_values':True},
-            {'name':'TPUv5e', 'Flops': system_configs['TPUv5e'].get('Flops', ''),
-            'Memory_BW': system_configs['TPUv5e'].get('Memory_BW', ''),
-            'Memory_size': system_configs['TPUv5e'].get('Memory_size', ''),
-            'ICN': system_configs['TPUv5e'].get('ICN', '') , 'nodes':1, 'eff':0.8, 'real_values':True},
-            {'name':'MI300X', 'Flops': system_configs['MI300X'].get('Flops', ''),
-            'Memory_BW': system_configs['MI300X'].get('Memory_BW', ''),
-            'Memory_size': system_configs['MI300X'].get('Memory_size', ''),
-            'ICN': system_configs['MI300X'].get('ICN', '') , 'nodes':1, 'eff':0.8, 'real_values':True},
-            {'name':'Gaudi3', 'Flops': system_configs['Gaudi3'].get('Flops', ''),
-            'Memory_BW': system_configs['Gaudi3'].get('Memory_BW', ''),
-            'Memory_size': system_configs['Gaudi3'].get('Memory_size', ''),
-            'ICN': system_configs['Gaudi3'].get('ICN', '') , 'nodes':1, 'eff':0.8, 'real_values':True},
+    if 'usecase_list' not in st.session_state:
+        st.session_state.usecase_list = [
+            {'name':'Ques-Ans', 'batch_size': 1, 'beam_size': 4, 'input_tokens': 1000, 'output_tokens': 200},
+            {'name':'Text Summarization', 'batch_size': 1, 'beam_size': 4, 'input_tokens': 15000, 'output_tokens': 1000},
+            {'name':'Chatbots', 'batch_size': 1, 'beam_size': 2, 'input_tokens': 2048, 'output_tokens': 128},
+            {'name':'Code Gen.', 'batch_size': 1, 'beam_size': 4, 'input_tokens': 20000, 'output_tokens': 50}
         ]
-    with col8:
+    with col6:
         if st.button("➕",key='add_item'):
-            new_item = {'name':system_name, 'Flops': flops, 'Memory_BW': mem_bw, 'Memory_size': mem_cap, 'ICN': icn_bw , 'nodes':nodes, 'eff':system_efficiency, 'real_values':True}
-            st.session_state.system_list.append(new_item)
-            st.success(f"Added: {nodes} x {system_name}")
-    st.subheader("Current Items:")
-    for i, item in enumerate(st.session_state.system_list):
+            new_item = {'name':use_case, 'batch_size': batch_size, 'beam_size': beam_size, 'input_tokens': input_tokens, 'output_tokens': output_tokens }
+            st.session_state.usecase_list.append(new_item)
+            st.success(f"Added Use case:  x {use_case}")
+    st.subheader("Current Usecase:")
+    for i, item in enumerate(st.session_state.usecase_list):
         col1, col2 = st.columns([3, 1])
-        col1.write(f"{i+1}. {item['nodes']} x {item['name']} @ {item['eff']} : {item['Flops']}, {item['Memory_BW']}, {item['Memory_size']}, {item['ICN']}")
+        col1.write(f"{i+1}. {item['name']} : B : {item['batch_size']}, beam: {item['beam_size']}, Tokens (Input/Output): {item['input_tokens']}/{item['output_tokens']}")
         if col2.button("➖", key=f"remove_{i}"):
-            st.session_state.system_list.pop(i)
+            st.session_state.usecase_list.pop(i)
             st.rerun()
     ChangeButtonColour('➕', '#FF009C', '#00FF63') # button txt to find, colour to assign
     ChangeButtonColour('➖', '#00FFEF', '#FF0010') # button txt to find, colour to assign
@@ -280,16 +267,13 @@ def main():
 
 
     # Create Plotly bar chart
-    if st.session_state.system_list:
-        outputs = generate_system_comparision(
+    if st.session_state.usecase_list:
+        outputs = generate_usecase_comparison(
             graph_type = graph_type,
-            system_list = st.session_state.system_list,
+            system = system,
             model=selected_models,
             quantization = quantization,
-            batch_size=batch_size,
-            input_tokens = input_tokens,
-            output_tokens = output_tokens,
-            beam_size = beam_size
+            usecase_list = st.session_state.usecase_list,
             )
         if isinstance(outputs, tuple):
             st.plotly_chart(outputs[0])
