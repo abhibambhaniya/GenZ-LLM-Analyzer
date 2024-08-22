@@ -26,8 +26,8 @@ st.set_page_config(
 
 st.sidebar.title("Usecase comparisons")
 st.sidebar.subheader("1. Select the LLM Model")
-st.sidebar.subheader("2. Select the use-case")
-st.sidebar.subheader("3. Make a list of various HW Systems to compare")
+st.sidebar.subheader("2. Select the HW Systems")
+st.sidebar.subheader("3. Make a list of various use-cases to compare")
 
 st.sidebar.info(
     "This app is maintained by Abhimanyu Bambhaniya. ")

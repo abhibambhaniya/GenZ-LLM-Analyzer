@@ -262,7 +262,7 @@ def main():
     st.subheader("Current Items:")
     for i, item in enumerate(st.session_state.system_list):
         col1, col2 = st.columns([3, 1])
-        col1.write(f"{i+1}. {item['nodes']} x {item['name']} @ {item['eff']} : {item['Flops']}, {item['Memory_BW']}, {item['Memory_size']}, {item['ICN']}")
+        col1.write(f"{i+1}. {item['nodes']} x {item['name']} @ {item['eff']} efficiency : FLOPS: {item['Flops']} TOPS, Memory BW: {item['Memory_BW']} GB/s, Memory Size: {item['Memory_size']} GB, Interconnect BW: {item['ICN']} GB/s")
         if col2.button("➖", key=f"remove_{i}"):
             st.session_state.system_list.pop(i)
             st.rerun()
