@@ -7,6 +7,7 @@ import warnings
 from GenZ import decode_moddeling, prefill_moddeling, get_configs
 import pandas as pd
 from tqdm import tqdm
+import time
 
 from Systems.system_configs import system_configs
 
@@ -121,8 +122,46 @@ def generate_demand_curve(system_box, system_eff, num_nodes_slider,
 
 def main():
 
-    col1, col2, col3 = st.columns([6,3,4])
+    regenerate_plot = True
 
+    col1, col2, col3 = st.columns([6,3,4])
+    tabs_font_css = """
+    <style>
+    div[class*="stTextArea"] label p {
+    font-size: 20px;
+    }
+
+    div[class*="stTextInput"] label p {
+    font-size: 20px;
+    }
+
+    div[class*="stNumberInput"] label p {
+    font-size: 20px;
+    }
+
+    div[class*="stSlider"] label p {
+    font-size: 20px;
+    }
+
+    div[class*="stSelectbox"] label p {
+    font-size: 20px;
+    }
+
+    div[class*="stMarkdown"] label p {
+    font-size: 20px;
+    }
+
+    div[class*="stMultiSelect"] label p {
+    font-size: 20px;
+    }
+
+    .big-font {
+    font-size:24px !important;
+    }
+    </style>
+    """
+
+    st.write(tabs_font_css, unsafe_allow_html=True)
     with col1:
         st.header("Model")
         if 'models' not in st.session_state:
@@ -159,9 +198,13 @@ def main():
             used_beam_size = 4
             used_input_tokens = 20000
             used_output_tokens = 50
+        else:
+            used_beam_size = 4
+            used_input_tokens = 1000
+            used_output_tokens = 200
         beam_size = st.slider("No. of Parallel Beams:", min_value=1, max_value=16, value=used_beam_size)
-        input_tokens = st.number_input("Input Tokens:", value=used_input_tokens)
-        output_tokens = st.number_input("Output Tokens:", value=used_output_tokens)
+        input_tokens = st.number_input("Input Tokens:", value=used_input_tokens, step=100)
+        output_tokens = st.number_input("Output Tokens:", value=used_output_tokens, step=100)
 
     with col3:
         st.header("HW System")
@@ -182,10 +225,10 @@ def main():
             used_mem_bw = 1600
             used_mem_cap = 40
             used_icn_bw = 150
-        flops = st.number_input("FLOPS (TOPS):", value=used_flops)
-        mem_bw = st.number_input("MEM BW (TB/s):", value=used_mem_bw)
-        mem_cap = st.number_input("Mem Capacity (GBs):", value=used_mem_cap)
-        icn_bw = st.number_input("ICN BW (GB/s):", value=used_icn_bw)
+        flops = st.number_input("FLOPS (TOPS):", value=used_flops, step=100)
+        mem_bw = st.number_input("MEM BW (GB/s):", value=used_mem_bw, step=100)
+        mem_cap = st.number_input("Mem Capacity (GBs):", value=used_mem_cap, step=8)
+        icn_bw = st.number_input("ICN BW (GB/s):", value=used_icn_bw, step=10)
 
     # Create Plotly bar chart
     if selected_models:
@@ -200,7 +243,13 @@ def main():
             output_token_slider=output_tokens,
             beam_size = beam_size
             )
-
+        with st.status("Computing metric...", expanded=True):
+            st.write("Building Platforms...")
+            time.sleep(2)
+            st.write("Getting LLM inference analysis...")
+            time.sleep(1)
+            st.write("Generating charts...")
+            time.sleep(1)
         if isinstance(outputs, pd.DataFrame):
             st.write("Number of nodes is insufficient, please increase the nodes to fit the model")
             st.dataframe(outputs)
@@ -210,6 +259,8 @@ def main():
             st.plotly_chart(outputs[0])
             st.write("Number of nodes is insufficient, please increase the nodes to fit the model")
             st.dataframe(outputs[1])
+        
+        regenerate_plot = False
 
 
     # Display some calculated metrics

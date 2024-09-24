@@ -8,6 +8,7 @@ import warnings
 from GenZ import decode_moddeling, prefill_moddeling, get_configs
 import pandas as pd
 from tqdm import tqdm
+import time
 
 from Systems.system_configs import system_configs
 
@@ -91,7 +92,8 @@ def generate_usecase_comparison(graph_type, system,
                     y0=0, y1=0.5,
                     fillcolor='rgba(0, 255, 0, 0.3)',  # Red with transparency
                     line=dict(color='rgba(255, 255, 255, 0)'),
-                    xref='paper', yref='paper'
+                    xref='paper', yref='paper',
+                    layer='below'  # This places the shape below the traces
                 ),
                 # Quadrant 3 (Bottom-left)
                 dict(
@@ -100,7 +102,8 @@ def generate_usecase_comparison(graph_type, system,
                     y0=0.5, y1=1,
                     fillcolor='rgba(255, 0, 0, 0.3)',  # Blue with transparency
                     line=dict(color='rgba(255, 255, 255, 0)'),
-                    xref='paper', yref='paper'
+                    xref='paper', yref='paper',
+                    layer='below'  # This places the shape below the traces
                 ),
             ]
         )
@@ -108,10 +111,13 @@ def generate_usecase_comparison(graph_type, system,
 
     elif graph_type == 'First Token Latency':
         fig = px.bar(data_df, x="Usecase", y="TTFT(ms)")
+        fig.update_layout(xaxis={'categoryorder':'total descending'})
     elif graph_type == 'Output Generation Throughput':
         fig = px.bar(data_df, x="Usecase", y="Decode Tokens/s")
+        fig.update_layout(xaxis={'categoryorder':'total ascending'})
     elif graph_type == 'Total Response Time':
         fig = px.bar(data_df, x="Usecase", y="E2E Latency(ms)")
+        fig.update_layout(xaxis={'categoryorder':'total descending'})
 
     # Customize axis labels
     fig.update_xaxes(title_font=dict(size=24))
@@ -159,6 +165,40 @@ def ChangeButtonColour(widget_label, font_color, background_color='transparent')
     components.html(f"{htmlstr}", height=0, width=0)
 
 def main():
+        # # Add custom CSS to increase the font size of all text
+    tabs_font_css = """
+    <style>
+    div[class*="stTextArea"] label p {
+    font-size: 20px;
+    }
+
+    div[class*="stTextInput"] label p {
+    font-size: 20px;
+    }
+
+    div[class*="stNumberInput"] label p {
+    font-size: 20px;
+    }
+
+    div[class*="stSlider"] label p {
+    font-size: 20px;
+    }
+
+    div[class*="stSelectbox"] label p {
+    font-size: 20px;
+    }
+
+    div[class*="stMarkdown"] label p {
+    font-size: 20px;
+    }
+
+    .big-font {
+    font-size:24px !important;
+    }
+    </style>
+    """
+
+    st.write(tabs_font_css, unsafe_allow_html=True)
     st.header("Model")
     col1, col2 = st.columns([3,2])
     with col1:
@@ -185,7 +225,7 @@ def main():
     with col1:
         selected_system = st.selectbox("System:", st.session_state.systems)
     with col2:
-        nodes = st.number_input("# Nodes:", value=2, step=1)
+        nodes = st.number_input("Nodes:", value=2, step=1)
     with col3:
         system_efficiency = st.slider("System Efficiency:", min_value=0.0, max_value=1.0, value=0.80, step=0.01)
     if selected_system in system_configs:
@@ -202,7 +242,7 @@ def main():
     with col4:
         flops = st.number_input("FLOPS(T):", value=used_flops)
     with col5:
-        mem_bw = st.number_input("MEM BW(TB/s):", value=used_mem_bw)
+        mem_bw = st.number_input("MEM BW(GB/s):", value=used_mem_bw)
     with col6:
         mem_cap = st.number_input("Mem Capacity (GBs):", value=used_mem_cap)
     with col7:
@@ -256,9 +296,13 @@ def main():
             st.session_state.usecase_list.append(new_item)
             st.success(f"Added Use case:  x {use_case}")
     st.subheader("Current Usecase:")
+    show_details = st.checkbox("Show Details")
     for i, item in enumerate(st.session_state.usecase_list):
         col1, col2 = st.columns([3, 1])
-        col1.write(f"{i+1}. {item['name']} : B : {item['batch_size']}, beam: {item['beam_size']}, Tokens (Input/Output): {item['input_tokens']}/{item['output_tokens']}")
+        if show_details:
+            col1.write(f"{i+1}. **{item['name']}** : B : {item['batch_size']}, beam: {item['beam_size']}, Tokens (Input/Output): {item['input_tokens']}/{item['output_tokens']}")
+        else:
+            col1.write(f"{i+1}. **{item['name']}**") 
         if col2.button("➖", key=f"remove_{i}"):
             st.session_state.usecase_list.pop(i)
             st.rerun()
@@ -284,12 +328,28 @@ def main():
             quantization = quantization,
             usecase_list = st.session_state.usecase_list,
             )
+        with st.status("Computing metric...", expanded=True):
+            st.write("Building Platforms...")
+            time.sleep(2)
+            st.write("Getting LLM inference analysis...")
+            time.sleep(1)
+            st.write("Generating charts...")
+            time.sleep(1)
         if isinstance(outputs, pd.DataFrame):
             st.write("Number of nodes is insufficient, please increase the nodes to fit the model")
             st.dataframe(outputs)
         elif isinstance(outputs, go.Figure):
+            if graph_type == 'First Token Latency' or graph_type ==  'Total Response Time':
+                st.markdown('<p class="big-font">Lower is Better</p>', unsafe_allow_html=True)
+            elif graph_type == 'Output Generation Throughput':
+                st.markdown('<p class="big-font">Higher is Better</p>', unsafe_allow_html=True)
             st.plotly_chart(outputs)
         else:
+            if graph_type == 'First Token Latency' or graph_type ==  'Total Response Time':
+                st.markdown('<p class="big-font">Lower is Better</p>', unsafe_allow_html=True)
+            elif graph_type == 'Output Generation Throughput':
+                st.markdown('<p class="big-font">Higher is Better</p>', unsafe_allow_html=True)
+            
             st.plotly_chart(outputs[0])
             st.write("Number of nodes is insufficient, please increase the nodes to fit the model")
             st.dataframe(outputs[1])
