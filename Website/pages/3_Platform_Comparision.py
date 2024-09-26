@@ -335,7 +335,9 @@ def main():
     for i, item in enumerate(st.session_state.system_list):
         col1, col2 = st.columns([3, 1])
         if item['name'] in st.session_state.systems: 
-                url = system_datasheet[item['name']]
+            url = system_datasheet[item['name']]
+        else:
+            url = 'https://google.com/search?q=' + item['name'] 
         if show_details:
             col1.write(f"{i+1}. **{item['nodes']} x [{item['name']}](%s)** @ {item['eff']} efficiency : FLOPS: {item['Flops']} TOPS, Memory BW: {item['Memory_BW']} GB/s, Memory Size: {item['Memory_size']} GB, Interconnect BW: {item['ICN']} GB/s"% url)
         else:
