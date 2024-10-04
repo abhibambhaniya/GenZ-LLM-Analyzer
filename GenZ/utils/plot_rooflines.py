@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from GenZ.unit import Unit
+from IPython.display import display
 
 unit = Unit()
 
