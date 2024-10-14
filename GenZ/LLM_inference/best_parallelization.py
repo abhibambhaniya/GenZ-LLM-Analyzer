@@ -14,12 +14,12 @@ import itertools
 unit = Unit()
 
 def factors(n):
-    return [x for tup in ([i, n//i] 
+    return [x for tup in ([i, n//i]
                 for i in range(1, int(n**0.5)+1) if n % i == 0) for x in tup]
 
 def get_various_parallization(model='llama_7b', total_nodes=8):
     model_config = get_configs(model, get_model_config=True)
-    
+
     if total_nodes == 1:
         return {(1,1)}
     elif total_nodes < 1:
@@ -48,7 +48,7 @@ def get_best_parallization_strategy(
     parallelism_combinations = get_various_parallization(model=model, total_nodes=total_nodes)
     if debug:
         print(f'For model:{model}, number cores:{total_nodes}, system:{system_name}, \n The parallelism combinatations are {parallelism_combinations} ')
-    
+
     data = []
     for TP,PP in parallelism_combinations:
         if PP <= batch_size:
@@ -58,23 +58,23 @@ def get_best_parallization_strategy(
                                         input_tokens = input_tokens, output_tokens = output_tokens, FLAT = True,
                                         system_name = system_name,
                                         bits=bits,
-                                        tensor_parallel = TP, pipeline_parallel = PP, debug=debug, time_breakdown=True) 
+                                        tensor_parallel = TP, pipeline_parallel = PP, debug=debug, time_breakdown=True)
                 data.append([micro_batch_size, TP, PP , prefill_outputs['Latency'], prefill_outputs['Throughput']] + prefill_outputs['Runtime_breakdown'])
             elif stage == 'decode':
                 decode_outputs = decode_moddeling(model = model, batch_size = micro_batch_size, Bb = beam_size ,
                                     input_tokens = input_tokens, output_tokens = output_tokens, FLAT = True,
                                     system_name = system_name,
                                     bits=bits,
-                                    tensor_parallel = TP, pipeline_parallel =PP, debug=debug, time_breakdown=True) 
+                                    tensor_parallel = TP, pipeline_parallel =PP, debug=debug, time_breakdown=True)
                 data.append([micro_batch_size, TP, PP,  decode_outputs['Latency'], decode_outputs['Throughput']] + decode_outputs['Runtime_breakdown'])
             else:
                 raise ValueError('Stage should be prefill or decode')
-            
+
     data_df = pd.DataFrame(data, columns = ['micro batch', 'TP', 'PP', 'Latency(ms)', 'Tokens/s', 'GEMM time', 'SA time', 'Comm. time'])
     if debug:
         display(data_df)
     return data_df.sort_values(by='Tokens/s', ascending=False).head(1)
-     
+
 def get_pareto_optimal_performance(
         stage='decode', model='llama_7b', total_nodes=8, batch_list = 1, beam_size = 1,
         input_tokens = 2000, output_tokens = 256,
@@ -87,7 +87,7 @@ def get_pareto_optimal_performance(
     if debug:
         print(f'For model:{model}, number cores:{total_nodes}, system:{system_name}, \n The parallelism combinatations are {parallelism_combinations} ')
     data = []
-    if isinstance(batch_list, int): 
+    if isinstance(batch_list, int):
         batch_list = [batch_list]
     for batch_size in batch_list:
         for TP,PP in parallelism_combinations:
@@ -98,21 +98,21 @@ def get_pareto_optimal_performance(
                                             input_tokens = input_tokens, output_tokens = output_tokens, FLAT = True,
                                             system_name = system_name,
                                             bits=bits,
-                                            tensor_parallel = TP, pipeline_parallel = PP, debug=False, time_breakdown=True) 
+                                            tensor_parallel = TP, pipeline_parallel = PP, debug=False, time_breakdown=True)
                     data.append([batch_size, micro_batch_size, TP, PP , prefill_outputs['Latency'], prefill_outputs['Throughput']] + prefill_outputs['Runtime_breakdown'])
                 elif stage == 'decode':
                     decode_outputs = decode_moddeling(model = model, batch_size = micro_batch_size, Bb = beam_size ,
                                         input_tokens = input_tokens, output_tokens = output_tokens, FLAT = True,
                                         system_name = system_name,
                                         bits=bits,
-                                        tensor_parallel = TP, pipeline_parallel =PP, debug=False, time_breakdown=True) 
+                                        tensor_parallel = TP, pipeline_parallel =PP, debug=False, time_breakdown=True)
                     data.append([batch_size, micro_batch_size, TP, PP,  decode_outputs['Latency'], decode_outputs['Throughput']] + decode_outputs['Runtime_breakdown'])
                 else:
                     raise ValueError('Stage should be prefill or decode')
-            
+
     data_df = pd.DataFrame(data, columns = ['batch', 'micro batch', 'TP', 'PP', 'Latency(ms)', 'Tokens/s', 'GEMM time', 'SA time', 'Comm. time'])
     datapoints = data_df[['Latency(ms)','Tokens/s']]
-    
+
     ##  We want a pareto optimal frontier with minimum latency and maximum Throughput.
     mask = paretoset(datapoints, sense=["min", "max"])
     return data_df[mask]

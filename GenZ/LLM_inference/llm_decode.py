@@ -14,35 +14,35 @@ unit = Unit()
 
 def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     output_tokens = 0, FLAT = True,  Bb = 4 ,           ## Only for Decode
-    system_name = 'A100_40GB_GPU', system_eff = 1, bits='bf16', debug= False, model_profilling = False,  
+    system_name = 'A100_40GB_GPU', system_eff = 1, bits='bf16', debug= False, model_profilling = False,
     tensor_parallel = 1, pipeline_parallel = 1, time_breakdown = False, return_model_df=False,
     model_offload = False, ceff = None, meff = None):
-    
-    ################################################################################################## # 
+
+    ##################################################################################################
     ### Model parsing
-    ################################################################################################## # 
+    ##################################################################################################
 
     model_config = get_configs(model, get_model_config=True)
-    
+
     model_D = model_config.hidden_size
-    F = model_config.intermediate_size 
+    F = model_config.intermediate_size
     fi = model_config.num_ffi
     H = model_config.num_attention_heads
     Hkv = model_config.num_key_value_heads
     num_layers = model_config.num_decoder_layers
     is_moe = model_config.moe_layer_freq
 
-    ################################################################################################## # 
+    ##################################################################################################
     ### System Declaration
-    ################################################################################################## # 
+    ##################################################################################################
 
     system = get_inference_system(system_name = system_name, bits = bits, ceff=system_eff , meff=system_eff )
-    
-    ################################################################################################## # 
+
+    ##################################################################################################
     ### Model Characterization Calculation
-    ################################################################################################## # 
+    ##################################################################################################
     # if is_moe:
-    model_decode = create_inference_moe_decode_model(input_sequence_length=input_tokens,output_gen_tokens = output_tokens , 
+    model_decode = create_inference_moe_decode_model(input_sequence_length=input_tokens,output_gen_tokens = output_tokens ,
                                         name=model,  tensor_parallel=tensor_parallel)
 
     model_df = get_model_df(model_decode, system, unit, batch_size*Bb, intermediate_on_chip=FLAT , beam_merge= (Bb > 1), beam_size= Bb, model_characterstics = True)
@@ -56,11 +56,11 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     unused_weights = 0
     for i in range(len(model_df)):
         if ('Logit'  in model_df.loc[i, 'Op Type']  or 'Attend'  in model_df.loc[i, 'Op Type']):
-            kv_cache += model_df.loc[i,'Input_w (MB)'] 
+            kv_cache += model_df.loc[i,'Input_w (MB)']
         else:
-           if model_df.loc[i, f'Num ops ({unit.unit_flop})'] == 0:
-               unused_weights += model_df.loc[i,'Input_w (MB)'] 
-           model_weights += model_df.loc[i,'Input_w (MB)'] 
+            if model_df.loc[i, f'Num ops ({unit.unit_flop})'] == 0:
+                unused_weights += model_df.loc[i,'Input_w (MB)']
+            model_weights += model_df.loc[i,'Input_w (MB)']
     num_layers_per_pipeline_stage = ceil(num_layers / pipeline_parallel)
     ## TP data volumn
     single_layer_all_reduce_data  = 2* batch_size*Bb*model_D* system.get_bit_multiplier(type='M')
@@ -83,9 +83,9 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     total_memory_req = model_weights + kv_cache
     Num_cores = pipeline_parallel * tensor_parallel
 
-    ################################################################################# # 
+    #################################################################################
     ### Offloading calculations
-    ################################################################################# # 
+    #################################################################################
     is_offloaded = False
     per_chip_memory = system.get_off_chip_mem_size()   ## MB
     if  per_chip_memory < total_memory_req:
@@ -95,7 +95,7 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
             is_offloaded = True
         elif model_profilling:
             warnings.warn(f"All params would not fit on chip. System Memory Cap:{per_chip_memory/1024} GB , Weights : {model_weights/1024} GB, KV Cache:{kv_cache/1024} ")
-        else: 
+        else:
             raise ValueError(f"All params would not fit on chip. System Memory Cap:{per_chip_memory/1024} GB , Weights : {model_weights/1024} GB, KV Cache:{kv_cache/1024}. \n System:{system_name}")
 
     ## for tensor shareding per layer.
@@ -106,12 +106,12 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
         raise ValueError(f"Number of layers:{num_layers} should be divisible by PP:{pipeline_parallel}")
     if model_profilling:
         return model_df, summary_table
-    
 
-    ################################################################################################## # 
+
+    ##################################################################################################
     ### First token generation time
-    ################################################################################################## # 
-    model_decode = create_inference_moe_decode_model(input_sequence_length=input_tokens,output_gen_tokens = 0 , 
+    ##################################################################################################
+    model_decode = create_inference_moe_decode_model(input_sequence_length=input_tokens,output_gen_tokens = 0 ,
                                         name=model, Hkv=Hkv, tensor_parallel=tensor_parallel, beam_merge= (Bb > 1), beam_size = Bb)
     model_df = get_model_df(model_decode, system, unit, batch_size*Bb, intermediate_on_chip=FLAT, beam_merge= (Bb > 1), beam_size= Bb )
     summary_table = get_summary_table(model_df,system,unit)
@@ -122,10 +122,10 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     decode_latency_first_token = summary_table['Latency (msec)'].values[0]   # Latency in msec
 
 
-    ################################################################################################## # 
+    ##################################################################################################
     ### Last token generation time
-    ################################################################################################## # 
-    model_decode = create_inference_moe_decode_model(input_sequence_length=input_tokens,output_gen_tokens = output_tokens , 
+    ##################################################################################################
+    model_decode = create_inference_moe_decode_model(input_sequence_length=input_tokens,output_gen_tokens = output_tokens ,
                                         name=model, Hkv=Hkv, tensor_parallel=tensor_parallel, beam_merge= (Bb > 1), beam_size = Bb)
 
     model_df = get_model_df(model_decode, system, unit, batch_size*Bb,  intermediate_on_chip=FLAT , beam_merge= (Bb > 1), beam_size= Bb)
@@ -135,11 +135,11 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     if debug:
         display_df(model_df)
         display(summary_table)
-    decode_latency_last_token = summary_table['Latency (msec)'].values[0]      # Latency in msec 
+    decode_latency_last_token = summary_table['Latency (msec)'].values[0]      # Latency in msec
 
-    ################################################################################################## # 
+    ##################################################################################################
     ### Communication time
-    ################################################################################################## # 
+    ##################################################################################################
     ## TP time
     if tensor_parallel > 1:
         all_reduce_delay  = 2*get_AR_time(data = single_layer_all_reduce_data/2 ,num_AR_nodes=tensor_parallel, system=system)
@@ -153,16 +153,16 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     total_communication_delay = single_stage_pipe_delay * (pipeline_parallel-1) + all_reduce_delay * num_layers
 
 
-    ################################################################################################## # 
+    ##################################################################################################
     ### Final Latency and Thrpt Calculation
-    ################################################################################################## # 
-    
+    ##################################################################################################
+
     ## Single layer will have compute/memory time + 2 AR delay
-    single_layer_time = (decode_latency_first_token+decode_latency_last_token)/2  + all_reduce_delay 
+    single_layer_time = (decode_latency_first_token+decode_latency_last_token)/2  + all_reduce_delay
     single_pipe_stage = single_layer_time * num_layers_per_pipeline_stage
 
     decode_latency =  single_pipe_stage * pipeline_parallel + single_stage_pipe_delay * (pipeline_parallel-1)
-    
+
     if debug:
             print(f'Decode Latency:{decode_latency} {unit.unit_time}')
             print(f'single_pipe_stage:{single_pipe_stage} {unit.unit_time}; single_layer_time:{single_layer_time} {unit.unit_time}')
@@ -172,7 +172,7 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     ## 1000x because the latency is in milli seconds. thrpt is in Token/s
     if pipeline_parallel > 1:
         token_generation_interval = single_pipe_stage + single_stage_pipe_delay
-        thrpt = 1000 * batch_size / token_generation_interval 
+        thrpt = 1000 * batch_size / token_generation_interval
 
     attn_time, linear_time = 0,0
     for i in range(len(model_df)):
@@ -181,25 +181,24 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
             # print(i, model_df.loc[i, 'Op Type'])
         else:
             linear_time +=  model_df.loc[i,'Latency (msec)']
-               
+
     linear_time *= num_layers     ## In milliseconds
     attn_time *= num_layers       ## In milliseconds
     total_time = linear_time + attn_time + total_communication_delay
     runtime_breakdown = [linear_time, attn_time, total_communication_delay]
 
-    ################################################################################################## # 
+    ##################################################################################################
     ### Output Generation
-    ################################################################################################## # 
+    ##################################################################################################
     ## Check for error in total time.
     Error_rate = 100*(total_time-decode_latency)/decode_latency
     if Error_rate > 50:
         warnings.warn(f"Error in latency calc. Avg Decode Latency:{decode_latency} msec , Latency based on last token : {total_time} msec, \n Attn time:{attn_time}; Linear time:{linear_time}; AR time:{all_reduce_delay * (num_layers_per_pipeline_stage)}; Pipeline Comm time:{single_stage_pipe_delay * (pipeline_parallel-1)}")
 
- 
     if debug:
         print(f'Error = {Error_rate} in latency calc. Avg Decode Latency:{decode_latency} msec , Latency based on last token : {total_time} msec')
         print(f'Attn time:{attn_time}; Linear time:{linear_time}; AR time:{all_reduce_delay * (num_layers_per_pipeline_stage)}; Pipeline Comm time:{single_stage_pipe_delay * (pipeline_parallel-1)}')
-    
+
     return ModdelingOutput(
                         Latency=decode_latency,
                         Throughput=thrpt,
