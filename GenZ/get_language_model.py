@@ -3,11 +3,26 @@ import os
 from math import ceil
 import numpy as np
 from datetime import datetime
+from enum import Enum
+
+class OpType(Enum):
+    FC = 0
+    CONV2D = 1
+    DWCONV = 2
+    GEMM = 3
+    Logit = 4
+    Attend = 5
+    Sync = 6
+    Logit_MQA = 7
+    Attend_MQA = 8
+    Logit_BM_PREFILL = 9
+    Attend_BM_PREFILL = 10
+    CONV1D = 11
 
 class ModelConfig():
     r"""
     This is the configuration class to store the configuration of a [`Model`]. It is used to instantiate an LLM
-    model according to the specified arguments, defining the model architecture. 
+    model according to the specified arguments, defining the model architecture.
     Args:
         vocab_size (`int`, *optional*, defaults to 32000):
             Vocabulary size of the model. Defines the number of different tokens that can be represented by the
@@ -48,6 +63,12 @@ class ModelConfig():
         num_experts = 1,
         expert_top_k = 1,
         max_model_len = 128000,
+        mamba_d_state=16,
+        mamba_d_conv=4,
+        mamba_expand=2,
+        mamba_dt_rank="auto",
+        mamba_conv_bias=True,
+        mamba_proj_bias=False,
         **kwargs,
     ):
         self.model = model
@@ -62,7 +83,7 @@ class ModelConfig():
         # for backward compatibility
         if num_key_value_heads is None:
             num_key_value_heads = num_attention_heads
-        
+
         if head_dim is None:
             head_dim = self.hidden_size // self.num_attention_heads
 
@@ -72,8 +93,15 @@ class ModelConfig():
         self.moe_layer_freq = moe_layer_freq    ## If n, than every nth value is moe layer.
         self.num_experts = num_experts
         self.expert_top_k = expert_top_k
-        
+
         self.max_model_len = max_model_len             ## TODO:Put real values
+
+        self.mamba_d_state = mamba_d_state
+        self.mamba_d_conv = mamba_d_conv
+        self.mamba_expand = mamba_expand
+        self.mamba_dt_rank = ceil(self.hidden_size / 16) if mamba_dt_rank == "auto" else mamba_dt_rank
+        self.mamba_conv_bias = mamba_conv_bias
+        self.mamba_proj_bias = mamba_proj_bias
 
         super().__init__(**kwargs)
 
@@ -206,34 +234,34 @@ def get_configs(name, return_full = False, get_model_config=False):
             )
     elif name in ['opt_30b']:
         model_config = ModelConfig(model='facebook/opt-30B',
-            hidden_size=7168, num_attention_heads=56, 
+            hidden_size=7168, num_attention_heads=56,
             intermediate_size=4*7168, num_decoder_layers=48,
             )
     elif name in ['llama_70b', 'meta-llama/llama-2-70b']:
         # https://huggingface.co/meta-llama/Llama-2-70b-hf/blob/main/config.json
         model_config = ModelConfig(model='meta-llama/Llama-2-70B',
-            hidden_size=8192, num_attention_heads=64, 
+            hidden_size=8192, num_attention_heads=64,
             num_key_value_heads=8, num_ffi = 2,
             intermediate_size=28672, num_decoder_layers=80,
             )
     elif name in ['llama_405b', 'meta-llama/meta-llama-3.1-405b']:
         # https://huggingface.co/meta-llama/Meta-Llama-3.1-405B
         model_config = ModelConfig(model='meta-llama/Llama-3.1-405B',
-            hidden_size=16384, num_attention_heads=128, 
+            hidden_size=16384, num_attention_heads=128,
             num_key_value_heads=16, num_ffi = 2,
             intermediate_size=3.25*16384, num_decoder_layers=126,
             )
     elif name in ['mistral_7b', 'mistralai/mistral-7b']:
         # https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2/blob/main/config.json
         model_config = ModelConfig(model='mistralai/Mistral-7B',
-            hidden_size=4096, num_attention_heads=32, 
+            hidden_size=4096, num_attention_heads=32,
             num_key_value_heads=8, num_ffi = 2,
             intermediate_size=14336, num_decoder_layers=32,
             )
     elif name in ['mixtral_7x8', 'mistralai/mixtral-8x7b']:
         # https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1/blob/main/config.json
         model_config = ModelConfig(model='mistralai/Mixtral-8x7B',
-            hidden_size=4096, num_attention_heads=32, 
+            hidden_size=4096, num_attention_heads=32,
             num_key_value_heads=8, num_ffi = 2,
             intermediate_size=14336, num_decoder_layers=32,
             expert_top_k=2, num_experts=8, moe_layer_freq=1
@@ -241,14 +269,14 @@ def get_configs(name, return_full = False, get_model_config=False):
     elif name in ['dbrx', 'databricks/dbrx-base']:
         # https://huggingface.co/databricks/dbrx-base/blob/main/config.json
         model_config = ModelConfig(model='databricks/dbrx-base',
-            hidden_size=6144, num_attention_heads=48, 
+            hidden_size=6144, num_attention_heads=48,
             num_key_value_heads=8, num_ffi = 2,
             intermediate_size=10752, num_decoder_layers=40,
             expert_top_k=4, num_experts=16, moe_layer_freq=1
             )
     elif name in ['gpt-4', 'openai/gpt-4']:
         model_config = ModelConfig(model='openai/GPT-4',
-            hidden_size=84*128, num_attention_heads=84, 
+            hidden_size=84*128, num_attention_heads=84,
             num_key_value_heads=84, num_ffi = 1,
             intermediate_size=4*84*128, num_decoder_layers=128,
             expert_top_k=2, num_experts=16, moe_layer_freq=1
@@ -256,7 +284,7 @@ def get_configs(name, return_full = False, get_model_config=False):
     elif name in ['grok-1', 'xai-org/grok-1']:
         # https://huggingface.co/xai-org/grok-1/blob/main/RELEASE
         model_config = ModelConfig(model='xai-org/grok-1',
-            hidden_size=6144, num_attention_heads=48, 
+            hidden_size=6144, num_attention_heads=48,
             num_key_value_heads=8, num_ffi = 1,
             intermediate_size=8*6144, num_decoder_layers=64,
             expert_top_k=2, num_experts=8, moe_layer_freq=1
@@ -264,15 +292,24 @@ def get_configs(name, return_full = False, get_model_config=False):
     elif name in ['glm-9b']:
         # https://huggingface.co/THUDM/glm-4-9b-chat/blob/main/config.json
         model_config = ModelConfig(model='THUDM/glm-4-9b-chat',
-            hidden_size=4096, num_attention_heads=32, 
+            hidden_size=4096, num_attention_heads=32,
             num_key_value_heads=2, num_ffi = 2,
             intermediate_size=13696, num_decoder_layers=40,
             max_model_len=131072, vocab_size=151552,
             )
+    elif name in ['state-spaces/mamba-130m-hf']:
+        # https://huggingface.co/state-spaces/mamba-130m-hf/blob/main/config.json
+        model_config = ModelConfig(model='state-spaces/mamba-130m-hf',
+            hidden_size=768, num_attention_heads=1,
+            num_key_value_heads=1, num_ffi = 2,
+            intermediate_size=1536, num_decoder_layers=24,
+            max_model_len=131072, vocab_size=50280,
+            mamba_d_state = 16, mamba_dt_rank = 48, mamba_expand = 2, mamba_d_conv=4,
+            )
     elif name in ['super_llm']:
         x = 108
         model_config = ModelConfig(model='SuperLLM-10T',
-            hidden_size=x*128, num_attention_heads=x, 
+            hidden_size=x*128, num_attention_heads=x,
             num_key_value_heads=x, num_ffi = 2,
             intermediate_size=4*x*128, num_decoder_layers=128,
             expert_top_k=4, num_experts=32, moe_layer_freq=1
@@ -280,15 +317,14 @@ def get_configs(name, return_full = False, get_model_config=False):
     else:
         ## If unknown name, then giving parameters of BERT
         print("ERROR, model name parsed incorrect, please check!!! Model Name:",name)
-    
+
     return model_config
 
 def create_inference_moe_prefix_model(input_sequence_length, name='BERT', data_path="/tmp/data/", masked=False,
-                         output_gen_tokens=32, **args):
+                         **args):
     model_path = os.path.join(data_path,"model")
-    sparsity_file_path = os.path.join(data_path,"sparsity") 
     model_config = get_configs(name, get_model_config=True)
-    
+
     M = N  = input_sequence_length ## input Seq Len
 
     tensor_parallel = args.get('tensor_parallel',1)
@@ -306,60 +342,48 @@ def create_inference_moe_prefix_model(input_sequence_length, name='BERT', data_p
 
     MQA = ( Hkv != H)
 
-    # assert H % tensor_parallel == 0, f'Heads should be equally divisible, H:{H}, TP:{tensor_parallel}' 
+    # assert H % tensor_parallel == 0, f'Heads should be equally divisible, H:{H}, TP:{tensor_parallel}'
     H = max(ceil(H/tensor_parallel),1)
-    Hkv = max(ceil(Hkv/tensor_parallel),1) 
+    Hkv = max(ceil(Hkv/tensor_parallel),1)
     Df = max(Df//tensor_parallel,1)
 
     layers = []
-    densities = []
 
-
-    query =         [[D//tensor_parallel + 2*Hkv*Dq, N, D, 1, 1, 1, 3]]
-
-    logit =         [[H, M, N, Dq, Hkv, 1, 7 if MQA else 4]]
-    attend =        [[H, M, N, Dq, Hkv, 1, 8 if MQA else 5]]
-
-    output =        [[D, M, D//tensor_parallel, 1, 1, 1, 3]]
+    query =         [[D//tensor_parallel + 2*Hkv*Dq, N, D, 1, 1, 1, OpType.GEMM]]
+    logit =         [[H, M, N, Dq, Hkv, 1, OpType.Attend_MQA if MQA else OpType.Attend]]
+    attend =        [[H, M, N, Dq, Hkv, 1, OpType.Logit_MQA if MQA else OpType.Logit]]
+    output =        [[D, M, D//tensor_parallel, 1, 1, 1, OpType.GEMM]]
 
     if moe_layer_freq:
         num_tokens_per_expert = M*K // E
-        ffup =           [[E*Df, num_tokens_per_expert, D, 1, 1, 1, 3]]
-        ffdown =           [[D, num_tokens_per_expert, E*Df, 1, 1, 1, 3]]
+        ffup =           [[E*Df, num_tokens_per_expert, D, 1, 1, 1, OpType.GEMM]]
+        ffdown =           [[D, num_tokens_per_expert, E*Df, 1, 1, 1, OpType.GEMM]]
     else:
-        ffup =           [[Df, M, D, 1, 1, 1, 3]]
-        ffdown =           [[D, M, Df, 1, 1, 1, 3]]
+        ffup =           [[Df, M, D, 1, 1, 1, OpType.GEMM]]
+        ffdown =           [[D, M, Df, 1, 1, 1, OpType.GEMM]]
 
-
-
-    layers = query + logit + attend + output 
-    
+    layers = query + logit + attend + output
 
     for _ in range(fi):
         layers += ffup
     layers += ffdown
 
-    # densities = np.ones((len(layers), 3), dtype=float) 
-    
-    # df = pd.DataFrame(densities,columns=['I', 'W', 'O'])
-    # df.to_csv(os.path.join(sparsity_file_path, name+ '_decode' + '.csv'),  header=True, index=None)
-
     df = pd.DataFrame(layers, columns=['M', 'N', 'D', 'H', 'Z', 'Z', 'T'])
-    file_name = name.replace("/", "_") + '_prefix' + datetime.now().strftime("%m_%d_%Y_%H_%M_%S") +'.csv' 
+    file_name = name.replace("/", "_") + '_prefix_' + datetime.now().strftime("%m_%d_%Y_%H_%M_%S") +'.csv'
     if not os.path.exists(model_path):
-        os.makedirs(model_path) 
+        os.makedirs(model_path)
     df.to_csv(os.path.join(model_path, file_name),  header=True, index=None)
 
     return file_name
 
 def create_inference_moe_decode_model(input_sequence_length, name='BERT', data_path="/tmp/data/",
                          output_gen_tokens=32, **args):
-    
+
     model_path = os.path.join(data_path,"model")
-    sparsity_file_path = os.path.join(data_path,"sparsity") 
-    
+    sparsity_file_path = os.path.join(data_path,"sparsity")
+
     model_config = get_configs(name, get_model_config=True)
-    
+
     N  = input_sequence_length ## input Seq Len
 
     tensor_parallel = args.get('tensor_parallel',1)
@@ -376,49 +400,136 @@ def create_inference_moe_decode_model(input_sequence_length, name='BERT', data_p
     Dq = model_config.head_dim
 
     MQA = ( Hkv != H)
-    
-    # assert H % tensor_parallel == 0, f'Heads should be equally divisible, H:{H}, TP:{tensor_parallel}' 
+
+    # assert H % tensor_parallel == 0, f'Heads should be equally divisible, H:{H}, TP:{tensor_parallel}'
 
     H = max(ceil(H/tensor_parallel),1)
-    Hkv = max(ceil(Hkv/tensor_parallel),1) 
+    Hkv = max(ceil(Hkv/tensor_parallel),1)
     Df = max(Df//tensor_parallel,1)
 
     layers = []
-    densities = []
 
-
-    query =         [[D//tensor_parallel + 2*Hkv*Dq, 1, D, 1, 1, 1, 3]]
-
+    query =         [[D//tensor_parallel + 2*Hkv*Dq, 1, D, 1, 1, 1, OpType.GEMM]]
+    # TODO: Correct the op type for prefill
+    # TODO: Merge Logit_MQA and Logit.
     logit_pre =         [[H, 1, N, Dq, Hkv, 1, 7 if MQA else 9]]
     attend_pre =        [[H, 1, N, Dq, Hkv, 1, 8 if MQA else 10]]
-    logit_suf =         [[H, 1, output_gen_tokens, Dq, Hkv, 1, 7 if MQA else 4]]
-    attend_suf =        [[H, 1, output_gen_tokens, Dq, Hkv, 1, 8 if MQA else 5]]
+    logit_suf =         [[H, 1, output_gen_tokens-N, Dq, Hkv, 1, OpType.Logit_MQA if MQA else OpType.Logit]]
+    attend_suf =        [[H, 1, output_gen_tokens-N, Dq, Hkv, 1, OpType.Attend_MQA if MQA else OpType.Attend]]
+    output =        [[D, 1, D//tensor_parallel, 1, 1, 1, OpType.GEMM]]
 
-    output =        [[D, 1, D//tensor_parallel, 1, 1, 1, 3]]
-    ffup =           [[K*Df, 1, D, 1, 1, 1, 3]]    ## Df is already divided
-    ffdown =           [[D, 1, K*Df, 1, 1, 1, 3]]
+    ffup =           [[K*Df, 1, D, 1, 1, 1, OpType.GEMM]]    ## Df is already divided
+    ffdown =           [[D, 1, K*Df, 1, 1, 1, OpType.GEMM]]
 
-    ffup_unused =   [[(E-K)*Df, 0, D, 1, 1, 1, 3]]   
-    ffdown_unused =   [[D, 0, (E-K)*Df, 1, 1, 1, 3]] 
+    ffup_unused =   [[(E-K)*Df, 0, D, 1, 1, 1, OpType.GEMM]]
+    ffdown_unused =   [[D, 0, (E-K)*Df, 1, 1, 1, OpType.GEMM]]
 
     layers = query + logit_pre + logit_suf + attend_pre + attend_suf + output
-    
-    
+
     for _ in range(fi):
         layers += (ffup + ffup_unused) if moe_layer_freq  else ffup
     layers += (ffdown + ffdown_unused)  if moe_layer_freq  else ffdown
-        
-    # densities = np.ones((len(layers), 3), dtype=float) 
-    
-    # df = pd.DataFrame(densities,columns=['I', 'W', 'O'])
-    # df.to_csv(os.path.join(sparsity_file_path, name+ '_decode' + '.csv'),  header=True, index=None)
 
-    
 
     df = pd.DataFrame(layers, columns=['M', 'N', 'D', 'H', 'Z', 'Z', 'T'])
     file_name = name.replace("/", "_") + '_decode_' + datetime.now().strftime("%m_%d_%Y_%H_%M_%S") +'.csv'
     if not os.path.exists(model_path):
-        os.makedirs(model_path) 
+        os.makedirs(model_path)
     df.to_csv(os.path.join(model_path, file_name),  header=True, index=None)
-    
+
+    return file_name
+
+
+def create_inference_mamba_prefix_model(input_sequence_length, name='jamba', data_path="/tmp/data/",
+                         **args):
+    model_path = os.path.join(data_path,"model")
+    sparsity_file_path = os.path.join(data_path,"sparsity")
+    model_config = get_configs(name, get_model_config=True)
+
+    L  = input_sequence_length ## input Seq Len
+
+    tensor_parallel = args.get('tensor_parallel',1)
+
+    D = model_config.hidden_size
+    Df = model_config.intermediate_size
+    fi = model_config.num_ffi
+    ## TODO : Implement the case when moe_layer_freq is >1
+    moe_layer_freq = model_config.moe_layer_freq
+    E = model_config.num_experts
+    K = model_config.expert_top_k
+    Dq = model_config.head_dim
+
+    ## Mamba parameters
+    S = model_config.mamba_d_state
+    C = model_config.mamba_d_conv
+    F = D * model_config.mamba_expand
+    R = model_config.mamba_dt_rank
+
+    # assert H % tensor_parallel == 0, f'Heads should be equally divisible, H:{H}, TP:{tensor_parallel}'
+    Df = max(Df//tensor_parallel,1)
+
+    layers = []
+
+    in_proj =      [[2*F, L, D, 1, 1, 1, OpType.GEMM]]        ## BLD * D2F = BL2F
+    conv_1d =      [[F, F, L, C, 1, 1, OpType.CONV1D]]         ## BLF conv FC -> BLF
+    dbc_proj =     [[R+2*S, L, F, 1, 1, 1, OpType.GEMM]]
+    xt_proj =      [[F, L, R, 1, 1, 1, OpType.GEMM]]
+    ## TODO:    SSN_kernel
+    output =       [[D, L, F, 1, 1, 1, OpType.GEMM]]
+
+    layers = in_proj + conv_1d + dbc_proj + xt_proj + output
+    df = pd.DataFrame(layers, columns=['M', 'N', 'D', 'H', 'Z', 'Z', 'T'])
+    file_name = name.replace("/", "_") + '_prefix_' + datetime.now().strftime("%m_%d_%Y_%H_%M_%S") +'.csv'
+    if not os.path.exists(model_path):
+        os.makedirs(model_path)
+    df.to_csv(os.path.join(model_path, file_name),  header=True, index=None)
+
+    return file_name
+
+def create_inference_mamba_decode_model(input_sequence_length, name='jamba', data_path="/tmp/data/",
+                         **args):
+    model_path = os.path.join(data_path,"model")
+    sparsity_file_path = os.path.join(data_path,"sparsity")
+    model_config = get_configs(name, get_model_config=True)
+
+    L  = input_sequence_length ## input Seq Len
+
+    tensor_parallel = args.get('tensor_parallel',1)
+
+    D = model_config.hidden_size
+    Df = model_config.intermediate_size
+    fi = model_config.num_ffi
+    ## TODO : Implement the case when moe_layer_freq is >1
+    moe_layer_freq = model_config.moe_layer_freq
+    E = model_config.num_experts
+    K = model_config.expert_top_k
+    Dq = model_config.head_dim
+
+    ## Mamba parameters
+    S = model_config.mamba_d_state
+    C = model_config.mamba_d_conv
+    F = D * model_config.mamba_expand
+    R = model_config.mamba_dt_rank
+
+    # assert H % tensor_parallel == 0, f'Heads should be equally divisible, H:{H}, TP:{tensor_parallel}'
+    Df = max(Df//tensor_parallel,1)
+
+    layers = []
+
+    in_proj =      [[2*F, 1, D, 1, 1, 1, OpType.GEMM]]        ## BLD * D2F = BL2F
+    conv_1d =      [[F, F, 1, C, 1, 1, OpType.CONV1D]]         ## BLF conv FC -> BLF
+    dbc_proj =     [[R+2*S, 1, F, 1, 1, 1, OpType.GEMM]]
+    xt_proj =      [[F, 1, R, 1, 1, 1, OpType.GEMM]]
+    ## TODO:    SSN_kernel
+    output =       [[D, 1, F, 1, 1, 1, OpType.GEMM]]
+
+    layers = in_proj + conv_1d + dbc_proj + xt_proj + output
+
+
+    df = pd.DataFrame(layers, columns=['M', 'N', 'D', 'H', 'Z', 'Z', 'T'])
+    file_name = name.replace("/", "_") + '_decode_' + datetime.now().strftime("%m_%d_%Y_%H_%M_%S") +'.csv'
+    if not os.path.exists(model_path):
+        os.makedirs(model_path)
+    df.to_csv(os.path.join(model_path, file_name),  header=True, index=None)
+
     return file_name

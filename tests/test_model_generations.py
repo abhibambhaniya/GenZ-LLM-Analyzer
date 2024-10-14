@@ -13,14 +13,14 @@ def test_create_inference_moe_prefix_model():
     assert file_name.endswith('.csv')
     assert 'gpt-2_prefix' in file_name
     df = pd.read_csv(os.path.join('/tmp/data/model', file_name), header=None)
-    gpt2_ref = pd.DataFrame([ 
-               ['M','N','D','H','Z','Z','T'],
-               ['2304','10','768','1','1','1','3'],
-               ['12','10','10','64','12','1','4'],
-               ['12','10','10','64','12','1','5'],
-               ['768','10','768','1','1','1','3'],
-               ['3072','10','768','1','1','1','3'],
-               ['768','10','3072','1','1','1','3']])
+    gpt2_ref = pd.DataFrame([
+                ['M','N','D','H','Z','Z','T'],
+                ['2304','10','768','1','1','1','3'],
+                ['12','10','10','64','12','1','4'],
+                ['12','10','10','64','12','1','5'],
+                ['768','10','768','1','1','1','3'],
+                ['3072','10','768','1','1','1','3'],
+                ['768','10','3072','1','1','1','3']])
     are_equal = gpt2_ref.equals(df)
     assert are_equal
 
@@ -28,7 +28,7 @@ def test_create_inference_moe_prefix_model():
     assert file_name.endswith('.csv')
     assert 'mixtral-8x7b_prefix' in file_name
     df = pd.read_csv(os.path.join('/tmp/data/model', file_name), header=None)
-    mixtral_ref = pd.DataFrame([ 
+    mixtral_ref = pd.DataFrame([
                 ['M','N','D','H','Z','Z','T'],
                 ['6144','10','4096','1','1','1','3'],
                 ['32','10','10','128','8','1','7'],
@@ -46,16 +46,16 @@ def test_create_inference_moe_decode_model():
     assert 'gpt-2_decode' in file_name
 
     df = pd.read_csv(os.path.join('/tmp/data/model', file_name), header=None)
-    gpt2_ref = pd.DataFrame([ 
-               ['M','N','D','H','Z','Z','T'],
-               ['2304','1','768','1','1','1','3'],
-               ['12','1','10','64','12','1','9'],
-               ['12','1','22','64','12','1','4'],
-               ['12','1','10','64','12','1','10'],
-               ['12','1','22','64','12','1','5'],
-               ['768','1','768','1','1','1','3'],
-               ['3072','1','768','1','1','1','3'],
-               ['768','1','3072','1','1','1','3']])
+    gpt2_ref = pd.DataFrame([
+                ['M','N','D','H','Z','Z','T'],
+                ['2304','1','768','1','1','1','3'],
+                ['12','1','10','64','12','1','9'],
+                ['12','1','22','64','12','1','4'],
+                ['12','1','10','64','12','1','10'],
+                ['12','1','22','64','12','1','5'],
+                ['768','1','768','1','1','1','3'],
+                ['3072','1','768','1','1','1','3'],
+                ['768','1','3072','1','1','1','3']])
 
     are_equal = gpt2_ref.equals(df)
     assert are_equal
@@ -80,4 +80,3 @@ def test_create_inference_moe_decode_model():
         ['4096','0','86016','1','1','1','3']])
 
     assert  mixtral_ref.equals(df)
-    
