@@ -11,25 +11,25 @@ def get_attn_index(df):
     ret = []
     for idx in range(len(df)):
         if 'Attend' in df.loc[idx, 'Op Type'] or 'Logit' in df.loc[idx, 'Op Type']:
-           ret.append(idx)
+            ret.append(idx)
     return ret
 
-def get_summary_table(df,system,unit,sparse_pe_support=1, model_characterstics=False):
+def get_summary_table(df,system,unit = Unit(),sparse_pe_support=1, model_characterstics=False):
     if model_characterstics == False:
         total_cycles = np.sum(df['Cycles'])
         total_latencies = np.sum(df['Latency (msec)'])
 
     attn_idx = get_attn_index(df)
     total_parameters = np.sum(df['Input_w (MB)']) - sum([df.loc[i, 'Input_w (MB)'] for i in attn_idx])
-    total_data = np.sum(df['Input_a (MB)'] + df['Input_w (MB)'] + df['Output (MB)']) 
+    total_data = np.sum(df['Input_a (MB)'] + df['Input_w (MB)'] + df['Output (MB)'])
     total_MACS = np.sum(df['Num ops (MFLOP)'])
     # total_weights = np.sum(df['Input_w (MB)'])
-    total_weights = 0; 
+    total_weights = 0;
     for i in range(len(df)):
         if ('Logit' not in df.loc[i, 'Op Type']  and 'Attend' not in df.loc[i, 'Op Type']):
-           total_weights = total_weights + df.loc[i,'Input_w (MB)'] 
+            total_weights = total_weights + df.loc[i,'Input_w (MB)']
     max_memory_footprint = max([df.loc[i, 'Input_a (MB)'] + df.loc[i, 'Input_w (MB)'] + df.loc[i, 'Output (MB)'] for i in range(len(df))])
-    
+
 
     ret = {
             f'MACs ({unit.unit_flop})': [total_MACS],
@@ -43,32 +43,31 @@ def get_summary_table(df,system,unit,sparse_pe_support=1, model_characterstics=F
             f'Latency ({unit.unit_time})': [total_latencies],
             'Cycles': [total_cycles],
         })
-    
-        
+
+
     return pd.DataFrame.from_dict(ret)
 
 def analysis_model(model_dims, system=None, unit=Unit(), densities = None,intermediate_on_chip=False,
-                   beam_size=1, beam_merge=False, model_characterstics=False):
+                    beam_size=1, beam_merge=False, model_characterstics=False):
     roofline_list = []
     if densities is None:
-       densities = np.ones((len(model_dims), 3), dtype=float) 
+        densities = np.ones((len(model_dims), 3), dtype=float)
     for i, (dim, density) in enumerate(zip(model_dims, densities)):
-        type = op_type_dicts[dim[-1]]
-        operator = getattr(operators, type)
-        if beam_merge:
-            if dim[-1] == 9 or dim[-1] == 10:
-                dim[0] /= beam_size
+        op_type = op_type_dicts[dim[-1]]
+        operator = getattr(operators, op_type)
+        if beam_merge and (dim[-1] == 9 or dim[-1] == 10):
+            dim[0] /= beam_size
         operator_instance = operator(dim=dim, density=density)
         # print(density[0],density[1],density[2])
         if (intermediate_on_chip):
-            if(type == 'Logit' or type == 'Logit_MQA'):
-                operator_instance.set_mem_pin(output='on')    
-            elif(type == 'Attend'or type == 'Attend_MQA'):
+            if(op_type == 'Logit' or op_type == 'Logit_MQA'):
+                operator_instance.set_mem_pin(output='on')
+            elif(op_type == 'Attend'or op_type == 'Attend_MQA'):
                 operator_instance.set_mem_pin(input_a='on')
-            
+
 
         if model_characterstics:
-            roofline = operator_instance.get_model_characterstics(system=system, unit=unit) 
+            roofline = operator_instance.get_model_characterstics(system=system, unit=unit)
         else:
             roofline = operator_instance.get_roofline(system=system, unit=unit)
 
@@ -83,8 +82,8 @@ def analysis_model(model_dims, system=None, unit=Unit(), densities = None,interm
     return df
 
 
-def get_model_df(model, system, unit, batch_size=1, data_path="/tmp/data/", sparse=False, intermediate_on_chip=False,
-                 beam_size=1, beam_merge=False, model_characterstics=False):
+def get_model_df(model, system, unit=Unit(), batch_size=1, data_path="/tmp/data/", sparse=False, intermediate_on_chip=False,
+                    beam_size=1, beam_merge=False, model_characterstics=False):
     m_file_path = os.path.join(data_path,"model")
     sparsity_file_path = os.path.join(data_path,"sparsity")
     m_file = os.path.join(m_file_path, model)

@@ -1,12 +1,12 @@
 import numpy as np
 from operator import mul
 from math import ceil
-
+from GenZ.unit import Unit
 # 4,5 Regular Logit and Attend
 # 7,8 MQA Logit and Attend
 # 9, 10 Beam Merge Logit and attend
 op_type_dicts = {0: 'FC', 1: 'CONV2D', 2: 'DWCONV', 3: 'GEMM', 4: 'Logit', 5: 'Attend', 6:'Sync',
-                 7:'Logit_MQA', 8:'Attend_MQA', 9:'Logit', 10:'Attend'}
+                7:'Logit_MQA', 8:'Attend_MQA', 9:'Logit', 10:'Attend', 11:'CONV1D'}
 class Operator(object):
     def __init__(self, dim, density=(1.0,1.0,1.0)):
         self.dim = dim
@@ -14,8 +14,6 @@ class Operator(object):
         self.input_a, self.input_w, self.output = self.get_tensors()
         self.num_ops = self.get_num_ops()
         self.set_mem_pin(*self.get_default_mem_loc())
-
-    
 
     def get_default_mem_loc(self):
         return ['off', 'off', 'off']
@@ -48,7 +46,7 @@ class Operator(object):
     def get_size(self, tensor):
         return np.prod(tensor)
 
-    # Each kind of operation function will have its own num ops, in which using the layer parameters obtained from the 
+    # Each kind of operation function will have its own num ops, in which using the layer parameters obtained from the
     # .csv file it will give out number of required ops .
     def get_num_ops(self):
         pass
@@ -79,7 +77,7 @@ class Operator(object):
 
 
     def get_effective_num_ops(self, system=None):
-        return  self.get_num_ops()
+        return self.get_num_ops()
 
 
 # The function returns the size of each of the 3 models parameter for each layer, i.e. input, weights and outputs.
@@ -117,8 +115,8 @@ class Operator(object):
 
         return onchip_mem_occupancy
 
-    def get_model_characterstics(self, system, unit):
-        num_ops =  self.get_num_ops() * 2
+    def get_model_characterstics(self, system, unit = Unit()):
+        num_ops =  self.get_num_ops()
         num_data = self.get_num_data() * system.get_bit_multiplier(type='M')
         op_intensity = num_ops/num_data
         input_a_size, input_w_size, output_size = self.get_sz_list()
@@ -143,7 +141,7 @@ class Operator(object):
         op_intensity = num_ops/num_data
 
         compute_time = self.get_compute_time(system=system)
-        
+
         compute_time /= system.compute_efficiency
         compute_efficiency = system.compute_efficiency
 

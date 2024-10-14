@@ -4,11 +4,11 @@ from GenZ.unit import Unit
 class System(object):
     compute_multiplier = {'int8': 0.5, 'bf16': 1, 'f32': 2, 'int4': 0.25, 'int2':0.125, 'fp8': 0.5, 'fp4': 0.25}
     mem_multiplier = {'int8': 1, 'bf16': 2, 'f32': 4, 'int4':0.5, 'int2':0.25, 'fp8':1, 'fp4':0.5}
-    def __init__(self, unit=None, onchip_mem_bw=18000, offchip_mem_bw=900, external_mem_bw=100, 
-                 on_chip_mem_size=float('Inf'), off_chip_mem_size=float('Inf'),
-                 compute_efficiency=1, memory_efficiency=1, flops=123, mxu_shape=None,
-                 frequency=940, bits='bf16', interchip_mem_bw = 25, num_cores = 1, interchip_link_latency=1.9):
-        
+    def __init__(self, unit=None, onchip_mem_bw=18000, offchip_mem_bw=900, external_mem_bw=100,
+                on_chip_mem_size=float('Inf'), off_chip_mem_size=float('Inf'),
+                compute_efficiency=1, memory_efficiency=1, flops=123, mxu_shape=None,
+                frequency=940, bits='bf16', interchip_mem_bw = 25, num_cores = 1, interchip_link_latency=1.9):
+
         if unit is None:
             self.unit = Unit()
         else:
@@ -28,11 +28,11 @@ class System(object):
 
         self.flops = self.unit.unit_to_raw(flops, type='C')
         self.op_per_sec = self.flops/2
-        
+
         self.frequency = self.unit.unit_to_raw(frequency, type='F')
         self.bits = bits
 
-    
+
     def __str__(self):
         unit = Unit()
         a = f"Accelerator OPS: {unit.raw_to_unit(self.flops,type='C')} TOPS , Freq = {unit.raw_to_unit(self.frequency,type='F')} GHz, Num Cores = {self.num_cores} \n"
@@ -41,7 +41,7 @@ class System(object):
         d = f"Compute type: {self.compute_type} , Realistic mem type: {self.model_on_chip_mem_implications}\n"
         e = f"Sparsity Params: Acc. type: {self.accelerator_type} , Skip compute: {self.skip_compute} , Compress mem: {self.compress_mem}"
         return a+b+c+d+e
-    
+
     def get_params(self):
         unit = Unit()
         a = f"Accelerator OPS: {unit.raw_to_unit(self.flops,type='C')} TOPS , Freq = {unit.raw_to_unit(self.frequency,type='F')} GHz, Num Cores = {self.num_cores}"
@@ -96,5 +96,4 @@ class System(object):
             return self.compute_multiplier[self.bits]
         elif type == 'M':
             return self.mem_multiplier[self.bits]
-        
-    
+
