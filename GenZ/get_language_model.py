@@ -3,9 +3,9 @@ import os
 from math import ceil
 import numpy as np
 from datetime import datetime
-from enum import Enum
+from enum import IntEnum
 
-class OpType(Enum):
+class OpType(IntEnum):
     FC = 0
     CONV2D = 1
     DWCONV = 2
@@ -414,8 +414,8 @@ def create_inference_moe_decode_model(input_sequence_length, name='BERT', data_p
     # TODO: Merge Logit_MQA and Logit.
     logit_pre =         [[H, 1, N, Dq, Hkv, 1, 7 if MQA else 9]]
     attend_pre =        [[H, 1, N, Dq, Hkv, 1, 8 if MQA else 10]]
-    logit_suf =         [[H, 1, output_gen_tokens-N, Dq, Hkv, 1, OpType.Logit_MQA if MQA else OpType.Logit]]
-    attend_suf =        [[H, 1, output_gen_tokens-N, Dq, Hkv, 1, OpType.Attend_MQA if MQA else OpType.Attend]]
+    logit_suf =         [[H, 1, output_gen_tokens, Dq, Hkv, 1, OpType.Logit_MQA if MQA else OpType.Logit]]
+    attend_suf =        [[H, 1, output_gen_tokens, Dq, Hkv, 1, OpType.Attend_MQA if MQA else OpType.Attend]]
     output =        [[D, 1, D//tensor_parallel, 1, 1, 1, OpType.GEMM]]
 
     ffup =           [[K*Df, 1, D, 1, 1, 1, OpType.GEMM]]    ## Df is already divided

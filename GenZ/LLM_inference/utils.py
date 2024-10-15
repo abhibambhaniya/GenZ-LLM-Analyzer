@@ -17,8 +17,18 @@ class ModdelingOutput(dict):
     is_offload: Optional[bool] = False
 
 def get_offload_system(system, total_memory_req, debug):
+    """Create a new system with offloaded memory connections
 
+    Args:
+        system (System): System Definition without offload
+        total_memory_req (float): Memory required for the model weights and activations in MB
+        debug (bool): Debug flag for printing
+
+    Returns:
+        System: System Definition with offload
+    """
     total_device_memory = unit.raw_to_unit(system.off_chip_mem_size, type='M')/1024 ## GB
+    total_memory_req = total_memory_req/1024 ## GB
 
     memory_offloaded = total_memory_req - total_device_memory
 
