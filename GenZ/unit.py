@@ -6,7 +6,7 @@ class Unit(object):
     binary_dicts = {'K': 2**10, 'M': 2**20, 'G':2**30, 'T':2**40, 'm': 2**-10, 'u': 2**-20, 'n': 2**-30, 'p': 2**-40}
 
     def __init__(self, unit_mem='MB', unit_compute='Tflops', unit_time='msec', unit_bw='GBsec', unit_freq='MHz',
-                 unit_energy='pJ', unit_flop='MFLOP'):
+                unit_energy='pJ', unit_flop='MFLOP'):
         self.unit_mem = unit_mem
         self.unit_compute = unit_compute
         self.unit_time = unit_time

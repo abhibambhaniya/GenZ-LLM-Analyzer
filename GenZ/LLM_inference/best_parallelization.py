@@ -5,7 +5,7 @@ from GenZ.operators import *
 from GenZ.operator_base import op_type_dicts
 from GenZ.system import System
 import pandas as pd
-from GenZ.analye_model import *
+from GenZ.analyse_model import *
 import warnings
 from GenZ.LLM_inference import decode_moddeling, prefill_moddeling
 from paretoset import paretoset

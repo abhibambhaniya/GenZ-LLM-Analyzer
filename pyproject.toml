@@ -7,9 +7,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "genz_llm"
-version = "0.0.11"
+version = "0.0.12"
 authors = [
-  { name="Abhimanyu Bambhaniya", email="abambhaniya3@gatech.edu" },
+    { name="Abhimanyu Bambhaniya", email="abambhaniya3@gatech.edu" },
 ]
 description = "GenZ is designed to simplify the relationship between the hardware platform used for serving Large Language Models(LLMs) and inference serving metrics like latency and memory."
 readme = "README.md"

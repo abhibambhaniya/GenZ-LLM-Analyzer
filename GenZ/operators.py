@@ -121,65 +121,6 @@ class Logit(Operator):
         super().__init__(dim=dim, density=density)
 
     def get_effective_dim_len(self):
-        return 5
-
-    def get_tensors(self):
-        ## Refer FLAT paper for more detailed explanation on these parameters
-        # B -> Batch Size
-        # H -> Number of Heads
-        # M -> Seq Len for Q
-        # N -> Seq Len for K
-        # D -> Split hidden size of key, query and values
-        B, H, M, N, D = self.dim[:self.get_effective_dim_len()]
-        input_a = (B, H, M, D)
-        input_w = (B, H, N, D)
-        output = (B, H, M, N)
-        return input_a, input_w, output
-
-    def get_gemms(self):
-        B, H, M, N, D = self.dim[:self.get_effective_dim_len()]
-        left = M
-        upper = N
-        contract = D
-        outer =B*H
-        return left, upper, contract, outer
-
-
-    def get_num_ops(self):
-        B, H, M, N, D = self.dim[:self.get_effective_dim_len()]
-        return  np.prod([B, H, M, N, D])
-
-class Attend(Operator):
-    def __init__(self, dim, density):
-        super().__init__(dim=dim, density=density)
-
-    def get_effective_dim_len(self):
-        return 5
-
-    def get_tensors(self):
-        B, H, M, N, D = self.dim[:self.get_effective_dim_len()]
-        input_a = (B, H, M, N)
-        input_w = (B, H, N, D)
-        output = (B, H, M, D)
-        return input_a, input_w, output
-
-    def get_gemms(self):
-        B, H, M, N, D = self.dim[:self.get_effective_dim_len()]
-        left = M
-        upper = D
-        contract = N
-        outer = B*H
-        return left, upper, contract, outer
-
-    def get_num_ops(self):
-        B, H, M, N, D = self.dim[:self.get_effective_dim_len()]
-        return 2* np.prod([B, H, M, N, D])
-
-class Logit_MQA(Operator):
-    def __init__(self, dim, density):
-        super().__init__(dim=dim, density=density)
-
-    def get_effective_dim_len(self):
         return 6
 
     def get_tensors(self):
@@ -211,7 +152,7 @@ class Logit_MQA(Operator):
         B, H, M, N, D, Hkv = self.dim[:self.get_effective_dim_len()]
         return  np.prod([B, H, M, N, D])
 
-class Attend_MQA(Operator):
+class Attend(Operator):
     def __init__(self, dim, density):
         super().__init__(dim=dim, density=density)
 
@@ -236,44 +177,7 @@ class Attend_MQA(Operator):
 
     def get_num_ops(self):
         B, H, M, N, D, Hkv = self.dim[:self.get_effective_dim_len()]
-        return 2* np.prod([B, H, M, N, D])
-
-class Logit_MQA(Operator):
-    def __init__(self, dim, density):
-        super().__init__(dim=dim, density=density)
-
-    def get_effective_dim_len(self):
-        return 6
-
-    def get_tensors(self):
-        ## Refer FLAT paper for more detailed explanation on these parameters
-        # B -> Batch Size
-        # H -> Number of Heads
-        # M -> Seq Len for Q
-        # N -> Seq Len for K
-        # D -> Split hidden size of key, query and values
-        # Hkv -> Number of Heads for K and V.
-
-        B, H, M, N, D, Hkv = self.dim[:self.get_effective_dim_len()]
-        assert H % Hkv == 0 , f"H:{H} must be divisible by Hkv:{Hkv} "
-        input_a = (B, H, M, D)
-        input_w = (B, Hkv, N, D)
-        output = (B, H, M, N)
-        return input_a, input_w, output
-
-    def get_gemms(self):
-        B, H, M, N, D, Hkv = self.dim[:self.get_effective_dim_len()]
-        left = M
-        upper = N
-        contract = D
-        outer =B*H
-        return left, upper, contract, outer
-
-
-    def get_num_ops(self):
-        B, H, M, N, D, Hkv = self.dim[:self.get_effective_dim_len()]
-        return  np.prod([B, H, M, N, D])
-
+        return np.prod([B, H, M, N, D])
 
 class DWCONV(Operator):
     def __init__(self, dim, density):

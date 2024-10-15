@@ -19,6 +19,17 @@ class OpType(IntEnum):
     Attend_BM_PREFILL = 10
     CONV1D = 11
 
+class ResidencyInfo(IntEnum):
+    All_offchip = 0
+    A_onchip = 1
+    B_onchip = 2
+    C_onchip = 3
+    AB_onchip = 4
+    AC_onchip = 5
+    BC_onchip = 6
+    All_onchip = 7
+
+
 class ModelConfig():
     r"""
     This is the configuration class to store the configuration of a [`Model`]. It is used to instantiate an LLM
@@ -198,7 +209,7 @@ def get_configs(name, return_full = False, get_model_config=False):
         model_config = ModelConfig(model='google/gemma-2-9B',
             hidden_size=3584, num_attention_heads=16, num_ffi = 2,
             num_key_value_heads=8, head_dim=256,
-            intermediate_size=14336, num_decoder_layers=42, 
+            intermediate_size=14336, num_decoder_layers=42,
             )
     elif name in ['gemma2_27b', 'google/gemma-2-27b']:
         # https://huggingface.co/google/gemma-2-27b-it/blob/main/config.json
@@ -349,24 +360,24 @@ def create_inference_moe_prefix_model(input_sequence_length, name='BERT', data_p
 
     layers = []
 
-    query =         [[D//tensor_parallel + 2*Hkv*Dq, N, D, 1, 1, 1, OpType.GEMM]]
-    logit =         [[H, M, N, Dq, Hkv, 1, OpType.Attend_MQA if MQA else OpType.Attend]]
-    attend =        [[H, M, N, Dq, Hkv, 1, OpType.Logit_MQA if MQA else OpType.Logit]]
-    output =        [[D, M, D//tensor_parallel, 1, 1, 1, OpType.GEMM]]
+    query =         [[D//tensor_parallel + 2*Hkv*Dq, N, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+    logit =         [[H, M, N, Dq, Hkv, ResidencyInfo.All_offchip, OpType.Logit]]
+    attend =        [[H, M, N, Dq, Hkv, ResidencyInfo.All_offchip, OpType.Attend]]
+    output =        [[D, M, D//tensor_parallel, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
 
     if moe_layer_freq:
         num_tokens_per_expert = M*K // E
-        ffup =           [[E*Df, num_tokens_per_expert, D, 1, 1, 1, OpType.GEMM]]
-        ffdown =           [[D, num_tokens_per_expert, E*Df, 1, 1, 1, OpType.GEMM]]
+        ffup =           [[E*Df*fi, num_tokens_per_expert, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+        ffdown =           [[D, num_tokens_per_expert, E*Df, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
     else:
-        ffup =           [[Df, M, D, 1, 1, 1, OpType.GEMM]]
-        ffdown =           [[D, M, Df, 1, 1, 1, OpType.GEMM]]
+        ffup =           [[Df*fi, M, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+        ffdown =           [[D, M, Df, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
 
-    layers = query + logit + attend + output
+    layers = query + logit + attend + output + ffup + ffdown
 
-    for _ in range(fi):
-        layers += ffup
-    layers += ffdown
+    # for _ in range(fi):
+    #     layers += ffup
+    # layers += ffdown
 
     df = pd.DataFrame(layers, columns=['M', 'N', 'D', 'H', 'Z', 'Z', 'T'])
     file_name = name.replace("/", "_") + '_prefix_' + datetime.now().strftime("%m_%d_%Y_%H_%M_%S") +'.csv'
@@ -409,20 +420,20 @@ def create_inference_moe_decode_model(input_sequence_length, name='BERT', data_p
 
     layers = []
 
-    query =         [[D//tensor_parallel + 2*Hkv*Dq, 1, D, 1, 1, 1, OpType.GEMM]]
+    query =         [[D//tensor_parallel + 2*Hkv*Dq, 1, D, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
     # TODO: Correct the op type for prefill
     # TODO: Merge Logit_MQA and Logit.
-    logit_pre =         [[H, 1, N, Dq, Hkv, 1, 7 if MQA else 9]]
-    attend_pre =        [[H, 1, N, Dq, Hkv, 1, 8 if MQA else 10]]
-    logit_suf =         [[H, 1, output_gen_tokens, Dq, Hkv, 1, OpType.Logit_MQA if MQA else OpType.Logit]]
-    attend_suf =        [[H, 1, output_gen_tokens, Dq, Hkv, 1, OpType.Attend_MQA if MQA else OpType.Attend]]
-    output =        [[D, 1, D//tensor_parallel, 1, 1, 1, OpType.GEMM]]
+    logit_pre =         [[H, 1, N, Dq, Hkv, ResidencyInfo.All_offchip, OpType.Logit_BM_PREFILL]]
+    attend_pre =        [[H, 1, N, Dq, Hkv, ResidencyInfo.All_offchip, OpType.Attend_BM_PREFILL]]
+    logit_suf =         [[H, 1, output_gen_tokens, Dq, Hkv, ResidencyInfo.All_offchip, OpType.Logit]]
+    attend_suf =        [[H, 1, output_gen_tokens, Dq, Hkv, ResidencyInfo.All_offchip, OpType.Attend]]
+    output =        [[D, 1, D//tensor_parallel, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
 
-    ffup =           [[K*Df, 1, D, 1, 1, 1, OpType.GEMM]]    ## Df is already divided
-    ffdown =           [[D, 1, K*Df, 1, 1, 1, OpType.GEMM]]
+    ffup =           [[K*Df, 1, D, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]    ## Df is already divided
+    ffdown =           [[D, 1, K*Df, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
 
-    ffup_unused =   [[(E-K)*Df, 0, D, 1, 1, 1, OpType.GEMM]]
-    ffdown_unused =   [[D, 0, (E-K)*Df, 1, 1, 1, OpType.GEMM]]
+    ffup_unused =   [[(E-K)*Df, 0, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+    ffdown_unused =   [[D, 0, (E-K)*Df, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
 
     layers = query + logit_pre + logit_suf + attend_pre + attend_suf + output
 
@@ -470,12 +481,12 @@ def create_inference_mamba_prefix_model(input_sequence_length, name='jamba', dat
 
     layers = []
 
-    in_proj =      [[2*F, L, D, 1, 1, 1, OpType.GEMM]]        ## BLD * D2F = BL2F
-    conv_1d =      [[F, F, L, C, 1, 1, OpType.CONV1D]]         ## BLF conv FC -> BLF
-    dbc_proj =     [[R+2*S, L, F, 1, 1, 1, OpType.GEMM]]
-    xt_proj =      [[F, L, R, 1, 1, 1, OpType.GEMM]]
+    in_proj =      [[2*F, L, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]        ## BLD * D2F = BL2F
+    conv_1d =      [[F, F, L, C, 1, ResidencyInfo.All_offchip, OpType.CONV1D]]         ## BLF conv FC -> BLF
+    dbc_proj =     [[R+2*S, L, F, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+    xt_proj =      [[F, L, R, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
     ## TODO:    SSN_kernel
-    output =       [[D, L, F, 1, 1, 1, OpType.GEMM]]
+    output =       [[D, L, F, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
 
     layers = in_proj + conv_1d + dbc_proj + xt_proj + output
     df = pd.DataFrame(layers, columns=['M', 'N', 'D', 'H', 'Z', 'Z', 'T'])
@@ -516,12 +527,12 @@ def create_inference_mamba_decode_model(input_sequence_length, name='jamba', dat
 
     layers = []
 
-    in_proj =      [[2*F, 1, D, 1, 1, 1, OpType.GEMM]]        ## BLD * D2F = BL2F
-    conv_1d =      [[F, F, 1, C, 1, 1, OpType.CONV1D]]         ## BLF conv FC -> BLF
-    dbc_proj =     [[R+2*S, 1, F, 1, 1, 1, OpType.GEMM]]
-    xt_proj =      [[F, 1, R, 1, 1, 1, OpType.GEMM]]
+    in_proj =      [[2*F, 1, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]        ## BLD * D2F = BL2F
+    conv_1d =      [[F, F, 1, C, 1, ResidencyInfo.All_offchip, OpType.CONV1D]]         ## BLF conv FC -> BLF
+    dbc_proj =     [[R+2*S, 1, F, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+    xt_proj =      [[F, 1, R, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
     ## TODO:    SSN_kernel
-    output =       [[D, 1, F, 1, 1, 1, OpType.GEMM]]
+    output =       [[D, 1, F, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
 
     layers = in_proj + conv_1d + dbc_proj + xt_proj + output
 

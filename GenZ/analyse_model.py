@@ -54,6 +54,7 @@ def analysis_model(model_dims, system=None, unit=Unit(), densities = None,interm
         densities = np.ones((len(model_dims), 3), dtype=float)
     for i, (dim, density) in enumerate(zip(model_dims, densities)):
         op_type = op_type_dicts[dim[-1]]
+        operators_residency = op_type_dicts[dim[-2]]
         operator = getattr(operators, op_type)
         if beam_merge and (dim[-1] == 9 or dim[-1] == 10):
             dim[0] /= beam_size
@@ -65,6 +66,25 @@ def analysis_model(model_dims, system=None, unit=Unit(), densities = None,interm
             elif(op_type == 'Attend'or op_type == 'Attend_MQA'):
                 operator_instance.set_mem_pin(input_a='on')
 
+        if operators_residency == ResidencyInfo.A_onchip:
+            operator_instance.set_mem_pin(input_a='on')
+        elif operators_residency == ResidencyInfo.B_onchip:
+            operator_instance.set_mem_pin(input_b='on')
+        elif operators_residency == ResidencyInfo.C_onchip:
+            operator_instance.set_mem_pin(output='on')
+        elif operators_residency == ResidencyInfo.AB_onchip:
+            operator_instance.set_mem_pin(input_a='on')
+            operator_instance.set_mem_pin(input_b='on')
+        elif operators_residency == ResidencyInfo.AC_onchip:
+            operator_instance.set_mem_pin(input_a='on')
+            operator_instance.set_mem_pin(output='on')
+        elif operators_residency == ResidencyInfo.BC_onchip:
+            operator_instance.set_mem_pin(input_b='on')
+            operator_instance.set_mem_pin(output='on')
+        elif operators_residency == ResidencyInfo.All_onchip:
+            operator_instance.set_mem_pin(input_a='on')
+            operator_instance.set_mem_pin(input_b='on')
+            operator_instance.set_mem_pin(output='on')
 
         if model_characterstics:
             roofline = operator_instance.get_model_characterstics(system=system, unit=unit)
@@ -82,7 +102,7 @@ def analysis_model(model_dims, system=None, unit=Unit(), densities = None,interm
     return df
 
 
-def get_model_df(model, system, unit=Unit(), batch_size=1, data_path="/tmp/data/", sparse=False, intermediate_on_chip=False,
+def get_model_df(model, system, unit=Unit(), batch_size=1, data_path="/tmp/data/", intermediate_on_chip=False,
                     beam_size=1, beam_merge=False, model_characterstics=False):
     m_file_path = os.path.join(data_path,"model")
     sparsity_file_path = os.path.join(data_path,"sparsity")

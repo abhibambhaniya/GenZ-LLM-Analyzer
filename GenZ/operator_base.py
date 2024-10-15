@@ -18,11 +18,11 @@ class Operator(object):
     def get_default_mem_loc(self):
         return ['off', 'off', 'off']
 
-    def set_mem_pin(self, input_a=None, input_w=None, output=None):
+    def set_mem_pin(self, input_a=None, input_b=None, output=None):
         if input_a is not None:
             self.input_a_loc = input_a
-        if input_w is not None:
-            self.input_w_loc = input_w
+        if input_b is not None:
+            self.input_w_loc = input_b
         if output is not None:
             self.output_loc = output
 
