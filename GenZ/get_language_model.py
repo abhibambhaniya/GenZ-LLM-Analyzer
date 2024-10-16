@@ -269,7 +269,7 @@ def get_configs(name, return_full = False, get_model_config=False):
             num_key_value_heads=8, num_ffi = 2,
             intermediate_size=14336, num_decoder_layers=32,
             )
-    elif name in ['mixtral_7x8', 'mistralai/mixtral-8x7b']:
+    elif name in ['mixtral_8x7b', 'mistralai/mixtral-8x7b']:
         # https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1/blob/main/config.json
         model_config = ModelConfig(model='mistralai/Mixtral-8x7B',
             hidden_size=4096, num_attention_heads=32,
@@ -351,7 +351,7 @@ def create_inference_moe_prefix_model(input_sequence_length, name='BERT', data_p
     K = model_config.expert_top_k
     Dq = model_config.head_dim
 
-    MQA = ( Hkv != H)
+    MQA = (Hkv != H)
 
     # assert H % tensor_parallel == 0, f'Heads should be equally divisible, H:{H}, TP:{tensor_parallel}'
     H = max(ceil(H/tensor_parallel),1)
@@ -375,10 +375,6 @@ def create_inference_moe_prefix_model(input_sequence_length, name='BERT', data_p
 
     layers = query + logit + attend + output + ffup + ffdown
 
-    # for _ in range(fi):
-    #     layers += ffup
-    # layers += ffdown
-
     df = pd.DataFrame(layers, columns=['M', 'N', 'D', 'H', 'Z', 'Z', 'T'])
     file_name = name.replace("/", "_") + '_prefix_' + datetime.now().strftime("%m_%d_%Y_%H_%M_%S") +'.csv'
     if not os.path.exists(model_path):
@@ -391,8 +387,6 @@ def create_inference_moe_decode_model(input_sequence_length, name='BERT', data_p
                          output_gen_tokens=32, **args):
 
     model_path = os.path.join(data_path,"model")
-    sparsity_file_path = os.path.join(data_path,"sparsity")
-
     model_config = get_configs(name, get_model_config=True)
 
     N  = input_sequence_length ## input Seq Len
@@ -421,24 +415,21 @@ def create_inference_moe_decode_model(input_sequence_length, name='BERT', data_p
     layers = []
 
     query =         [[D//tensor_parallel + 2*Hkv*Dq, 1, D, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
-    # TODO: Correct the op type for prefill
-    # TODO: Merge Logit_MQA and Logit.
     logit_pre =         [[H, 1, N, Dq, Hkv, ResidencyInfo.All_offchip, OpType.Logit_BM_PREFILL]]
     attend_pre =        [[H, 1, N, Dq, Hkv, ResidencyInfo.All_offchip, OpType.Attend_BM_PREFILL]]
     logit_suf =         [[H, 1, output_gen_tokens, Dq, Hkv, ResidencyInfo.All_offchip, OpType.Logit]]
     attend_suf =        [[H, 1, output_gen_tokens, Dq, Hkv, ResidencyInfo.All_offchip, OpType.Attend]]
     output =        [[D, 1, D//tensor_parallel, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
 
-    ffup =           [[K*Df, 1, D, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]    ## Df is already divided
+    ffup =           [[K*Df*fi, 1, D, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]    ## Df is already divided
     ffdown =           [[D, 1, K*Df, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
 
-    ffup_unused =   [[(E-K)*Df, 0, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+    ffup_unused =   [[(E-K)*Df*fi, 0, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
     ffdown_unused =   [[D, 0, (E-K)*Df, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
 
     layers = query + logit_pre + logit_suf + attend_pre + attend_suf + output
 
-    for _ in range(fi):
-        layers += (ffup + ffup_unused) if moe_layer_freq  else ffup
+    layers += (ffup + ffup_unused) if moe_layer_freq  else ffup
     layers += (ffdown + ffdown_unused)  if moe_layer_freq  else ffdown
 
 
@@ -454,7 +445,6 @@ def create_inference_moe_decode_model(input_sequence_length, name='BERT', data_p
 def create_inference_mamba_prefix_model(input_sequence_length, name='jamba', data_path="/tmp/data/",
                          **args):
     model_path = os.path.join(data_path,"model")
-    sparsity_file_path = os.path.join(data_path,"sparsity")
     model_config = get_configs(name, get_model_config=True)
 
     L  = input_sequence_length ## input Seq Len
@@ -500,7 +490,6 @@ def create_inference_mamba_prefix_model(input_sequence_length, name='jamba', dat
 def create_inference_mamba_decode_model(input_sequence_length, name='jamba', data_path="/tmp/data/",
                          **args):
     model_path = os.path.join(data_path,"model")
-    sparsity_file_path = os.path.join(data_path,"sparsity")
     model_config = get_configs(name, get_model_config=True)
 
     L  = input_sequence_length ## input Seq Len
