@@ -18,7 +18,7 @@ def factors(n):
                 for i in range(1, int(n**0.5)+1) if n % i == 0) for x in tup]
 
 def get_various_parallization(model='llama_7b', total_nodes=8):
-    model_config = get_configs(model, get_model_config=True)
+    model_config = get_configs(model)
 
     if total_nodes == 1:
         return {(1,1)}

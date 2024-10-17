@@ -22,7 +22,7 @@ def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     ### Model parsing
     ##################################################################################################
 
-    model_config = get_configs(model, get_model_config=True)
+    model_config = get_configs(model)
 
     model_D = model_config.hidden_size
     F = model_config.intermediate_size

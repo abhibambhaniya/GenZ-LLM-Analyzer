@@ -2,11 +2,10 @@ import numpy as np
 from operator import mul
 from math import ceil
 from GenZ.unit import Unit
-# 4,5 Regular Logit and Attend
-# 7,8 MQA Logit and Attend
+# 4, 5 Regular Logit and Attend
 # 9, 10 Beam Merge Logit and attend
 op_type_dicts = {0: 'FC', 1: 'CONV2D', 2: 'DWCONV', 3: 'GEMM', 4: 'Logit', 5: 'Attend', 6:'Sync',
-                7:'Logit_MQA', 8:'Attend_MQA', 9:'Logit', 10:'Attend', 11:'CONV1D'}
+                9:'Logit', 10:'Attend', 11:'CONV1D'}
 class Operator(object):
     def __init__(self, dim, density=(1.0,1.0,1.0)):
         self.dim = dim

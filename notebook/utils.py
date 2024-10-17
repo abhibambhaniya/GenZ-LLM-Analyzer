@@ -30,7 +30,7 @@ def generate_demand_curve(graph_type, system_box, system_eff, num_nodes_slider,
         elif not isinstance(system_box, dict):
             raise ValueError(f'System mentioned:{system_box} not present in predefined systems. Please use systems from Systems/system_configs')
 
-    # ('1. ISO-HW: Model vs Throughput', 1), 
+    # ('1. ISO-HW: Model vs Throughput', 1),
     # ('2. ISO-HW: Model vs Latency (TTFT, TPOT)', 2),
     # ('3. ISO-HW, ISO-Model: Batch vs Throughput/Latency', 3)
     # ('4. ISO-Usecase, Multiple HW, Throuput vs Latency', 4)
@@ -42,7 +42,7 @@ def generate_demand_curve(graph_type, system_box, system_eff, num_nodes_slider,
         for model in model_box:
             if batch_size <= batch_slider:
                 model_name = get_configs(model).model
-                try: 
+                try:
                     prefill_outputs = prefill_moddeling(model = model, batch_size = batch_size,
                                             input_tokens = input_token_slider, output_tokens = output_token_slider, FLAT = True,
                                             system_name = system_box, system_eff = system_eff,
@@ -60,13 +60,13 @@ def generate_demand_curve(graph_type, system_box, system_eff, num_nodes_slider,
                     decode_outputs, decode_summary_table = decode_moddeling(model = model, batch_size = batch_size, Bb = beam_size ,
                                             input_tokens = input_token_slider, output_tokens = output_token_slider, FLAT = True,
                                             system_name = system_box, system_eff = system_eff,
-                                            bits=quantization_box, model_profilling=True) 
+                                            bits=quantization_box, model_profilling=True)
                     total_memory = int(system_box.get('Memory_size'))*1024  ## per device memory
                     memory_req =  decode_summary_table['Model Weights (MB)'].values[0] + decode_summary_table['KV Cache (MB)'].values[0] 
 
                     mem_size_data.append([model, total_memory, batch_size, beam_size, input_token_slider, output_token_slider, np.ceil(memory_req/total_memory)])
     # assert len(data) > 0, "No Model fits in the given # of GPUs. Increase GPUs or use different Model"
-    
+
     data_df = pd.DataFrame(data, columns = ['Model', 'Stage','Batch', 'Latency(ms)', 'Tokens/s', 'GEMM Time', 'Attn Time', 'Communication Time'])
     chip_req_df = pd.DataFrame(mem_size_data, columns = ['Model', 'NPU memory','Batch', 'Beam size', 'Input Tokens', 'Output Tokens', 'Min. Chips'])
     if len(data) == 0 :
@@ -74,7 +74,7 @@ def generate_demand_curve(graph_type, system_box, system_eff, num_nodes_slider,
         return chip_req_df
     else:
         data_df['Stage'] = pd.Categorical(data_df['Stage'], categories=['Prefill','Decode'])
-        
+
         if graph_type == 1:
             fig = px.line(data_df, x="Batch", y="Tokens/s",  line_group="Model", color="Model", facet_row='Stage', 
                     labels={"Batch": "Batch", "Tokens/s": "Tokens/s", "Model": "Model"},

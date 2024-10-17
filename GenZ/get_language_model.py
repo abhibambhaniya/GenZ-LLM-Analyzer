@@ -5,6 +5,8 @@ import numpy as np
 from datetime import datetime
 from enum import IntEnum
 
+from GenZ.parallelism import ParallelismConfig
+
 class OpType(IntEnum):
     FC = 0
     CONV2D = 1
@@ -120,8 +122,7 @@ class ModelConfig():
         return str(vars(self))
 
 
-
-def get_configs(name, return_full = False, get_model_config=False):
+def get_configs(name) -> ModelConfig:
     name = name.lower()
     if  name in ['opt_125m', 'facebook/opt-125m'] :
         # https://huggingface.co/facebook/opt-125m/blob/main/config.json
@@ -331,95 +332,69 @@ def get_configs(name, return_full = False, get_model_config=False):
 
     return model_config
 
-def create_inference_moe_prefix_model(input_sequence_length, name='BERT', data_path="/tmp/data/", masked=False,
-                         **args):
-    model_path = os.path.join(data_path,"model")
-    model_config = get_configs(name, get_model_config=True)
-
-    M = N  = input_sequence_length ## input Seq Len
-
-    tensor_parallel = args.get('tensor_parallel',1)
-
-    D = model_config.hidden_size
-    Df = model_config.intermediate_size
-    fi = model_config.num_ffi
+def mha_flash_attention_prefill(model_config:ModelConfig, parallelism_config:ParallelismConfig, input_sequence_length:int):
     H = model_config.num_attention_heads
     Hkv = model_config.num_key_value_heads
-    ## TODO : Implement the case when moe_layer_freq is >1
-    moe_layer_freq = model_config.moe_layer_freq
-    E = model_config.num_experts
-    K = model_config.expert_top_k
+    D = model_config.hidden_size
     Dq = model_config.head_dim
 
-    MQA = (Hkv != H)
+    tensor_parallel = parallelism_config.tensor_parallel
 
-    # assert H % tensor_parallel == 0, f'Heads should be equally divisible, H:{H}, TP:{tensor_parallel}'
-    H = max(ceil(H/tensor_parallel),1)
-    Hkv = max(ceil(Hkv/tensor_parallel),1)
-    Df = max(Df//tensor_parallel,1)
+    query =         [[D//tensor_parallel + 2*Hkv*Dq, input_sequence_length, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+    logit =         [[H, input_sequence_length, input_sequence_length, Dq, Hkv, ResidencyInfo.All_offchip, OpType.Logit]]
+    attend =        [[H, input_sequence_length, input_sequence_length, Dq, Hkv, ResidencyInfo.All_offchip, OpType.Attend]]
+    output =        [[D, input_sequence_length, D//tensor_parallel, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
 
-    layers = []
+    return query + logit + attend + output
 
-    query =         [[D//tensor_parallel + 2*Hkv*Dq, N, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
-    logit =         [[H, M, N, Dq, Hkv, ResidencyInfo.All_offchip, OpType.Logit]]
-    attend =        [[H, M, N, Dq, Hkv, ResidencyInfo.All_offchip, OpType.Attend]]
-    output =        [[D, M, D//tensor_parallel, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
-
-    if moe_layer_freq:
-        num_tokens_per_expert = M*K // E
-        ffup =           [[E*Df*fi, num_tokens_per_expert, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
-        ffdown =           [[D, num_tokens_per_expert, E*Df, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
-    else:
-        ffup =           [[Df*fi, M, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
-        ffdown =           [[D, M, Df, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
-
-    layers = query + logit + attend + output + ffup + ffdown
-
-    df = pd.DataFrame(layers, columns=['M', 'N', 'D', 'H', 'Z', 'Z', 'T'])
-    file_name = name.replace("/", "_") + '_prefix_' + datetime.now().strftime("%m_%d_%Y_%H_%M_%S") +'.csv'
-    if not os.path.exists(model_path):
-        os.makedirs(model_path)
-    df.to_csv(os.path.join(model_path, file_name),  header=True, index=None)
-
-    return file_name
-
-def create_inference_moe_decode_model(input_sequence_length, name='BERT', data_path="/tmp/data/",
-                         output_gen_tokens=32, **args):
-
-    model_path = os.path.join(data_path,"model")
-    model_config = get_configs(name, get_model_config=True)
-
-    N  = input_sequence_length ## input Seq Len
-
-    tensor_parallel = args.get('tensor_parallel',1)
-
-    D = model_config.hidden_size
-    Df = model_config.intermediate_size
-    fi = model_config.num_ffi
+def mha_flash_attention_decode(model_config:ModelConfig, parallelism_config:ParallelismConfig, input_sequence_length:int, output_gen_tokens:int):
     H = model_config.num_attention_heads
     Hkv = model_config.num_key_value_heads
-    ## TODO : Implement the case when moe_layer_freq is >1
-    moe_layer_freq = model_config.moe_layer_freq
-    E = model_config.num_experts
-    K = model_config.expert_top_k
+    D = model_config.hidden_size
     Dq = model_config.head_dim
 
-    MQA = ( Hkv != H)
-
-    # assert H % tensor_parallel == 0, f'Heads should be equally divisible, H:{H}, TP:{tensor_parallel}'
-
-    H = max(ceil(H/tensor_parallel),1)
-    Hkv = max(ceil(Hkv/tensor_parallel),1)
-    Df = max(Df//tensor_parallel,1)
-
-    layers = []
+    tensor_parallel = parallelism_config.tensor_parallel
 
     query =         [[D//tensor_parallel + 2*Hkv*Dq, 1, D, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
-    logit_pre =         [[H, 1, N, Dq, Hkv, ResidencyInfo.All_offchip, OpType.Logit_BM_PREFILL]]
-    attend_pre =        [[H, 1, N, Dq, Hkv, ResidencyInfo.All_offchip, OpType.Attend_BM_PREFILL]]
-    logit_suf =         [[H, 1, output_gen_tokens, Dq, Hkv, ResidencyInfo.All_offchip, OpType.Logit]]
-    attend_suf =        [[H, 1, output_gen_tokens, Dq, Hkv, ResidencyInfo.All_offchip, OpType.Attend]]
+    logit_pre =     [[H, 1, input_sequence_length, Dq, Hkv, ResidencyInfo.All_offchip, OpType.Logit_BM_PREFILL]]
+    attend_pre =    [[H, 1, input_sequence_length, Dq, Hkv, ResidencyInfo.All_offchip, OpType.Attend_BM_PREFILL]]
+    logit_suf =     [[H, 1, output_gen_tokens, Dq, Hkv, ResidencyInfo.All_offchip, OpType.Logit]]
+    attend_suf =    [[H, 1, output_gen_tokens, Dq, Hkv, ResidencyInfo.All_offchip, OpType.Attend]]
     output =        [[D, 1, D//tensor_parallel, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
+
+    return query + logit_pre + logit_suf + attend_pre + attend_suf + output
+
+def ffn_prefill(model_config:ModelConfig, parallelism_config:ParallelismConfig, input_sequence_length:int):
+    D = model_config.hidden_size
+    Df = model_config.intermediate_size
+    fi = model_config.num_ffi
+    tensor_parallel = parallelism_config.tensor_parallel
+
+    moe_layer_freq = model_config.moe_layer_freq
+    E = model_config.num_experts
+    K = model_config.expert_top_k
+    Df = max(Df//tensor_parallel,1)
+
+    if moe_layer_freq:
+        num_tokens_per_expert = input_sequence_length*K // E
+        ffup =   [[E*Df*fi, num_tokens_per_expert, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+        ffdown = [[D, num_tokens_per_expert, E*Df, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+    else:
+        ffup =   [[Df*fi, input_sequence_length, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+        ffdown = [[D, input_sequence_length, Df, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+
+    return ffup + ffdown
+
+def ffn_decode(model_config:ModelConfig, parallelism_config:ParallelismConfig):
+    D = model_config.hidden_size
+    Df = model_config.intermediate_size
+    fi = model_config.num_ffi
+    tensor_parallel = parallelism_config.tensor_parallel
+
+    moe_layer_freq = model_config.moe_layer_freq
+    E = model_config.num_experts
+    K = model_config.expert_top_k
+    Df = max(Df//tensor_parallel,1)
 
     ffup =           [[K*Df*fi, 1, D, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]    ## Df is already divided
     ffdown =           [[D, 1, K*Df, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
@@ -427,25 +402,49 @@ def create_inference_moe_decode_model(input_sequence_length, name='BERT', data_p
     ffup_unused =   [[(E-K)*Df*fi, 0, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
     ffdown_unused =   [[D, 0, (E-K)*Df, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
 
-    layers = query + logit_pre + logit_suf + attend_pre + attend_suf + output
-
+    layers = []
     layers += (ffup + ffup_unused) if moe_layer_freq  else ffup
     layers += (ffdown + ffdown_unused)  if moe_layer_freq  else ffdown
 
+    return layers
 
+def save_layers(layers:str, data_path:str, name:str):
+    model_path = os.path.join(data_path,"model")
     df = pd.DataFrame(layers, columns=['M', 'N', 'D', 'H', 'Z', 'Z', 'T'])
-    file_name = name.replace("/", "_") + '_decode_' + datetime.now().strftime("%m_%d_%Y_%H_%M_%S") +'.csv'
+    file_name = name.replace("/", "_") + datetime.now().strftime("%m_%d_%Y_%H_%M_%S") +'.csv'
     if not os.path.exists(model_path):
         os.makedirs(model_path)
     df.to_csv(os.path.join(model_path, file_name),  header=True, index=None)
-
     return file_name
 
 
-def create_inference_mamba_prefix_model(input_sequence_length, name='jamba', data_path="/tmp/data/",
+DATA_PATH = "/tmp/data/"
+
+def create_inference_moe_prefix_model(input_sequence_length, name='BERT', data_path=DATA_PATH,
                          **args):
-    model_path = os.path.join(data_path,"model")
-    model_config = get_configs(name, get_model_config=True)
+    model_config = get_configs(name)
+    tensor_parallel = args.get('tensor_parallel',1)
+    parallelism_config = ParallelismConfig(tensor_parallel=tensor_parallel)
+
+    layers = mha_flash_attention_prefill(model_config, parallelism_config, input_sequence_length) + ffn_prefill(model_config, parallelism_config, input_sequence_length)
+
+    return save_layers(layers=layers, data_path=data_path, name=name+"_prefix_")
+
+def create_inference_moe_decode_model(input_sequence_length, name='BERT', data_path=DATA_PATH,
+                         output_gen_tokens=32, **args):
+
+    model_config = get_configs(name)
+    tensor_parallel = args.get('tensor_parallel',1)
+
+    parallelism_config = ParallelismConfig(tensor_parallel=tensor_parallel)
+    layers = mha_flash_attention_decode(model_config, parallelism_config, input_sequence_length, output_gen_tokens) + ffn_decode(model_config, parallelism_config)
+
+    return save_layers(layers=layers, data_path=data_path, name=name+"_decode_")
+
+def create_inference_mamba_prefix_model(input_sequence_length, name='jamba', data_path=DATA_PATH,
+                         **args):
+
+    model_config = get_configs(name)
 
     L  = input_sequence_length ## input Seq Len
 
@@ -479,18 +478,13 @@ def create_inference_mamba_prefix_model(input_sequence_length, name='jamba', dat
     output =       [[D, L, F, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
 
     layers = in_proj + conv_1d + dbc_proj + xt_proj + output
-    df = pd.DataFrame(layers, columns=['M', 'N', 'D', 'H', 'Z', 'Z', 'T'])
-    file_name = name.replace("/", "_") + '_prefix_' + datetime.now().strftime("%m_%d_%Y_%H_%M_%S") +'.csv'
-    if not os.path.exists(model_path):
-        os.makedirs(model_path)
-    df.to_csv(os.path.join(model_path, file_name),  header=True, index=None)
 
-    return file_name
+    return save_layers(layers=layers, data_path=data_path, name=name+"_prefill_")
 
-def create_inference_mamba_decode_model(input_sequence_length, name='jamba', data_path="/tmp/data/",
+def create_inference_mamba_decode_model(input_sequence_length, name='jamba', data_path=DATA_PATH,
                          **args):
-    model_path = os.path.join(data_path,"model")
-    model_config = get_configs(name, get_model_config=True)
+
+    model_config = get_configs(name)
 
     L  = input_sequence_length ## input Seq Len
 
@@ -525,11 +519,4 @@ def create_inference_mamba_decode_model(input_sequence_length, name='jamba', dat
 
     layers = in_proj + conv_1d + dbc_proj + xt_proj + output
 
-
-    df = pd.DataFrame(layers, columns=['M', 'N', 'D', 'H', 'Z', 'Z', 'T'])
-    file_name = name.replace("/", "_") + '_decode_' + datetime.now().strftime("%m_%d_%Y_%H_%M_%S") +'.csv'
-    if not os.path.exists(model_path):
-        os.makedirs(model_path)
-    df.to_csv(os.path.join(model_path, file_name),  header=True, index=None)
-
-    return file_name
+    return save_layers(layers=layers, data_path=data_path, name=name+"_decode_")
