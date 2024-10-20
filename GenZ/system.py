@@ -7,7 +7,8 @@ class System(object):
     def __init__(self, unit=None, onchip_mem_bw=18000, offchip_mem_bw=900, external_mem_bw=100,
                 on_chip_mem_size=float('Inf'), off_chip_mem_size=float('Inf'),
                 compute_efficiency=1, memory_efficiency=1, flops=123, mxu_shape=None,
-                frequency=940, bits='bf16', interchip_mem_bw = 25, num_cores = 1, interchip_link_latency=1.9):
+                frequency=940, bits='bf16', interchip_mem_bw = 25, num_nodes = 1, interchip_link_latency=1.9,
+                topology='FullyConnected'):
 
         if unit is None:
             self.unit = Unit()
@@ -24,8 +25,8 @@ class System(object):
         self.compute_efficiency = compute_efficiency
         self.memory_efficiency = memory_efficiency
         self.mxu_shape = mxu_shape
-        self.num_cores = num_cores
-
+        self.num_nodes = num_nodes
+        self.topology = topology
         self.flops = self.unit.unit_to_raw(flops, type='C')
         self.op_per_sec = self.flops/2
 
@@ -35,27 +36,18 @@ class System(object):
 
     def __str__(self):
         unit = Unit()
-        a = f"Accelerator OPS: {unit.raw_to_unit(self.flops,type='C')} TOPS , Freq = {unit.raw_to_unit(self.frequency,type='F')} GHz, Num Cores = {self.num_cores} \n"
+        a = f"Accelerator OPS: {unit.raw_to_unit(self.flops,type='C')} TOPS , Freq = {unit.raw_to_unit(self.frequency,type='F')} GHz, Num Nodes = {self.num_nodes} \n"
         b = f"On-Chip mem size: {unit.raw_to_unit(self.on_chip_mem_size, type='M')} MB , Off-chip mem size:{unit.raw_to_unit(self.off_chip_mem_size, type='M')} MB\n"
         c = f"On-Chip mem BW: {unit.raw_to_unit(self.onchip_mem_bw, type='BW')} GB/s , Off-chip mem BW:{unit.raw_to_unit(self.offchip_mem_bw, type='BW')} GB/s, External-mem BW:{unit.raw_to_unit(self.external_mem_bw, type='BW')} GB/s,\n"
-        d = f"Compute type: {self.compute_type} , Realistic mem type: {self.model_on_chip_mem_implications}\n"
-        e = f"Sparsity Params: Acc. type: {self.accelerator_type} , Skip compute: {self.skip_compute} , Compress mem: {self.compress_mem}"
-        return a+b+c+d+e
+        return a+b+c
 
     def get_params(self):
         unit = Unit()
-        a = f"Accelerator OPS: {unit.raw_to_unit(self.flops,type='C')} TOPS , Freq = {unit.raw_to_unit(self.frequency,type='F')} GHz, Num Cores = {self.num_cores}"
+        a = f"Accelerator OPS: {unit.raw_to_unit(self.flops,type='C')} TOPS , Freq = {unit.raw_to_unit(self.frequency,type='F')} GHz, Num Nodes = {self.num_nodes}"
         b = f" Off-chip mem size:{unit.raw_to_unit(self.off_chip_mem_size, type='M')/1024} GB "
         c = f" Off-chip mem BW:{unit.raw_to_unit(self.offchip_mem_bw, type='BW')} GB/s, External-mem BW:{unit.raw_to_unit(self.external_mem_bw, type='BW')} GB/s"
         return a+b+c
 
-    def set_pe_min_density_support(self,pe_min_density_support):
-        if(self.accelerator_type=="structured" or pe_min_density_support==1):
-            self.treat_as_dense = True
-            self.pe_min_density_support = pe_min_density_support
-        elif(self.accelerator_type=="unstructured"):
-            self.pe_min_density_support = 0.000001
-            self.treat_as_dense = False
 
     def set_onchip_mem_bw(self,onchip_mem_bw):
         self.onchip_mem_bw = self.unit.unit_to_raw(onchip_mem_bw, type='BW')

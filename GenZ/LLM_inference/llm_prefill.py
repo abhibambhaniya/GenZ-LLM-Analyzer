@@ -79,7 +79,7 @@ def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     summary_table[f'Pipe data  ({unit.unit_mem})'] = unit.raw_to_unit( total_pipe_data, 'M')         ## In MB
 
     total_memory_req = model_weights + kv_cache
-    Num_cores = pipeline_parallel * tensor_parallel
+    num_nodes = pipeline_parallel * tensor_parallel
 
     #################################################################################
     ### Offloading calculations

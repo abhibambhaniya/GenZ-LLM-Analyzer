@@ -1,7 +1,9 @@
 import pytest
-from GenZ.get_language_model import get_configs, create_inference_moe_prefix_model, create_inference_moe_decode_model
+from GenZ.Models.get_language_model import get_configs, create_inference_moe_prefix_model, create_inference_moe_decode_model
 import os
 import pandas as pd
+
+MODEL_PATH = "/tmp/genz/data/model"
 
 def test_get_configs():
     # Test known model names
@@ -12,7 +14,7 @@ def test_create_inference_dense_prefix_model():
     file_name = create_inference_moe_prefix_model(input_sequence_length=10, name='gpt-2')
     assert file_name.endswith('.csv')
     assert 'gpt-2_prefix' in file_name
-    df = pd.read_csv(os.path.join('/tmp/data/model', file_name), header=None)
+    df = pd.read_csv(os.path.join(MODEL_PATH, file_name), header=None)
     gpt2_ref = pd.DataFrame([
                 ['M','N','D','H','Z','Z','T'],
                 ['2304','10','768','1','1','0','3'],
@@ -23,11 +25,26 @@ def test_create_inference_dense_prefix_model():
                 ['768','10','3072','1','1','0','3']])
     pd.testing.assert_frame_equal(gpt2_ref,df)
 
+def test_create_inference_dense_gemma_prefix_model():
+    file_name = create_inference_moe_prefix_model(input_sequence_length=10, name='gemma2_9b')
+    assert file_name.endswith('.csv')
+    assert 'gemma2_9b_prefix' in file_name
+    df = pd.read_csv(os.path.join(MODEL_PATH, file_name), header=None)
+    gemma2_9b_ref = pd.DataFrame([
+                ['M','N','D','H','Z','Z','T'],
+                ['8192','10','3584','1','1','0','3'],
+                ['16','10','10','256','8','0','4'],
+                ['16','10','10','256','8','0','5'],
+                ['3584','10','4096','1','1','0','3'],
+                ['28672','10','3584','1','1','0','3'],
+                ['3584','10','14336','1','1','0','3']])
+    pd.testing.assert_frame_equal(gemma2_9b_ref,df)
+
 def test_create_inference_moe_prefix_model():
     file_name = create_inference_moe_prefix_model(input_sequence_length=10, name='mistralai/mixtral-8x7b')
     assert file_name.endswith('.csv')
     assert 'mixtral-8x7b_prefix' in file_name
-    df = pd.read_csv(os.path.join('/tmp/data/model', file_name), header=None)
+    df = pd.read_csv(os.path.join(MODEL_PATH, file_name), header=None)
     mixtral_ref = pd.DataFrame([
                 ['M','N','D','H','Z','Z','T'],
                 ['6144','10','4096','1','1','0','3'],
@@ -43,7 +60,7 @@ def test_create_inference_dense_decode_model():
     assert file_name.endswith('.csv')
     assert 'gpt-2_decode' in file_name
 
-    df = pd.read_csv(os.path.join('/tmp/data/model', file_name), header=None)
+    df = pd.read_csv(os.path.join(MODEL_PATH, file_name), header=None)
     gpt2_ref = pd.DataFrame([
                 ['M','N','D','H','Z','Z','T'],
                 ['2304','1','768','1','1','5','3'],
@@ -62,7 +79,7 @@ def test_create_inference_moe_decode_model():
     assert file_name.endswith('.csv')
     assert 'mixtral-8x7b_decode' in file_name
 
-    df = pd.read_csv(os.path.join('/tmp/data/model', file_name), header=None)
+    df = pd.read_csv(os.path.join(MODEL_PATH, file_name), header=None)
     mixtral_ref = pd.DataFrame([
         ['M','N','D','H','Z','Z','T'],
         ['6144','1','4096','1','1','5','3'],
