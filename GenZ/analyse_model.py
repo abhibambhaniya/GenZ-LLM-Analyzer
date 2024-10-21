@@ -53,8 +53,9 @@ def analysis_model(model_dims, system=None, unit=Unit(), densities = None,interm
     if densities is None:
         densities = np.ones((len(model_dims), 3), dtype=float)
     for i, (dim, density) in enumerate(zip(model_dims, densities)):
+
         op_type = op_type_dicts[dim[-1]]
-        operators_residency = op_type_dicts[dim[-2]]
+        operators_residency = dim[-2]
         operator = getattr(operators, op_type)
         if beam_merge and (dim[-1] == 9 or dim[-1] == 10):
             dim[0] /= beam_size
@@ -110,10 +111,18 @@ def get_model_df(model, system, unit=Unit(), batch_size=1, data_path="/tmp/genz/
     density_file = os.path.join(sparsity_file_path, model)
     df = pd.read_csv(m_file)
     model_defs = df.to_numpy()
-    batch_sizes = np.ones((len(model_defs), 1)) * batch_size                    # Batch size has been fixed to 1.
-    model_defs = np.append(batch_sizes, model_defs, axis=1).astype(int)
+    batch_sizes = np.ones((len(model_defs), 1)) * batch_size
+    model_defs = np.append(batch_sizes, model_defs, axis=1)
+    
+    new_model_defs = []
+    for layer in model_defs:
+        if layer[-1] != OpType.EINSUM:
+            new_model_defs.append(layer.astype(int))
+        else:
+            new_layer = [int(x) if isinstance(x, (int, float)) else x for x in layer]
+            new_model_defs.append(new_layer)
 
     densities = np.ones((len(model_defs), 3), dtype=float)
 
-    model_df  = analysis_model(model_defs, system, unit, densities, intermediate_on_chip, beam_size, beam_merge, model_characterstics)
+    model_df  = analysis_model(new_model_defs, system, unit, densities, intermediate_on_chip, beam_size, beam_merge, model_characterstics)
     return model_df

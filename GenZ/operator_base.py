@@ -5,7 +5,7 @@ from GenZ.unit import Unit
 # 4, 5 Regular Logit and Attend
 # 9, 10 Beam Merge Logit and attend
 op_type_dicts = {0: 'FC', 1: 'CONV2D', 2: 'DWCONV', 3: 'GEMM', 4: 'Logit', 5: 'Attend', 6:'Sync',
-                9:'Logit', 10:'Attend', 11:'CONV1D'}
+                9:'Logit', 10:'Attend', 11:'CONV1D', 12:'Einsum'}
 class Operator(object):
     def __init__(self, dim, density=(1.0,1.0,1.0)):
         self.dim = dim
@@ -49,7 +49,10 @@ class Operator(object):
     # .csv file it will give out number of required ops .
     def get_num_ops(self):
         pass
-
+    
+    def get_dimensions(self):
+        return self.get_tensors()
+    
     # For each kind of operator, this returns number of required paramters for that layer type. (Refer operators.py )
     def get_effective_dim_len(self):
         pass
@@ -102,8 +105,6 @@ class Operator(object):
         return memory_time
 
 
-
-
     def get_onchip_occupancy(self):
         sz_list = self.get_sz_list()
         loc_list = self.get_loc_list()
@@ -121,7 +122,7 @@ class Operator(object):
         input_a_size, input_w_size, output_size = self.get_sz_list()
         ret = {
             'Op Type': self.get_op_type(self.dim),
-            'Dimension': self.dim[:self.get_effective_dim_len()],
+            'Dimension': self.get_dimensions(),
             'Op Intensity': op_intensity,
             f'Num ops ({unit.unit_flop})': unit.raw_to_unit(num_ops, type='O'),
             f'Input_a ({unit.unit_mem})': unit.raw_to_unit(input_a_size, type='M')* system.get_bit_multiplier(type='M'),
@@ -157,7 +158,7 @@ class Operator(object):
 
         ret = {
             'Op Type': self.get_op_type(self.dim),
-            'Dimension': self.dim[:self.get_effective_dim_len()],
+            'Dimension': self.get_dimensions(),
             'Bound': boundedness,
             'C/M ratio': com_to_mem_ratio,
             'Op Intensity': op_intensity,

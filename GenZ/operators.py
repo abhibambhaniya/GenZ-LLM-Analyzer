@@ -1,5 +1,6 @@
 import numpy as np
 from GenZ.operator_base import Operator
+import ast
 
 class FC(Operator):
     def __init__(self, dim, density):
@@ -92,6 +93,9 @@ class GEMM(Operator):
 
     def get_effective_dim_len(self):
         return 4
+
+    def get_dimensions(self):
+        return [self.get_tensors()]
 
     def get_tensors(self):
         B, M, N, K = self.dim[:self.get_effective_dim_len()]
@@ -235,14 +239,34 @@ class Sync(Operator):   ## Just data movement.
         return 0
 
 class Einsum(Operator):
-    def __init__(self, equation, dims):
+    def __init__(self, dim, density):
         """
         equation: Einstein summation notation string
         dims: Dictionary of tensor dimensions keyed by the corresponding label in the equation
         """
-        self.equation = equation
-        self.dims = dims
+        self.batch = dim[0]
+        self.equation = dim[1]
+        
+        self.dimensions = {k: int(v) if isinstance(v, (int, float)) else v for k, v in ast.literal_eval(dim[2]).items()}
+        for k, v in self.dimensions.items():
+            if v == 'b':
+                self.dimensions[k] = self.batch
+            elif isinstance(v, str):
+                raise ValueError(f"Unknown dimension {k}:{v} in equation {self.equation}")
 
+        for var in set(''.join(self.equation.split('->')[0].split(','))):
+            if var not in set(self.dimensions.keys()):
+                raise ValueError(f"Invalid variable {var} in equation {self.equation}")
+        
+        super().__init__(dim=dim, density=density)
+
+
+    def get_tensors(self):
+        input_dims = self.equation.split('->')[0]
+        input_a = [self.dimensions[label] for label in input_dims.split(',')[0]]
+        input_b = [self.dimensions[label] for label in input_dims.split(',')[1]]
+        output = [self.dimensions[label] for label in self.equation.split('->')[1]]
+        return input_a, input_b, output
 
     def get_num_ops(self):
         """
@@ -252,5 +276,5 @@ class Einsum(Operator):
         dim_labels = set(''.join(input_dims.split(',')))
 
         # The number of operations is the product of the dimensions involved in the contraction
-        num_ops = np.prod([self.dims[label] for label in dim_labels])
+        num_ops = np.prod([self.dimensions[label] for label in dim_labels])
         return num_ops
