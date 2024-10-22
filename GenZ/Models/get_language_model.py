@@ -237,9 +237,9 @@ def mamda_ssn_slow(model_config:ModelConfig, parallelism_config:ParallelismConfi
     ## U and output on-chip
     deltaB_u = [['bdls,bdl->bdls',parse_einsum_expression('bdls,bdl->bdls', ('b',F,L,S), ('b',F,L), ('b',F,L,S)), 1, 1, 1, ResidencyInfo.All_offchip, OpType.EINSUM]]
     Layers += deltaA + deltaB + deltaB_u
-    for _ in range(L):
-        Layers += [['bfs,bfs->bfs',parse_einsum_expression('bfs,bfs->bfs', ('b',F,S), ('b',F,S), ('b',F,S)), 1, 1, 1, ResidencyInfo.All_onchip, OpType.EINSUM]]
-        Layers += [['bfs,bs->bf',parse_einsum_expression('bfs,bs->bf', ('b',F,S), ('b',S), ('b',F)), 1, 1, 1, ResidencyInfo.All_onchip, OpType.EINSUM]]
+    # for _ in range(L):
+    Layers += [['lbfs,lbfs->lbfs',parse_einsum_expression('lbfs,lbfs->lbfs', (L,'b',F,S), (L,'b',F,S), (L,'b',F,S)), 1, 1, 1, ResidencyInfo.All_onchip, OpType.EINSUM]]
+    Layers += [['lbfs,lbs->lbf',parse_einsum_expression('lbfs,lbs->lbf', (L,'b',F,S), (L,'b',S), (L,'b',F)), 1, 1, 1, ResidencyInfo.All_onchip, OpType.EINSUM]]
     Layers += [['blf,blf->blf',parse_einsum_expression('blf,blf->blf', ('b',L,F), ('b',L,F), ('b',L,F)), 1, 1, 1, ResidencyInfo.All_onchip, OpType.EINSUM]] 
     Layers += [['blf,blf->blf',parse_einsum_expression('blf,blf->blf', ('b',L,F), ('b',L,F), ('b',L,F)), 1, 1, 1, ResidencyInfo.All_onchip, OpType.EINSUM]] 
 

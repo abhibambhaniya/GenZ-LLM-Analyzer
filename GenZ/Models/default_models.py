@@ -285,6 +285,25 @@ mamba_130m_config = ModelConfig(model='state-spaces/mamba-130m-hf',
     mamba_d_state = 16, mamba_dt_rank = 48, mamba_expand = 2, mamba_d_conv=4,
 )
 
+# https://huggingface.co/state-spaces/mamba-2.8b-hf/blob/main/config.json
+mamba_3b_config = ModelConfig(model='state-spaces/mamba-2.8b-hf',
+    hidden_size=2560, num_attention_heads=1,
+    num_key_value_heads=1, num_ffi = 2,
+    intermediate_size=5120, num_decoder_layers=64,
+    max_model_len=131072, vocab_size=50280,
+    mamba_d_state = 16, mamba_dt_rank = 160, mamba_expand = 2, mamba_d_conv=4,
+)
+
+# https://huggingface.co/tiiuae/falcon-mamba-7b/blob/main/config.json
+falcon_mamba_7b_config = ModelConfig(model='tiiuae/falcon-mamba-7b',
+    hidden_size=4096, num_attention_heads=1,
+    num_key_value_heads=1, num_ffi = 2,
+    intermediate_size=8192, num_decoder_layers=64,
+    max_model_len=131072, vocab_size=50280,
+    mamba_d_state = 16, mamba_dt_rank = 256, mamba_expand = 16, mamba_d_conv=4,
+)
+
+
 super_llm_config = ModelConfig(model='SuperLLM-10T',
     hidden_size=108*128, num_attention_heads=108,
     num_key_value_heads=108, num_ffi = 2,
@@ -356,5 +375,7 @@ MODEL_DICT = {
     'glm-9b': glm_9b_config,
     'THUDM/glm-4-9b-chat': glm_9b_config,
     'state-spaces/mamba-130m-hf': mamba_130m_config,
+    'state-spaces/mamba-2.8b-hf': mamba_3b_config,
+    'tiiuae/falcon-mamba-7b': falcon_mamba_7b_config,
     'super_llm': super_llm_config,
 }
