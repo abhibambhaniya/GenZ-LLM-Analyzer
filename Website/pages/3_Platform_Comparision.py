@@ -61,12 +61,12 @@ def generate_system_comparision(graph_type, system_list,
     for system in system_list:
         try:
             prefill_outputs = prefill_moddeling(model = model, batch_size = batch_size,
-                                    input_tokens = input_tokens, output_tokens = output_tokens, FLAT = True,
+                                    input_tokens = input_tokens, output_tokens = output_tokens, 
                                     system_name = system, system_eff = system['eff'],
                                     bits=quantization,
                                     tensor_parallel = system['nodes'], debug=False)
             decode_outputs = decode_moddeling(model = model, batch_size = batch_size, Bb = beam_size ,
-                                    input_tokens = input_tokens, output_tokens = output_tokens, FLAT = True,
+                                    input_tokens = input_tokens, output_tokens = output_tokens, 
                                     system_name = system, system_eff=system['eff'],
                                     bits=quantization,
                                     tensor_parallel = system['nodes'], debug=False)
@@ -74,7 +74,7 @@ def generate_system_comparision(graph_type, system_list,
         except:
             # ValueError
             decode_outputs, decode_summary_table = decode_moddeling(model = model, batch_size = batch_size, Bb = beam_size ,
-                            input_tokens = input_tokens, output_tokens = output_tokens, FLAT = True,
+                            input_tokens = input_tokens, output_tokens = output_tokens, 
                             system_name = system, system_eff=system['eff'],
                             bits=quantization,
                             debug=False, model_profilling=True)

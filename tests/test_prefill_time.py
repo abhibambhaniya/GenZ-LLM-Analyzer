@@ -24,6 +24,8 @@ def test_dense_LLM_prefill_with_tensor_parallel():
     Model = 'gpt-2'
     # Save the current result to a CSV file
     current_df = get_model_df(model=create_inference_moe_prefix_model(4096, Model, tensor_parallel=4), system=TPU)
+    
+    ## For GPT-2, the AR message size is 6 MB (4k tokens * 2 bytes)
     AR_time = get_AR_time(data = 6*2**20, num_AR_nodes = 4, system = TPU) 
 
     prefill_output = prefill_moddeling(model = Model, batch_size = 1, input_tokens = 4096,

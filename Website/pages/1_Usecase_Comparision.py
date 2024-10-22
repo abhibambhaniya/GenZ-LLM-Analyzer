@@ -49,12 +49,12 @@ def generate_usecase_comparison(graph_type, system,
         batch_size, beam_size, input_tokens, output_tokens = usecase['batch_size'], usecase['beam_size'], usecase['input_tokens'], usecase['output_tokens']
         try:
             prefill_outputs = prefill_moddeling(model = model, batch_size = batch_size,
-                                    input_tokens = input_tokens, output_tokens = output_tokens, FLAT = True,
+                                    input_tokens = input_tokens, output_tokens = output_tokens, 
                                     system_name = system, system_eff = system['eff'],
                                     bits=quantization,
                                     tensor_parallel = system['nodes'], debug=False)
             decode_outputs = decode_moddeling(model = model, batch_size = batch_size, Bb = beam_size ,
-                                    input_tokens = input_tokens, output_tokens = output_tokens, FLAT = True,
+                                    input_tokens = input_tokens, output_tokens = output_tokens, 
                                     system_name = system, system_eff=system['eff'],
                                     bits=quantization,
                                     tensor_parallel = system['nodes'], debug=False)
@@ -62,7 +62,7 @@ def generate_usecase_comparison(graph_type, system,
         except:
             # ValueError
             decode_outputs, decode_summary_table = decode_moddeling(model = model, batch_size = batch_size, Bb = beam_size ,
-                            input_tokens = input_tokens, output_tokens = output_tokens, FLAT = True,
+                            input_tokens = input_tokens, output_tokens = output_tokens, 
                             system_name = system, system_eff=system['eff'],
                             bits=quantization,
                             debug=False, model_profilling=True)

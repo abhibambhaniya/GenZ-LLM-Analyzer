@@ -9,15 +9,15 @@ from GenZ.analyse_model import *
 import warnings
 from GenZ.collective_times import *
 from GenZ.utils.plot_rooflines import *
-from GenZ.Models import get_configs, create_inference_moe_prefix_model, create_inference_moe_decode_model
+from GenZ.Models import get_configs, create_inference_moe_decode_model
 from math import ceil
 
 unit = Unit()
 
 def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
-    output_tokens = 0, FLAT = True,  Bb = 4 ,           ## Only for Decode
+    output_tokens = 0,   Bb = 4 ,           ## Only for Decode
     system_name = 'A100_40GB_GPU', system_eff = 1, bits='bf16', debug= False, model_profilling = False,
-    tensor_parallel = 1, pipeline_parallel = 1, time_breakdown = False, return_model_df=False,
+    tensor_parallel = 1, pipeline_parallel = 1, return_model_df=False,
     model_offload = False, ceff = None, meff = None):
 
     ##################################################################################################
@@ -47,7 +47,7 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     model_decode = create_inference_moe_decode_model(input_sequence_length=input_tokens,output_gen_tokens = output_tokens ,
                                         name=model,  tensor_parallel=tensor_parallel)
 
-    model_df = get_model_df(model_decode, system, unit, batch_size*Bb, intermediate_on_chip=FLAT , beam_merge= (Bb > 1), beam_size= Bb, model_characterstics = True)
+    model_df = get_model_df(model_decode, system, unit, batch_size*Bb, intermediate_on_chip=True , beam_merge= (Bb > 1), beam_size= Bb, model_characterstics = True)
     summary_table = get_summary_table(model_df,system,unit, model_characterstics = True)
     summary_table_cols = [f'MACs ({unit.unit_flop})', f'Total Data ({unit.unit_mem})']
     ## Drop columns not is list
@@ -109,28 +109,13 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     if model_profilling:
         return model_df, summary_table
 
-
     ##################################################################################################
-    ### First token generation time
-    ##################################################################################################
-    model_decode = create_inference_moe_decode_model(input_sequence_length=input_tokens,output_gen_tokens = 0 ,
-                                        name=model, Hkv=Hkv, tensor_parallel=tensor_parallel, beam_merge= (Bb > 1), beam_size = Bb)
-    model_df = get_model_df(model_decode, system, unit, batch_size*Bb, intermediate_on_chip=FLAT, beam_merge= (Bb > 1), beam_size= Bb )
-    summary_table = get_summary_table(model_df,system,unit)
-
-    if debug:
-        display_df(model_df)
-        display(summary_table)
-    decode_latency_first_token = summary_table['Latency (msec)'].values[0]   # Latency in msec
-
-
-    ##################################################################################################
-    ### Last token generation time
+    ### Token generation time
     ##################################################################################################
     model_decode = create_inference_moe_decode_model(input_sequence_length=input_tokens,output_gen_tokens = output_tokens ,
                                         name=model, Hkv=Hkv, tensor_parallel=tensor_parallel, beam_merge= (Bb > 1), beam_size = Bb)
 
-    model_df = get_model_df(model_decode, system, unit, batch_size*Bb,  intermediate_on_chip=FLAT , beam_merge= (Bb > 1), beam_size= Bb)
+    model_df = get_model_df(model_decode, system, unit, batch_size*Bb,  intermediate_on_chip=True , beam_merge= (Bb > 1), beam_size= Bb)
     summary_table = get_summary_table(model_df,system,unit)
     if return_model_df:
         return model_df, summary_table
@@ -160,7 +145,7 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     ##################################################################################################
 
     ## Single layer will have compute/memory time + 2 AR delay
-    single_layer_time = (decode_latency_first_token+decode_latency_last_token)/2  + all_reduce_delay
+    single_layer_time = decode_latency_last_token  + all_reduce_delay
     single_pipe_stage = single_layer_time * num_layers_per_pipeline_stage
 
     decode_latency =  single_pipe_stage * pipeline_parallel + single_stage_pipe_delay * (pipeline_parallel-1)

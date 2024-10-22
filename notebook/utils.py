@@ -44,21 +44,21 @@ def generate_demand_curve(graph_type, system_box, system_eff, num_nodes_slider,
                 model_name = get_configs(model).model
                 try:
                     prefill_outputs = prefill_moddeling(model = model, batch_size = batch_size,
-                                            input_tokens = input_token_slider, output_tokens = output_token_slider, FLAT = True,
+                                            input_tokens = input_token_slider, output_tokens = output_token_slider, 
                                             system_name = system_box, system_eff = system_eff,
                                             bits=quantization_box,
-                                            tensor_parallel = num_nodes_slider, debug=False, time_breakdown=True) 
+                                            tensor_parallel = num_nodes_slider, debug=False) 
                     data.append([model_name,'Prefill',batch_size, prefill_outputs['Latency'], prefill_outputs['Throughput']] + prefill_outputs['Runtime_breakdown'])
                     decode_outputs = decode_moddeling(model = model, batch_size = batch_size, Bb = beam_size ,
-                                            input_tokens = input_token_slider, output_tokens = output_token_slider, FLAT = True,
+                                            input_tokens = input_token_slider, output_tokens = output_token_slider, 
                                             system_name = system_box, system_eff=system_eff,
                                             bits=quantization_box,
-                                            tensor_parallel = num_nodes_slider, debug=False, time_breakdown=True) 
+                                            tensor_parallel = num_nodes_slider, debug=False) 
                     data.append([model_name,'Decode',batch_size,  decode_outputs['Latency'], decode_outputs['Throughput']] + decode_outputs['Runtime_breakdown'])
                 except:
                     # ValueError
                     decode_outputs, decode_summary_table = decode_moddeling(model = model, batch_size = batch_size, Bb = beam_size ,
-                                            input_tokens = input_token_slider, output_tokens = output_token_slider, FLAT = True,
+                                            input_tokens = input_token_slider, output_tokens = output_token_slider, 
                                             system_name = system_box, system_eff = system_eff,
                                             bits=quantization_box, model_profilling=True)
                     total_memory = int(system_box.get('Memory_size'))*1024  ## per device memory

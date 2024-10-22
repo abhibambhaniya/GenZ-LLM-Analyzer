@@ -56,17 +56,17 @@ def get_best_parallization_strategy(
             micro_batch_size = (batch_size//PP)
             if stage == 'prefill':
                 prefill_outputs = prefill_moddeling(model = model, batch_size = micro_batch_size,
-                                        input_tokens = input_tokens, output_tokens = output_tokens, FLAT = True,
+                                        input_tokens = input_tokens, output_tokens = output_tokens, 
                                         system_name = system_name,
                                         bits=bits,
-                                        tensor_parallel = TP, pipeline_parallel = PP, debug=debug, time_breakdown=True)
+                                        tensor_parallel = TP, pipeline_parallel = PP, debug=debug)
                 data.append([micro_batch_size, TP, PP , prefill_outputs['Latency'], prefill_outputs['Throughput']] + prefill_outputs['Runtime_breakdown'])
             elif stage == 'decode':
                 decode_outputs = decode_moddeling(model = model, batch_size = micro_batch_size, Bb = beam_size ,
-                                    input_tokens = input_tokens, output_tokens = output_tokens, FLAT = True,
+                                    input_tokens = input_tokens, output_tokens = output_tokens, 
                                     system_name = system_name,
                                     bits=bits,
-                                    tensor_parallel = TP, pipeline_parallel =PP, debug=debug, time_breakdown=True)
+                                    tensor_parallel = TP, pipeline_parallel =PP, debug=debug)
                 data.append([micro_batch_size, TP, PP,  decode_outputs['Latency'], decode_outputs['Throughput']] + decode_outputs['Runtime_breakdown'])
             else:
                 raise ValueError('Stage should be prefill or decode')
@@ -96,17 +96,17 @@ def get_pareto_optimal_performance(
                 micro_batch_size = (batch_size//PP)
                 if stage == 'prefill':
                     prefill_outputs = prefill_moddeling(model = model, batch_size = micro_batch_size,
-                                            input_tokens = input_tokens, output_tokens = output_tokens, FLAT = True,
+                                            input_tokens = input_tokens, output_tokens = output_tokens, 
                                             system_name = system_name,
                                             bits=bits,
-                                            tensor_parallel = TP, pipeline_parallel = PP, debug=False, time_breakdown=True)
+                                            tensor_parallel = TP, pipeline_parallel = PP, debug=False)
                     data.append([batch_size, micro_batch_size, TP, PP , prefill_outputs['Latency'], prefill_outputs['Throughput']] + prefill_outputs['Runtime_breakdown'])
                 elif stage == 'decode':
                     decode_outputs = decode_moddeling(model = model, batch_size = micro_batch_size, Bb = beam_size ,
-                                        input_tokens = input_tokens, output_tokens = output_tokens, FLAT = True,
+                                        input_tokens = input_tokens, output_tokens = output_tokens, 
                                         system_name = system_name,
                                         bits=bits,
-                                        tensor_parallel = TP, pipeline_parallel =PP, debug=False, time_breakdown=True)
+                                        tensor_parallel = TP, pipeline_parallel =PP, debug=False)
                     data.append([batch_size, micro_batch_size, TP, PP,  decode_outputs['Latency'], decode_outputs['Throughput']] + decode_outputs['Runtime_breakdown'])
                 else:
                     raise ValueError('Stage should be prefill or decode')

@@ -14,9 +14,9 @@ from GenZ.Models import get_configs, create_inference_moe_prefix_model, create_i
 unit = Unit()
 
 def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
-    output_tokens = 0, FLAT = True,         ## Only for prefill
+    output_tokens = 0,          ## Only for prefill
     system_name = 'A100_40GB_GPU', system_eff=1, bits='bf16', debug= False, model_profilling = False,
-    tensor_parallel = 1, pipeline_parallel = 1, time_breakdown = False, return_model_df=False,
+    tensor_parallel = 1, pipeline_parallel = 1, return_model_df=False,
     model_offload = False):
 
     ##################################################################################################
@@ -46,7 +46,7 @@ def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
                                         name=model, Hkv=Hkv, tensor_parallel=tensor_parallel)
 
 
-    model_df = get_model_df(model_prefill, system, unit, batch_size, intermediate_on_chip=FLAT , model_characterstics = True)
+    model_df = get_model_df(model_prefill, system, unit, batch_size, intermediate_on_chip=True , model_characterstics = True)
     summary_table = get_summary_table(model_df,system,unit, model_characterstics = True)
     summary_table_cols = [f'MACs ({unit.unit_flop})', f'Total Data ({unit.unit_mem})']
     ## Drop columns not is list
@@ -111,7 +111,7 @@ def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     ##################################################################################################
     model_prefill = create_inference_moe_prefix_model(input_sequence_length=input_tokens,output_gen_tokens = 0 ,
                                         name=model, Hkv=Hkv, tensor_parallel=tensor_parallel)
-    model_df = get_model_df(model_prefill, system, unit, batch_size, intermediate_on_chip=FLAT )
+    model_df = get_model_df(model_prefill, system, unit, batch_size, intermediate_on_chip=True )
 
     # if debug:
         # display_df(model_df)
