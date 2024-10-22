@@ -9,6 +9,7 @@ from GenZ.analyse_model import *
 import warnings
 from GenZ.collective_times import *
 from GenZ.utils.plot_rooflines import *
+from GenZ.Models import get_configs, create_inference_moe_prefix_model, create_inference_moe_decode_model
 
 unit = Unit()
 
