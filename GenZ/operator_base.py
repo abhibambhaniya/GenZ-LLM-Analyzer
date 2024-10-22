@@ -8,7 +8,7 @@ op_type_dicts = {0: 'FC', 1: 'CONV2D', 2: 'DWCONV', 3: 'GEMM', 4: 'Logit', 5: 'A
                 9:'Logit', 10:'Attend', 11:'CONV1D', 12:'Einsum'}
 class Operator(object):
     def __init__(self, dim, density=(1.0,1.0,1.0)):
-        self.dim = dim
+        self.dim = [int(x) if isinstance(x, (int, float, np.int32, np.int64)) else x for x in dim]
         self.density_a, self.density_w, self.density_o = density
         self.input_a, self.input_w, self.output = self.get_tensors()
         self.num_ops = self.get_num_ops()

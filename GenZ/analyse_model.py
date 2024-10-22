@@ -1,9 +1,9 @@
 from GenZ.unit import Unit
-from GenZ.operators import *
 import GenZ.operators as operators
 from GenZ.operator_base import op_type_dicts
 from GenZ.system import System
 import pandas as pd
+import numpy as np
 import os
 from GenZ.Models.get_language_model import OpType, ResidencyInfo
 
@@ -103,7 +103,7 @@ def analysis_model(model_dims, system=None, unit=Unit(), densities = None,interm
     return df
 
 
-def get_model_df(model, system, unit=Unit(), batch_size=1, data_path="/tmp/genz/data", intermediate_on_chip=False,
+def get_model_df(model, system=System(), unit=Unit(), batch_size=1, data_path="/tmp/genz/data", intermediate_on_chip=False,
                     beam_size=1, beam_merge=False, model_characterstics=False):
     m_file_path = os.path.join(data_path,"model")
     sparsity_file_path = os.path.join(data_path,"sparsity")
