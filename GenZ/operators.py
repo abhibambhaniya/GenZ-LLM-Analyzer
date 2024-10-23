@@ -278,3 +278,37 @@ class Einsum(Operator):
         # The number of operations is the product of the dimensions involved in the contraction
         num_ops = np.prod([self.dimensions[label] for label in dim_labels])
         return num_ops
+
+class Repeat(Operator):   ## Layer/Model Repetition
+    def __init__(self, dim, density):
+        super().__init__(dim=dim, density=density)
+
+    def get_effective_dim_len(self):
+        return 3
+
+    def get_tensors(self):
+        B, Num_Repeats, ID = self.dim[:self.get_effective_dim_len()]
+        return 0, 0, (Num_Repeats, ID, 0)
+
+    def get_gemms(self):
+        return 0, 0, 0, 0
+
+    def get_num_ops(self):
+        return 0
+
+class EndRepeat(Operator):   ## Layer/Model Repetition
+    def __init__(self, dim, density):
+        super().__init__(dim=dim, density=density)
+
+    def get_effective_dim_len(self):
+        return 3
+
+    def get_tensors(self):
+        B, Num_Repeats, ID = self.dim[:self.get_effective_dim_len()]
+        return 0, 0, (Num_Repeats, ID, 0)
+
+    def get_gemms(self):
+        return 0, 0, 0, 0
+
+    def get_num_ops(self):
+        return 0

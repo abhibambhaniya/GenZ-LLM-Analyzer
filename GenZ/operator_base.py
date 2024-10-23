@@ -5,7 +5,7 @@ from GenZ.unit import Unit
 # 4, 5 Regular Logit and Attend
 # 9, 10 Beam Merge Logit and attend
 op_type_dicts = {0: 'FC', 1: 'CONV2D', 2: 'DWCONV', 3: 'GEMM', 4: 'Logit', 5: 'Attend', 6:'Sync',
-                9:'Logit', 10:'Attend', 11:'CONV1D', 12:'Einsum'}
+                9:'Logit', 10:'Attend', 11:'CONV1D', 12:'Einsum', 13:'Repeat', 14:'EndRepeat'}
 class Operator(object):
     def __init__(self, dim, density=(1.0,1.0,1.0)):
         self.dim = [int(x) if isinstance(x, (int, float, np.int32, np.int64)) else x for x in dim]

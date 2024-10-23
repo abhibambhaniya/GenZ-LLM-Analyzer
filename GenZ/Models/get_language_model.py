@@ -23,6 +23,8 @@ class OpType(IntEnum):
     Attend_BM_PREFILL = 10
     CONV1D = 11
     EINSUM = 12
+    REPEAT = 13
+    ENDREPEAT = 14
 
 class ResidencyInfo(IntEnum):
     All_offchip = 0
@@ -192,6 +194,22 @@ def create_inference_moe_decode_model(input_sequence_length, name='BERT', data_p
     layers = mha_flash_attention_decode(model_config, parallelism_config, input_sequence_length, output_gen_tokens) + ffn_decode(model_config, parallelism_config)
 
     return save_layers(layers=layers, data_path=data_path, name=name+"_decode_")
+
+def create_full_prefill_model(input_sequence_length, name='BERT', data_path=DATA_PATH, **args):
+    
+    model_config = get_configs(name)
+
+    parallelism_config = ParallelismConfig(
+        tensor_parallel=args.get('tensor_parallel',1), 
+        expert_parallel=args.get('expert_parallel',1),
+        sequence_parallel=args.get('sequence_parallel',1),
+        data_parallel=args.get('data_parallel',1)
+        )
+
+    layers = mha_flash_attention_prefill(model_config, parallelism_config, input_sequence_length) + ffn_prefill(model_config, parallelism_config, input_sequence_length)
+
+    return save_layers(layers=layers, data_path=data_path, name=name+"_prefix_")
+
 
 def mamda_ssn_slow(model_config:ModelConfig, parallelism_config:ParallelismConfig, input_sequence_length:int):
     tp = parallelism_config.tensor_parallel * parallelism_config.expert_parallel

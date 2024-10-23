@@ -48,7 +48,7 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
                                         name=model,  tensor_parallel=tensor_parallel)
 
     model_df = get_model_df(model_decode, system, unit, batch_size*Bb, intermediate_on_chip=True , beam_merge= (Bb > 1), beam_size= Bb, model_characterstics = True)
-    summary_table = get_summary_table(model_df,system,unit, model_characterstics = True)
+    summary_table = get_summary_table(model_df, unit, model_characterstics = True)
     summary_table_cols = [f'MACs ({unit.unit_flop})', f'Total Data ({unit.unit_mem})']
     ## Drop columns not is list
     summary_table = summary_table[summary_table.columns.intersection(summary_table_cols)]
@@ -116,7 +116,7 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
                                         name=model, Hkv=Hkv, tensor_parallel=tensor_parallel, beam_merge= (Bb > 1), beam_size = Bb)
 
     model_df = get_model_df(model_decode, system, unit, batch_size*Bb,  intermediate_on_chip=True , beam_merge= (Bb > 1), beam_size= Bb)
-    summary_table = get_summary_table(model_df,system,unit)
+    summary_table = get_summary_table(model_df, unit)
     if return_model_df:
         return model_df, summary_table
     if debug:

@@ -14,28 +14,49 @@ def get_attn_index(df):
             ret.append(idx)
     return ret
 
-def get_summary_table(df,system,unit = Unit(),sparse_pe_support=1, model_characterstics=False):
-    if model_characterstics == False:
-        total_cycles = np.sum(df['Cycles'])
-        total_latencies = np.sum(df['Latency (msec)'])
+def get_summary_table(df, unit = Unit(), model_characterstics=False):
 
     attn_idx = get_attn_index(df)
-    total_parameters = np.sum(df['Input_w (MB)']) - sum([df.loc[i, 'Input_w (MB)'] for i in attn_idx])
-    total_data = np.sum(df['Input_a (MB)'] + df['Input_w (MB)'] + df['Output (MB)'])
-    total_MACS = np.sum(df['Num ops (MFLOP)'])
     # total_weights = np.sum(df['Input_w (MB)'])
-    total_weights = 0;
+
+    total_macs = 0
+    total_data = 0
+    kv_cache = 0
+    total_weights = 0
+    unused_weights = 0
+    total_latencies = 0
+    total_cycles = 0
+    
+    multiplier = 1
     for i in range(len(df)):
-        if ('Logit' not in df.loc[i, 'Op Type']  and 'Attend' not in df.loc[i, 'Op Type']):
-            total_weights = total_weights + df.loc[i,'Input_w (MB)']
+        if df.iloc[i]['Op Type'] == 'Repeat':
+            multiplier *= df.iloc[i]['Dimension'][2][0]
+        elif df.iloc[i]['Op Type'] == 'EndRepeat':
+            multiplier /= df.iloc[i]['Dimension'][2][0]
+        else:
+            print(total_weights, df.loc[i,'Input_w (MB)'], multiplier)
+            total_macs += df.loc[i,'Num ops (MFLOP)'] * multiplier
+            total_data += (df.loc[i,'Input_a (MB)'] + df.loc[i,'Input_w (MB)'] + df.loc[i,'Output (MB)']) * multiplier
+            if i in attn_idx:
+                kv_cache += df.loc[i,'Input_w (MB)'] * multiplier
+            else:
+                total_weights += df.loc[i,'Input_w (MB)'] * multiplier
+                if df.loc[i, f'Num ops ({unit.unit_flop})'] == 0:
+                    unused_weights += df.loc[i,'Input_w (MB)']
+            
+            if model_characterstics == False:
+                total_latencies += df.loc[i,'Latency (msec)'] * multiplier
+                total_cycles += df.loc[i,'Cycles'] * multiplier
+            
     max_memory_footprint = max([df.loc[i, 'Input_a (MB)'] + df.loc[i, 'Input_w (MB)'] + df.loc[i, 'Output (MB)'] for i in range(len(df))])
 
 
     ret = {
-            f'MACs ({unit.unit_flop})': [total_MACS],
+            f'MACs ({unit.unit_flop})': [total_macs],
             f'Total Data ({unit.unit_mem})': [total_data],
             f'Total Weights ({unit.unit_mem})': [total_weights],
-            f'Parameters  ({unit.unit_mem})': [total_parameters],
+            f'Unused Weights ({unit.unit_mem})': [unused_weights],
+            f'KV Cache ({unit.unit_mem})': [kv_cache],
             f'On-chip Memory Footprint ({unit.unit_mem})': [max_memory_footprint],
         }
     if model_characterstics == False:
@@ -57,7 +78,7 @@ def analysis_model(model_dims, system=None, unit=Unit(), densities = None,interm
         op_type = op_type_dicts[dim[-1]]
         operators_residency = dim[-2]
         operator = getattr(operators, op_type)
-        if beam_merge and (dim[-1] == 9 or dim[-1] == 10):
+        if beam_merge and (dim[-1] == OpType.Logit_BM_PREFILL or dim[-1] == OpType.Attend_BM_PREFILL):
             dim[0] /= beam_size
         operator_instance = operator(dim=dim, density=density)
         # print(density[0],density[1],density[2])
@@ -96,8 +117,6 @@ def analysis_model(model_dims, system=None, unit=Unit(), densities = None,interm
             column = roofline.keys()
         roofline_list.append([roofline[c] for c in column])
 
-    # pd.set_option("precision", 3)
-    # pd.set_option('display.float_format', lambda x: '%.3f' % x)
     df = pd.DataFrame(np.array(roofline_list,dtype=object), columns=column, dtype=object)
 
     return df
@@ -113,16 +132,35 @@ def get_model_df(model, system=System(), unit=Unit(), batch_size=1, data_path="/
     model_defs = df.to_numpy()
     batch_sizes = np.ones((len(model_defs), 1)) * batch_size
     model_defs = np.append(batch_sizes, model_defs, axis=1)
+    def verify_repeat_pairs(model_defs):
+        pairs = []
+        stack = []
+        for idx, row in enumerate(model_defs):
+            Repeat_id = row[2]
+            if row[-1] == OpType.REPEAT:
+                stack.append((idx, Repeat_id))
+            elif row[-1] == OpType.ENDREPEAT:
+                if stack and stack[-1][1] == Repeat_id:
+                    start_idx, _ = stack.pop()
+                    pairs.append((start_idx, idx))
+                else:
+                    raise ValueError(f"Unmatched Endrepeat found or ID mismatch:{Repeat_id}")
+
+        if stack:
+            raise ValueError(f"Unmatched Repeat found: {stack[-1]}")
+
+        return pairs
+    pairs = verify_repeat_pairs(model_defs)
     
     new_model_defs = []
     for layer in model_defs:
-        if layer[-1] != OpType.EINSUM:
-            new_model_defs.append(layer.astype(int))
-        else:
+        if layer[-1] == OpType.EINSUM:
             new_layer = [int(x) if isinstance(x, (int, float)) else x for x in layer]
             new_model_defs.append(new_layer)
+        else:
+            new_model_defs.append(layer.astype(int))
 
     densities = np.ones((len(model_defs), 3), dtype=float)
 
-    model_df  = analysis_model(new_model_defs, system, unit, densities, intermediate_on_chip, beam_size, beam_merge, model_characterstics)
-    return model_df
+    return analysis_model(new_model_defs, system, unit, densities, intermediate_on_chip, beam_size, beam_merge, model_characterstics)
+

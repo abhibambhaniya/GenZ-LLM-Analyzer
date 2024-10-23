@@ -47,7 +47,7 @@ def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
 
 
     model_df = get_model_df(model_prefill, system, unit, batch_size, intermediate_on_chip=True , model_characterstics = True)
-    summary_table = get_summary_table(model_df,system,unit, model_characterstics = True)
+    summary_table = get_summary_table(model_df, unit, model_characterstics = True)
     summary_table_cols = [f'MACs ({unit.unit_flop})', f'Total Data ({unit.unit_mem})']
     ## Drop columns not is list
     summary_table = summary_table[summary_table.columns.intersection(summary_table_cols)]
@@ -74,7 +74,7 @@ def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     summary_table[f'MACs ({unit.unit_flop})'] = summary_table[f'MACs ({unit.unit_flop})'].apply(lambda x: x*num_layers_per_pipeline_stage)
     summary_table[f'Total Data ({unit.unit_mem})'] = summary_table[f'Total Data ({unit.unit_mem})'].apply(lambda x: x*num_layers_per_pipeline_stage)
     summary_table[f'Model Weights ({unit.unit_mem})'] = model_weights       ## In MB
-    summary_table[f'Unused Weights ({unit.unit_mem})'] = 0       ## In MB
+    summary_table[f'Unused Weights ({unit.unit_mem})'] = 0                  ## In MB
     summary_table[f'KV Cache ({unit.unit_mem})'] = kv_cache                 ## In MB
     summary_table[f'AR data ({unit.unit_mem})'] = unit.raw_to_unit( total_all_reduce_data, 'M')      ## In MB
     summary_table[f'Pipe data  ({unit.unit_mem})'] = unit.raw_to_unit( total_pipe_data, 'M')         ## In MB
@@ -115,7 +115,7 @@ def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
 
     # if debug:
         # display_df(model_df)
-    summary_table = get_summary_table(model_df,system,unit)
+    summary_table = get_summary_table(model_df, unit)
     prefill_latency = summary_table['Latency (msec)'].values[0]   # Latency in millisec
     if return_model_df:
         return model_df, summary_table
