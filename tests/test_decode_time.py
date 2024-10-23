@@ -1,5 +1,5 @@
 import pytest
-from GenZ import decode_moddeling, get_model_df, get_configs, System, create_inference_moe_decode_model, get_AR_time
+from GenZ import decode_moddeling, get_model_df, get_configs, System, create_inference_moe_decode_layer, get_AR_time
 import os
 import pandas as pd
 
@@ -9,7 +9,7 @@ def test_dense_LLM_decode():
     Model = 'gpt-2'
     Bb = 4
     # Save the current result to a CSV file
-    current_df = get_model_df(model=create_inference_moe_decode_model(4096, Model, output_gen_tokens=100), system=TPU
+    current_df = get_model_df(model=create_inference_moe_decode_layer(4096, Model, output_gen_tokens=100), system=TPU
                             , batch_size=Bb, beam_merge= (Bb > 1), beam_size= Bb)
 
     decode_output = decode_moddeling(model = Model, batch_size = 1, input_tokens = 4096, output_tokens=100, Bb=Bb,
@@ -26,7 +26,7 @@ def test_dense_LLM_decode_with_tensor_parallel():
     Model = 'gpt-2'
     Bb = 4
     # Save the current result to a CSV file
-    current_df = get_model_df(model=create_inference_moe_decode_model(4096, Model, tensor_parallel=4, output_gen_tokens=1024), system=TPU
+    current_df = get_model_df(model=create_inference_moe_decode_layer(4096, Model, tensor_parallel=4, output_gen_tokens=1024), system=TPU
                             , batch_size=Bb, beam_merge= (Bb > 1), beam_size= Bb)
     
     ## For GPT-2, the AR message size is 6 KB

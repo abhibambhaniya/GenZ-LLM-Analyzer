@@ -226,7 +226,6 @@ class Sync(Operator):   ## Just data movement.
 
 
     def get_gemms(self):
-        # B, M, N, K = self.dim[:self.get_effective_dim_len()]
         left = 0
         upper = 0
         contract = 0
@@ -235,7 +234,6 @@ class Sync(Operator):   ## Just data movement.
 
 
     def get_num_ops(self):
-        # B, M, N, K = self.dim[:self.get_effective_dim_len()]
         return 0
 
 class Einsum(Operator):
@@ -246,7 +244,7 @@ class Einsum(Operator):
         """
         self.batch = dim[0]
         self.equation = dim[1]
-        
+
         self.dimensions = {k: int(v) if isinstance(v, (int, float)) else v for k, v in ast.literal_eval(dim[2]).items()}
         for k, v in self.dimensions.items():
             if v == 'b':
@@ -257,7 +255,7 @@ class Einsum(Operator):
         for var in set(''.join(self.equation.split('->')[0].split(','))):
             if var not in set(self.dimensions.keys()):
                 raise ValueError(f"Invalid variable {var} in equation {self.equation}")
-        
+
         super().__init__(dim=dim, density=density)
 
 
@@ -287,8 +285,8 @@ class Repeat(Operator):   ## Layer/Model Repetition
         return 3
 
     def get_tensors(self):
-        B, Num_Repeats, ID = self.dim[:self.get_effective_dim_len()]
-        return 0, 0, (Num_Repeats, ID, 0)
+        _, repeat_count, ID = self.dim[:self.get_effective_dim_len()]
+        return 0, 0, (repeat_count, ID, 0)
 
     def get_gemms(self):
         return 0, 0, 0, 0
@@ -304,8 +302,8 @@ class EndRepeat(Operator):   ## Layer/Model Repetition
         return 3
 
     def get_tensors(self):
-        B, Num_Repeats, ID = self.dim[:self.get_effective_dim_len()]
-        return 0, 0, (Num_Repeats, ID, 0)
+        _, repeat_count, ID = self.dim[:self.get_effective_dim_len()]
+        return 0, 0, (repeat_count, ID, 0)
 
     def get_gemms(self):
         return 0, 0, 0, 0

@@ -5,19 +5,18 @@ from GenZ.system import System
 import pandas as pd
 import numpy as np
 import os
-from GenZ.Models.get_language_model import OpType, ResidencyInfo
+from GenZ.Models import OpType, ResidencyInfo
 
-def get_attn_index(df):
+def get_attn_index(df:pd.DataFrame):
     ret = []
     for idx in range(len(df)):
         if 'Attend' in df.loc[idx, 'Op Type'] or 'Logit' in df.loc[idx, 'Op Type']:
             ret.append(idx)
     return ret
 
-def get_summary_table(df, unit = Unit(), model_characterstics=False):
+def get_summary_table(df:pd.DataFrame, unit = Unit(), model_characterstics:bool=False):
 
     attn_idx = get_attn_index(df)
-    # total_weights = np.sum(df['Input_w (MB)'])
 
     total_macs = 0
     total_data = 0
@@ -26,29 +25,28 @@ def get_summary_table(df, unit = Unit(), model_characterstics=False):
     unused_weights = 0
     total_latencies = 0
     total_cycles = 0
-    
+
     multiplier = 1
     for i in range(len(df)):
-        if df.iloc[i]['Op Type'] == 'Repeat':
-            multiplier *= df.iloc[i]['Dimension'][2][0]
-        elif df.iloc[i]['Op Type'] == 'EndRepeat':
-            multiplier /= df.iloc[i]['Dimension'][2][0]
+        if df.loc[i,'Op Type'] == 'Repeat':
+            multiplier *= df.loc[i,'Dimension'][2][0]
+        elif df.loc[i,'Op Type'] == 'EndRepeat':
+            multiplier /= df.loc[i,'Dimension'][2][0]
         else:
-            print(total_weights, df.loc[i,'Input_w (MB)'], multiplier)
-            total_macs += df.loc[i,'Num ops (MFLOP)'] * multiplier
-            total_data += (df.loc[i,'Input_a (MB)'] + df.loc[i,'Input_w (MB)'] + df.loc[i,'Output (MB)']) * multiplier
+            total_macs += df.loc[i,f'Num ops ({unit.unit_flop})'] * multiplier
+            total_data += (df.loc[i,f'Input_a ({unit.unit_mem})'] + df.loc[i,f'Input_w ({unit.unit_mem})'] + df.loc[i,f'Output ({unit.unit_mem})']) * multiplier
             if i in attn_idx:
-                kv_cache += df.loc[i,'Input_w (MB)'] * multiplier
+                kv_cache += df.loc[i,f'Input_w ({unit.unit_mem})'] * multiplier
             else:
-                total_weights += df.loc[i,'Input_w (MB)'] * multiplier
+                total_weights += df.loc[i,f'Input_w ({unit.unit_mem})'] * multiplier
                 if df.loc[i, f'Num ops ({unit.unit_flop})'] == 0:
-                    unused_weights += df.loc[i,'Input_w (MB)']
-            
+                    unused_weights += df.loc[i,f'Input_w ({unit.unit_mem})']
+
             if model_characterstics == False:
-                total_latencies += df.loc[i,'Latency (msec)'] * multiplier
+                total_latencies += df.loc[i,f'Latency ({unit.unit_time})'] * multiplier
                 total_cycles += df.loc[i,'Cycles'] * multiplier
-            
-    max_memory_footprint = max([df.loc[i, 'Input_a (MB)'] + df.loc[i, 'Input_w (MB)'] + df.loc[i, 'Output (MB)'] for i in range(len(df))])
+
+    max_memory_footprint = max([df.loc[i, f'Input_a ({unit.unit_mem})'] + df.loc[i, f'Input_w ({unit.unit_mem})'] + df.loc[i, f'Output ({unit.unit_mem})'] for i in range(len(df))])
 
 
     ret = {
@@ -83,9 +81,9 @@ def analysis_model(model_dims, system=None, unit=Unit(), densities = None,interm
         operator_instance = operator(dim=dim, density=density)
         # print(density[0],density[1],density[2])
         if (intermediate_on_chip):
-            if(op_type == 'Logit' or op_type == 'Logit_MQA'):
+            if(op_type == 'Logit'):
                 operator_instance.set_mem_pin(output='on')
-            elif(op_type == 'Attend'or op_type == 'Attend_MQA'):
+            elif(op_type == 'Attend'):
                 operator_instance.set_mem_pin(input_a='on')
 
         if operators_residency == ResidencyInfo.A_onchip:
@@ -151,7 +149,7 @@ def get_model_df(model, system=System(), unit=Unit(), batch_size=1, data_path="/
 
         return pairs
     pairs = verify_repeat_pairs(model_defs)
-    
+
     new_model_defs = []
     for layer in model_defs:
         if layer[-1] == OpType.EINSUM:

@@ -9,7 +9,7 @@ from GenZ.analyse_model import *
 import warnings
 from GenZ.collective_times import *
 from GenZ.utils.plot_rooflines import *
-from GenZ.Models import get_configs, create_inference_moe_prefix_model, create_inference_moe_decode_model
+from GenZ.Models import get_configs, create_inference_moe_prefill_layer, create_inference_moe_decode_layer
 
 unit = Unit()
 
@@ -42,7 +42,7 @@ def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     ##################################################################################################
     ### Model Characterization Calculation
     ##################################################################################################
-    model_prefill = create_inference_moe_prefix_model(input_sequence_length=input_tokens,output_gen_tokens = 0 ,
+    model_prefill = create_inference_moe_prefill_layer(input_sequence_length=input_tokens,output_gen_tokens = 0 ,
                                         name=model, Hkv=Hkv, tensor_parallel=tensor_parallel)
 
 
@@ -109,7 +109,7 @@ def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     ##################################################################################################
     ### Prefill generation time
     ##################################################################################################
-    model_prefill = create_inference_moe_prefix_model(input_sequence_length=input_tokens,output_gen_tokens = 0 ,
+    model_prefill = create_inference_moe_prefill_layer(input_sequence_length=input_tokens,output_gen_tokens = 0 ,
                                         name=model, Hkv=Hkv, tensor_parallel=tensor_parallel)
     model_df = get_model_df(model_prefill, system, unit, batch_size, intermediate_on_chip=True )
 

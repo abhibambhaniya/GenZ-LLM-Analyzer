@@ -9,7 +9,7 @@ from GenZ.analyse_model import *
 import warnings
 from GenZ.collective_times import *
 from GenZ.utils.plot_rooflines import *
-from GenZ.Models import get_configs, create_inference_moe_decode_model
+from GenZ.Models import get_configs, create_inference_moe_decode_layer
 from math import ceil
 
 unit = Unit()
@@ -44,7 +44,7 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     ### Model Characterization Calculation
     ##################################################################################################
     # if is_moe:
-    model_decode = create_inference_moe_decode_model(input_sequence_length=input_tokens,output_gen_tokens = output_tokens ,
+    model_decode = create_inference_moe_decode_layer(input_sequence_length=input_tokens,output_gen_tokens = output_tokens ,
                                         name=model,  tensor_parallel=tensor_parallel)
 
     model_df = get_model_df(model_decode, system, unit, batch_size*Bb, intermediate_on_chip=True , beam_merge= (Bb > 1), beam_size= Bb, model_characterstics = True)
@@ -112,7 +112,7 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     ##################################################################################################
     ### Token generation time
     ##################################################################################################
-    model_decode = create_inference_moe_decode_model(input_sequence_length=input_tokens,output_gen_tokens = output_tokens ,
+    model_decode = create_inference_moe_decode_layer(input_sequence_length=input_tokens,output_gen_tokens = output_tokens ,
                                         name=model, Hkv=Hkv, tensor_parallel=tensor_parallel, beam_merge= (Bb > 1), beam_size = Bb)
 
     model_df = get_model_df(model_decode, system, unit, batch_size*Bb,  intermediate_on_chip=True , beam_merge= (Bb > 1), beam_size= Bb)

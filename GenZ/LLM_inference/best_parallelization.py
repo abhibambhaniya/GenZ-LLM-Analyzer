@@ -10,7 +10,7 @@ import warnings
 from GenZ.LLM_inference import decode_moddeling, prefill_moddeling
 from paretoset import paretoset
 import itertools
-from GenZ.Models import get_configs, create_inference_moe_prefix_model, create_inference_moe_decode_model
+from GenZ.Models import get_configs, create_inference_moe_prefill_layer, create_inference_moe_decode_layer
 
 unit = Unit()
 

@@ -1,5 +1,5 @@
 import pytest
-from GenZ import get_model_df, get_summary_table, System, create_inference_moe_prefix_model, create_inference_moe_decode_model
+from GenZ import get_model_df, get_summary_table, System, create_inference_moe_prefill_layer, create_inference_moe_decode_layer
 
 import os
 import pandas as pd
@@ -16,7 +16,7 @@ def test_dense_LLM_prefill():
     TPU = System(flops=300, offchip_mem_bw=1200, compute_efficiency=0.8, memory_efficiency=0.8, bits='bf16')
 
     # Save the current result to a CSV file
-    current_df = get_model_df(model=create_inference_moe_prefix_model(1024, "llama_7b"), system=TPU)
+    current_df = get_model_df(model=create_inference_moe_prefill_layer(1024, "llama_7b"), system=TPU)
     current_df.to_csv('/tmp/current_llama_7b_prefill_on_TPU.csv', index=False)
 
     # Reload the saved current result
@@ -37,7 +37,7 @@ def test_dense_LLM_decode():
     TPU = System(flops=300, offchip_mem_bw=1200, compute_efficiency=0.8, memory_efficiency=0.8, bits='bf16')
 
     # Save the current result to a CSV file
-    current_df = get_model_df(model=create_inference_moe_decode_model(1024, "llama_7b"), system=TPU)
+    current_df = get_model_df(model=create_inference_moe_decode_layer(1024, "llama_7b"), system=TPU)
     current_df.to_csv('/tmp/current_llama_7b_decode_on_TPU.csv', index=False)
 
     # Reload the saved current result
@@ -59,7 +59,7 @@ def test_moe_LLM_prefill():
                 off_chip_mem_size=144)
 
     # Save the current result to a CSV file
-    current_df = get_model_df(model=create_inference_moe_prefix_model(1024, "mixtral_8x7b"), system=GH200)
+    current_df = get_model_df(model=create_inference_moe_prefill_layer(1024, "mixtral_8x7b"), system=GH200)
     current_df.to_csv('/tmp/current_mixtral_8x7b_prefill_on_GH200.csv', index=False)
 
     # Reload the saved current result
@@ -81,7 +81,7 @@ def test_moe_LLM_decode():
                 off_chip_mem_size=144)
 
     # Save the current result to a CSV file
-    current_df = get_model_df(model=create_inference_moe_decode_model(1024, "mixtral_8x7b"), system=GH200)
+    current_df = get_model_df(model=create_inference_moe_decode_layer(1024, "mixtral_8x7b"), system=GH200)
     current_df.to_csv('/tmp/current_mixtral_8x7b_decode_on_GH200.csv', index=False)
 
     # Reload the saved current result
