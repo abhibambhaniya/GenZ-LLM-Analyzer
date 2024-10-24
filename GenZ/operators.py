@@ -222,14 +222,14 @@ class Sync(Operator):   ## Just data movement.
         return 0, 0, 0
 
     def get_dimensions(self):
-        if self.num_collective_nodes > 1:
+        if self.num_collective_nodes == 1:
             return None
         else:
             B, M, N = self.dim[:self.get_effective_dim_len()]
             return (B,M,N)
 
     def communication_data(self):
-        if self.num_collective_nodes > 1:
+        if self.num_collective_nodes == 1:
             return 0
         else:
             B, M, N = self.dim[:self.get_effective_dim_len()]

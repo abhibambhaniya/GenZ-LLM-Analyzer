@@ -109,15 +109,19 @@ class Operator(object):
         return memory_time
 
     def get_communication_time(self, system):
+        '''
+            Returns the communication time for the operator in seconds.
+        '''
         if self.get_op_type(self.dim) != 'Sync':
             return 0
         else:
+            data_size = self.communication_data() * system.get_bit_multiplier(type='M', data='a')
             if self.collective_type == CollectiveType.AllReduce:
-                return get_AR_time(self.communication_data() , self.num_collective_nodes, system)
+                return get_AR_time(data_size , self.num_collective_nodes, system) / 1000
             elif  self.collective_type == CollectiveType.All2All:
-                return get_A2A_time(self.communication_data() , self.num_collective_nodes, system)
+                return get_A2A_time(data_size , self.num_collective_nodes, system) / 1000
             elif  self.collective_type == CollectiveType.MessagePass:
-                return get_message_pass_time(self.communication_data(), system)
+                return get_message_pass_time(data_size, system) / 1000
             else:
                 raise ValueError(f'Unknown collective type: {self.collective_type}.')
 
@@ -154,7 +158,7 @@ class Operator(object):
         # x2 for ops -> MAC has 1 multiplication and 1 Addition hence 2.
         num_ops = self.get_effective_num_ops(system) * 2
         num_data = self.get_effective_num_data(system) * system.get_bit_multiplier(type='M')
-        op_intensity = num_ops/num_data
+        op_intensity = num_ops/num_data if num_data else 0
 
         compute_time = self.get_compute_time(system=system)
 

@@ -9,7 +9,8 @@ def get_AR_time(data, num_AR_nodes, system):
     Returns:
         time(float): Total time(msec) to complete the All-Reduce
     """
-
+    if data == 0 or num_AR_nodes == 1:
+        return 0
     ## Ring AR Time = Start Latency + N*Tlink +  2M*(N-1)/(N*BW)
     ## Source:  https://tech.preferred.jp/en/blog/technologies-behind-distributed-deep-learning-allreduce/
     AR_time = (5e-6 + 2*(num_AR_nodes-1)*system.interchip_link_latency +  2 * (num_AR_nodes-1) * (data/num_AR_nodes) / system.interchip_mem_bw)*1000
@@ -27,7 +28,8 @@ def get_message_pass_time(data, system):
     Returns:
         time(float): Total time(msec) to pass the Message from 1 node to next
     """
-
+    if data == 0:
+        return 0
     msg_pass_time = ((4.2e-6 + (2-1)*system.interchip_link_latency) +  data / system.interchip_mem_bw)*1000
     return msg_pass_time
 
@@ -43,6 +45,7 @@ def get_A2A_time(data, num_A2A_nodes, system):
     Returns:
         time (float): Total time (msec) to complete the All-to-All operation
     """
+
     ## BWeff = 4B/N if Ring of size N
     ## BWeff = 4B/T if 2D Torus of size TxT
 
@@ -52,6 +55,8 @@ def get_A2A_time(data, num_A2A_nodes, system):
     # Where N is the number of nodes, M is the message size per node pair,
     # Tlink is the inter-chip link latency, and BW is the inter-chip memory bandwidth
 
+    if data == 0 or num_A2A_nodes == 1:
+        return 0
     message_size_per_pair = data / num_A2A_nodes
     A2A_time = (5e-6 + (num_A2A_nodes - 1) * system.interchip_link_latency +
                 (num_A2A_nodes - 1) * message_size_per_pair / system.interchip_mem_bw) * 1000
