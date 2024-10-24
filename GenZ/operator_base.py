@@ -138,7 +138,7 @@ class Operator(object):
     def get_model_characterstics(self, system, unit = Unit()):
         num_ops =  self.get_num_ops()
         num_data = self.get_num_data() * system.get_bit_multiplier(type='M')
-        op_intensity = num_ops/num_data
+        op_intensity = num_ops/num_data  if num_data else 0
         input_a_size, input_w_size, output_size = self.get_sz_list()
         ret = {
             'Op Type': self.get_op_type(self.dim),

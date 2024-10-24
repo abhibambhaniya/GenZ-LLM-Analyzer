@@ -32,9 +32,9 @@ def get_summary_table(df:pd.DataFrame, unit = Unit(), model_characterstics:bool=
     multiplier = 1
     for i in range(len(df)):
         if df.loc[i,'Op Type'] == 'Repeat':
-            multiplier *= df.loc[i,'Dimension'][2][0]
+            multiplier *= df.loc[i,'Dimension']
         elif df.loc[i,'Op Type'] == 'EndRepeat':
-            multiplier /= df.loc[i,'Dimension'][2][0]
+            multiplier /= df.loc[i,'Dimension']
         else:
             total_macs += df.loc[i,f'Num ops ({unit.unit_flop})'] * multiplier
             total_data += (df.loc[i,f'Input_a ({unit.unit_mem})'] + df.loc[i,f'Input_w ({unit.unit_mem})'] + df.loc[i,f'Output ({unit.unit_mem})']) * multiplier

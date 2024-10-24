@@ -31,7 +31,10 @@ def ffn_prefill(model_config:ModelConfig, parallelism_config:ParallelismConfig, 
         ffup =   [[Df*fi, input_sequence_length//sp, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
         ffdown = [[D, input_sequence_length//sp, Df, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
 
-    sync =          [[input_sequence_length//sp, D, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
+    if tp > 1:
+        sync =          [[input_sequence_length//sp, D, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
+    else:
+        sync = []
 
     return ffup + ffdown + sync
 
@@ -64,6 +67,9 @@ def ffn_decode(model_config:ModelConfig, parallelism_config:ParallelismConfig):
     layers = []
     layers += (ffup + ffup_unused) if moe_layer_freq  else ffup
     layers += (ffdown + ffdown_unused)  if moe_layer_freq  else ffdown
-    sync =          [[1, D, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
+    if tp > 1:
+        sync =          [[1, D, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
+    else:
+        sync = []
 
     return layers + sync

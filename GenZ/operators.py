@@ -1,6 +1,7 @@
 import numpy as np
 from GenZ.operator_base import Operator
 import ast
+from GenZ.Models import OpType, CollectiveType
 
 class FC(Operator):
     def __init__(self, dim, density):
@@ -222,14 +223,14 @@ class Sync(Operator):   ## Just data movement.
         return 0, 0, 0
 
     def get_dimensions(self):
-        if self.num_collective_nodes == 1:
+        if self.num_collective_nodes == 1 and self.collective_type != CollectiveType.MessagePass:
             return None
         else:
             B, M, N = self.dim[:self.get_effective_dim_len()]
             return (B,M,N)
 
     def communication_data(self):
-        if self.num_collective_nodes == 1:
+        if self.num_collective_nodes == 1 and self.collective_type != CollectiveType.MessagePass:
             return 0
         else:
             B, M, N = self.dim[:self.get_effective_dim_len()]
@@ -295,11 +296,13 @@ class Repeat(Operator):   ## Layer/Model Repetition
         return 3
 
     def get_tensors(self):
-        _, repeat_count, ID = self.dim[:self.get_effective_dim_len()]
-        return 0, 0, (repeat_count, ID, 0)
-
+        return 0, 0, 0
     def get_gemms(self):
         return 0, 0, 0, 0
+
+    def get_dimensions(self):
+        _, repeat_count, ID = self.dim[:self.get_effective_dim_len()]
+        return repeat_count
 
     def get_num_ops(self):
         return 0
@@ -312,8 +315,11 @@ class EndRepeat(Operator):   ## Layer/Model Repetition
         return 3
 
     def get_tensors(self):
+        return 0, 0, 0
+
+    def get_dimensions(self):
         _, repeat_count, ID = self.dim[:self.get_effective_dim_len()]
-        return 0, 0, (repeat_count, ID, 0)
+        return repeat_count
 
     def get_gemms(self):
         return 0, 0, 0, 0
