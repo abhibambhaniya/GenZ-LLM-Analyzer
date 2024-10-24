@@ -44,7 +44,7 @@ def generate_demand_curve(graph_type, system_box, system_eff, num_nodes_slider,
                 model_name = get_configs(model).model
                 try:
                     prefill_outputs = prefill_moddeling(model = model, batch_size = batch_size,
-                                            input_tokens = input_token_slider, output_tokens = output_token_slider, 
+                                            input_tokens = input_token_slider,
                                             system_name = system_box, system_eff = system_eff,
                                             bits=quantization_box,
                                             tensor_parallel = num_nodes_slider, debug=False) 

@@ -56,7 +56,7 @@ def get_best_parallization_strategy(
             micro_batch_size = (batch_size//PP)
             if stage == 'prefill':
                 prefill_outputs = prefill_moddeling(model = model, batch_size = micro_batch_size,
-                                        input_tokens = input_tokens, output_tokens = output_tokens, 
+                                        input_tokens = input_tokens,
                                         system_name = system_name,
                                         bits=bits,
                                         tensor_parallel = TP, pipeline_parallel = PP, debug=debug)
@@ -96,7 +96,7 @@ def get_pareto_optimal_performance(
                 micro_batch_size = (batch_size//PP)
                 if stage == 'prefill':
                     prefill_outputs = prefill_moddeling(model = model, batch_size = micro_batch_size,
-                                            input_tokens = input_tokens, output_tokens = output_tokens, 
+                                            input_tokens = input_tokens,
                                             system_name = system_name,
                                             bits=bits,
                                             tensor_parallel = TP, pipeline_parallel = PP, debug=False)

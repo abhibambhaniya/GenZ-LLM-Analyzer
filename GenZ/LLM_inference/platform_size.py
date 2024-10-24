@@ -10,7 +10,7 @@ def get_minimum_system_size(
 
     if stage=='prefill':
         model_df, summary_table = prefill_moddeling(model = model, batch_size = max_batch_size,
-                            input_tokens = input_tokens, output_tokens = output_tokens, model_profilling=True,
+                            input_tokens = input_tokens, model_profilling=True,
                             tensor_parallel = 1, pipeline_parallel = 1, bits=bits, debug=debug)
     elif stage=='decode':
         model_df, summary_table = decode_moddeling(model = model, batch_size = max_batch_size, Bb = beam_size ,

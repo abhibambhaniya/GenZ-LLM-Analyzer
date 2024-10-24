@@ -51,25 +51,25 @@ def generate_demand_curve(system_box, system_eff, num_nodes_slider,
                 model_name = get_configs(model).model
                 try:
                     prefill_outputs = prefill_moddeling(model = model, batch_size = batch_size,
-                                            input_tokens = input_token_slider, output_tokens = output_token_slider, 
+                                            input_tokens = input_token_slider,
                                             system_name = system_box, system_eff = system_eff,
                                             bits=quantization_box,
-                                            tensor_parallel = num_nodes_slider, debug=False) 
+                                            tensor_parallel = num_nodes_slider, debug=False)
                     data.append([model_name,'Prefill',batch_size, prefill_outputs['Latency'], prefill_outputs['Throughput']] + prefill_outputs['Runtime_breakdown'])
                     decode_outputs = decode_moddeling(model = model, batch_size = batch_size, Bb = beam_size ,
-                                            input_tokens = input_token_slider, output_tokens = output_token_slider, 
+                                            input_tokens = input_token_slider, output_tokens = output_token_slider,
                                             system_name = system_box, system_eff=system_eff,
                                             bits=quantization_box,
-                                            tensor_parallel = num_nodes_slider, debug=False) 
+                                            tensor_parallel = num_nodes_slider, debug=False)
                     data.append([model_name,'Decode',batch_size,  decode_outputs['Latency'], decode_outputs['Throughput']] + decode_outputs['Runtime_breakdown'])
                 except:
                     # ValueError
                     decode_outputs, decode_summary_table = decode_moddeling(model = model, batch_size = batch_size, Bb = beam_size ,
-                                            input_tokens = input_token_slider, output_tokens = output_token_slider, 
+                                            input_tokens = input_token_slider, output_tokens = output_token_slider,
                                             system_name = system_box, system_eff = system_eff,
-                                            bits=quantization_box, model_profilling=True) 
+                                            bits=quantization_box, model_profilling=True)
                     total_memory = int(system_box.get('Memory_size'))*1024  ## per device memory
-                    memory_req =  decode_summary_table['Model Weights (MB)'].values[0] + decode_summary_table['KV Cache (MB)'].values[0] 
+                    memory_req =  decode_summary_table['Model Weights (MB)'].values[0] + decode_summary_table['KV Cache (MB)'].values[0]
 
                     mem_size_data.append([model, total_memory, batch_size, beam_size, input_token_slider, output_token_slider, np.ceil(memory_req/total_memory)])
 
@@ -78,7 +78,7 @@ def generate_demand_curve(system_box, system_eff, num_nodes_slider,
 
     data_df['Stage'] = pd.Categorical(data_df['Stage'], categories=['Prefill','Decode'])
 
-    fig = px.line(data_df, x="Batch", y="Tokens/s",  line_group="Model", color="Model", 
+    fig = px.line(data_df, x="Batch", y="Tokens/s",  line_group="Model", color="Model",
                 facet_row='Stage', facet_row_spacing = 0.1,
                 labels={"Batch": "Batch", "Tokens/s": "Tokens/s", "Model": "Model"},
                 width=1200, height=600, markers=True)
