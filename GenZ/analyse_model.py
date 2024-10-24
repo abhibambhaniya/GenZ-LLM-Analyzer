@@ -25,6 +25,9 @@ def get_summary_table(df:pd.DataFrame, unit = Unit(), model_characterstics:bool=
     unused_weights = 0
     total_latencies = 0
     total_cycles = 0
+    total_attn_latencies = 0
+    total_linear_latencies = 0
+    total_comm_latencies = 0
 
     multiplier = 1
     for i in range(len(df)):
@@ -45,6 +48,12 @@ def get_summary_table(df:pd.DataFrame, unit = Unit(), model_characterstics:bool=
             if model_characterstics == False:
                 total_latencies += df.loc[i,f'Latency ({unit.unit_time})'] * multiplier
                 total_cycles += df.loc[i,'Cycles'] * multiplier
+                if i in attn_idx:
+                    total_attn_latencies += df.loc[i,f'Latency ({unit.unit_time})'] * multiplier
+                elif 'GEMM' in df.loc[i, 'Op Type']:
+                    total_linear_latencies += df.loc[i,f'Latency ({unit.unit_time})'] * multiplier
+                elif 'Sync' in df.loc[i, 'Op Type']:
+                    total_comm_latencies += df.loc[i,f'Latency ({unit.unit_time})'] * multiplier
 
     max_memory_footprint = max([df.loc[i, f'Input_a ({unit.unit_mem})'] + df.loc[i, f'Input_w ({unit.unit_mem})'] + df.loc[i, f'Output ({unit.unit_mem})'] for i in range(len(df))])
 
@@ -61,6 +70,9 @@ def get_summary_table(df:pd.DataFrame, unit = Unit(), model_characterstics:bool=
         ret.update({
             f'Latency ({unit.unit_time})': [total_latencies],
             'Cycles': [total_cycles],
+            f'Attn Latency ({unit.unit_time})': [total_attn_latencies],
+            f'Linear Latency ({unit.unit_time})': [total_linear_latencies],
+            f'Comm Latency ({unit.unit_time})': [total_comm_latencies]
         })
 
 

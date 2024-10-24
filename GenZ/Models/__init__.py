@@ -6,4 +6,5 @@ from .get_language_model import (
     create_inference_moe_decode_layer,
     create_inference_mamba_prefix_model,
     create_inference_mamba_decode_model,
+    create_full_prefill_model,
 )
