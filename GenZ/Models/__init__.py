@@ -1,4 +1,4 @@
-from .utils import (OpType, ResidencyInfo, parse_einsum_expression)
+from .utils import (OpType, ResidencyInfo, CollectiveType, parse_einsum_expression)
 from .default_models import ModelConfig, MODEL_DICT
 from .get_language_model import (
     get_configs,

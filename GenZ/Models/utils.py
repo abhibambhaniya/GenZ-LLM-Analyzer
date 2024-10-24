@@ -25,6 +25,15 @@ class ResidencyInfo(IntEnum):
     BC_onchip = 6
     All_onchip = 7
 
+from enum import IntEnum
+
+class CollectiveType(IntEnum):
+    AllReduce = 1
+    All2All = 2
+    AllGather = 3
+    ReduceScatter = 4
+    MessagePass = 5
+
 def parse_einsum_expression(expression, *tensors):
     einsum_vars = {}
     input_subscripts, output_subscript = expression.split('->')

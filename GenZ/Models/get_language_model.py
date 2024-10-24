@@ -5,7 +5,7 @@ import numpy as np
 from datetime import datetime
 from GenZ.parallelism import ParallelismConfig
 
-from GenZ.Models import ModelConfig, MODEL_DICT
+from GenZ.Models.default_models import ModelConfig, MODEL_DICT
 
 from GenZ.Models.utils import OpType, ResidencyInfo, parse_einsum_expression
 from GenZ.Models.attention import mha_flash_attention_prefill, mha_flash_attention_decode
@@ -22,7 +22,7 @@ def get_configs(name) -> ModelConfig:
 
     return model_config
 
-def save_layers(layers:str, data_path:str, name:str):
+def save_layers(layers:list, data_path:str, name:str):
     model_path = os.path.join(data_path,"model")
     df = pd.DataFrame(layers, columns=['M', 'N', 'D', 'H', 'Z', 'Z', 'T'])
     file_name = name.replace("/", "_") + datetime.now().strftime("%m_%d_%Y_%H_%M_%S") +'.csv'
@@ -74,9 +74,11 @@ def create_full_prefill_model(input_sequence_length, name='BERT', data_path=DATA
         data_parallel=args.get('data_parallel',1)
         )
 
-    layers = mha_flash_attention_prefill(model_config, parallelism_config, input_sequence_length) + ffn_prefill(model_config, parallelism_config, input_sequence_length)
-
-    return save_layers(layers=layers, data_path=data_path, name=name+"_prefix_")
+    full_model = []
+    full_model +=  [[model_config.num_decoder_layers, 1, 1, 1, 1, 1, OpType.REPEAT]]
+    full_model += mha_flash_attention_prefill(model_config, parallelism_config, input_sequence_length) + ffn_prefill(model_config, parallelism_config, input_sequence_length)
+    full_model +=  [[model_config.num_decoder_layers, 1, 1, 1, 1, 1, OpType.ENDREPEAT]]
+    return save_layers(layers=full_model, data_path=data_path, name=name+"_prefix_")
 
 
 def create_inference_mamba_prefix_model(input_sequence_length, name='jamba', data_path=DATA_PATH,

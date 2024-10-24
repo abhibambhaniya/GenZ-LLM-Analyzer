@@ -211,19 +211,29 @@ class DWCONV(Operator):
 
 class Sync(Operator):   ## Just data movement.
     def __init__(self, dim, density):
+        self.collective_type = dim[-2]
+        self.num_collective_nodes = dim[-3]
         super().__init__(dim=dim, density=density)
 
     def get_effective_dim_len(self):
         return 3
 
     def get_tensors(self):
-        B, M, N = self.dim[:self.get_effective_dim_len()]
-        input_a = 0
-        input_w = 0
-        output = (B, M, N)
-        # print(input_a,input_w,output)
-        return input_a, input_w, output
+        return 0, 0, 0
 
+    def get_dimensions(self):
+        if self.num_collective_nodes > 1:
+            return None
+        else:
+            B, M, N = self.dim[:self.get_effective_dim_len()]
+            return (B,M,N)
+
+    def communication_data(self):
+        if self.num_collective_nodes > 1:
+            return 0
+        else:
+            B, M, N = self.dim[:self.get_effective_dim_len()]
+            return B*M*N
 
     def get_gemms(self):
         left = 0

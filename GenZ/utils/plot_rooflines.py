@@ -34,10 +34,12 @@ def dot_roofline(df,system,unit):
         plt.scatter(op_intensity, thrpt)
 
 def color_bound_type(value):
-    if value == 'M':
+    if value == 'Memory':
         color = 'red'
-    elif value == 'C':
+    elif value == 'Compute':
         color = 'green'
+    elif value == 'Collective':
+        color = 'blue'
     else:
         return
     return 'color: %s' % color
@@ -59,7 +61,7 @@ def display_df(df):
     pd.set_option("display.precision", 2)
 
     ## Reordering columns
-    first_cols = ['Op Type','Dimension','Op Intensity','Num ops (MFLOP)','Input_a (MB)','Input_w (MB)','Output (MB)','Total Data (MB)',f'Compute time ({unit.unit_time})',f'Memory time ({unit.unit_time})','Bound','C/M ratio','Cycles', '% of total time','Throughput (Tflops)',f'Compute cycle',f'Memory cycle']
+    first_cols = ['Op Type','Dimension','Op Intensity','Num ops (MFLOP)','Input_a (MB)','Input_w (MB)','Output (MB)','Total Data (MB)',f'Compute time ({unit.unit_time})',f'Memory time ({unit.unit_time})',f'Communication time ({unit.unit_time})','Bound','C/M ratio','Cycles', '% of total time','Throughput (Tflops)',f'Compute cycle',f'Memory cycle']
     last_cols = [col for col in df.columns if col not in first_cols]
     df = df.loc[:,first_cols+last_cols]
 
@@ -68,9 +70,8 @@ def display_df(df):
         .background_gradient(cmap='Spectral_r',axis=1,subset=['Input_a (MB)','Input_w (MB)','Output (MB)'])\
         .background_gradient(cmap='Oranges',axis=0,subset=["Op Intensity"])\
         .map(color_bound_type, subset=['Bound'])\
-        .apply(highlight_max_cycles,axis=1,subset=pd.IndexSlice[:, [f'Compute time ({unit.unit_time})',f'Memory time ({unit.unit_time})']])
-    
+        .apply(highlight_max_cycles,axis=1,subset=pd.IndexSlice[:, [f'Compute time ({unit.unit_time})',f'Memory time ({unit.unit_time})',f'Communication time ({unit.unit_time})']])    
 
-    pd.set_option('display.float_format', '{:.5f}'.format) 
+    pd.set_option('display.float_format', '{:.5f}'.format)
     display(df)
     return df

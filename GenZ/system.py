@@ -4,10 +4,14 @@ from GenZ.unit import Unit
 class System(object):
     compute_multiplier = {'int8': 0.5, 'bf16': 1, 'f32': 2, 'int4': 0.25, 'int2':0.125, 'fp8': 0.5, 'fp4': 0.25}
     mem_multiplier = {'int8': 1, 'bf16': 2, 'f32': 4, 'int4':0.5, 'int2':0.25, 'fp8':1, 'fp4':0.5}
-    def __init__(self, unit=None, onchip_mem_bw=18000, offchip_mem_bw=900, external_mem_bw=100,
-                on_chip_mem_size=float('Inf'), off_chip_mem_size=float('Inf'),
-                compute_efficiency=1, memory_efficiency=1, flops=123, mxu_shape=None,
-                frequency=940, bits='bf16', interchip_mem_bw = 25, num_nodes = 1, interchip_link_latency=1.9,
+    def __init__(self, unit=None,
+                flops=123, mxu_shape=None,
+                onchip_mem_bw=18000, on_chip_mem_size=float('Inf'),
+                offchip_mem_bw=900, off_chip_mem_size=float('Inf'),
+                external_mem_bw=100,
+                frequency=940, bits='bf16',
+                compute_efficiency=1, memory_efficiency=1, comm_efficiency=1,
+                interchip_mem_bw = 25, num_nodes = 1, interchip_link_latency=1.9,
                 topology='FullyConnected'):
 
         if unit is None:
@@ -24,6 +28,7 @@ class System(object):
         self.off_chip_mem_size = self.unit.unit_to_raw(off_chip_mem_size, type='M')
         self.compute_efficiency = compute_efficiency
         self.memory_efficiency = memory_efficiency
+        self.comm_efficiency = comm_efficiency
         self.mxu_shape = mxu_shape
         self.num_nodes = num_nodes
         self.topology = topology

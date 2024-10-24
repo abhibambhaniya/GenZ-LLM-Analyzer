@@ -1,4 +1,4 @@
-from GenZ.Models import ModelConfig, ResidencyInfo, OpType
+from GenZ.Models import ModelConfig, ResidencyInfo, OpType, CollectiveType
 from GenZ.parallelism import ParallelismConfig
 
 
@@ -24,7 +24,9 @@ def mha_flash_attention_prefill(model_config:ModelConfig, parallelism_config:Par
     ## [Batch/dp, Seq, Dq, Head/tp] * [Dq, Head/tp,  Dmodel] = [Batch/dp, Seq, Dmodel]
     output =        [[D, input_sequence_length//sp, (H//tp) * Dq, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
 
-    return QKV + logit + attend + output
+    sync =          [[input_sequence_length//sp, D//tp, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
+
+    return QKV + logit + attend + output + sync
 
 def mha_flash_attention_decode(model_config:ModelConfig, parallelism_config:ParallelismConfig, input_sequence_length:int, output_gen_tokens:int):
     H = model_config.num_attention_heads
@@ -42,6 +44,7 @@ def mha_flash_attention_decode(model_config:ModelConfig, parallelism_config:Para
     logit_suf =     [[H//tp, 1, output_gen_tokens, Dq, Hkv//tp, ResidencyInfo.AC_onchip, OpType.Logit]]
     attend_suf =    [[H//tp, 1, output_gen_tokens, Dq, Hkv//tp, ResidencyInfo.AC_onchip, OpType.Attend]]
     output =        [[D, 1, (H//tp) * Dq, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
+    sync =          [[1, D//tp, 1, 1, tp, ResidencyInfo.All_offchip, OpType.Sync]]
 
-    return query + logit_pre + logit_suf + attend_pre + attend_suf + output
+    return query + logit_pre + logit_suf + attend_pre + attend_suf + output + sync
 
