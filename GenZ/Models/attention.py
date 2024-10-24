@@ -44,7 +44,7 @@ def mha_flash_attention_decode(model_config:ModelConfig, parallelism_config:Para
     logit_suf =     [[H//tp, 1, output_gen_tokens, Dq, Hkv//tp, ResidencyInfo.AC_onchip, OpType.Logit]]
     attend_suf =    [[H//tp, 1, output_gen_tokens, Dq, Hkv//tp, ResidencyInfo.AC_onchip, OpType.Attend]]
     output =        [[D, 1, (H//tp) * Dq, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
-    sync =          [[1, D//tp, 1, 1, tp, ResidencyInfo.All_offchip, OpType.Sync]]
+    sync =          [[1, D//tp, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
 
     return query + logit_pre + logit_suf + attend_pre + attend_suf + output + sync
 
