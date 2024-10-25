@@ -2,9 +2,6 @@ from .utils import ModdelingOutput, get_inference_system, get_offload_system
 from GenZ.unit import Unit
 from GenZ.operators import *
 
-from GenZ.operator_base import op_type_dicts
-from GenZ.system import System
-import pandas as pd
 from GenZ.analyse_model import *
 import warnings
 from GenZ.collective_times import *
@@ -38,7 +35,7 @@ def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
                                                     tensor_parallel=tensor_parallel)
 
 
-    model_df = get_model_df(model_prefill, system, unit, ub, intermediate_on_chip=True , model_characterstics = True)
+    model_df = get_model_df(model_prefill, system=system, batch_size = ub, intermediate_on_chip=True , model_characterstics = True)
     summary_table = get_summary_table(model_df, unit, model_characterstics = True)
 
     model_weights = summary_table[f'Total Weights ({unit.unit_mem})'].values[0]        ## In MB
@@ -89,7 +86,9 @@ def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     ## 1000x because the latency is in milli seconds. thrpt is in Token/s
     if pipeline_parallel > 1:
         micro_batch_latency = prefill_latency
-        total_latency = ((num_micro_batches-1) * prefill_latency / pipeline_parallel) + micro_batch_latency
+        ## If the N micro batches, then the total latency is (N-1)*stage latency + initial_latency
+        ## We make the assumption that the pipeline is balanced and the latency is same for all stages
+        total_latency = ((num_micro_batches-1) * (prefill_latency / pipeline_parallel)) + micro_batch_latency
         thrpt = 1000 * batch_size / total_latency
     else:
         thrpt = 1000 * batch_size / prefill_latency

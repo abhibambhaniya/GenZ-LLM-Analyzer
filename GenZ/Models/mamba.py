@@ -1,4 +1,4 @@
-from GenZ.Models import ModelConfig, ResidencyInfo, OpType
+from GenZ.Models import ModelConfig, ResidencyInfo, OpType, parse_einsum_expression
 from GenZ.parallelism import ParallelismConfig
 
 def mamda_ssn_slow(model_config:ModelConfig, parallelism_config:ParallelismConfig, input_sequence_length:int):

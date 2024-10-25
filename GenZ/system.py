@@ -93,4 +93,3 @@ class System(object):
             return self.compute_multiplier[self.bits]
         elif type == 'M':
             return self.mem_multiplier[self.bits]
-
