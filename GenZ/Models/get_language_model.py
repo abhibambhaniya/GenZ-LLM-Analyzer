@@ -15,7 +15,7 @@ from GenZ.Models.mamba import mamba_prefill, mamba_decode
 def get_configs(name) -> ModelConfig:
     name = name.lower()
 
-    if model := MODEL_DICT.get(name):
+    if model := MODEL_DICT.get_model(name):
         model_config = model
     else:
         print("ERROR, model name parsed incorrect, please check!!! Model Name:",name)

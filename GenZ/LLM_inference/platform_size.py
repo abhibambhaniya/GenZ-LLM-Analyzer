@@ -2,7 +2,7 @@ import numpy as np
 from GenZ.LLM_inference import decode_moddeling, prefill_moddeling, get_best_parallization_strategy, get_inference_system
 
 def get_minimum_system_size(
-        stage='decode', model='llama_7b', max_batch_size = 1, beam_size = 1,
+        stage='decode', model='llama2_7b', max_batch_size = 1, beam_size = 1,
         input_tokens = 2000, output_tokens = 256,
         system_name = {'Flops': 200, 'Memory_size': 32, 'Memory_BW': 1000, 'ICN': 300 , 'real_values':True},
         bits='bf16', debug=False

@@ -62,7 +62,7 @@ def generate_demand_curve(graph_type, system_box, system_eff, num_nodes_slider,
                                             system_name = system_box, system_eff = system_eff,
                                             bits=quantization_box, model_profilling=True)
                     total_memory = int(system_box.get('Memory_size'))*1024  ## per device memory
-                    memory_req =  decode_summary_table['Model Weights (MB)'].values[0] + decode_summary_table['KV Cache (MB)'].values[0] 
+                    memory_req =  decode_summary_table['Total Weights (MB)'].values[0] + decode_summary_table['KV Cache (MB)'].values[0] 
 
                     mem_size_data.append([model, total_memory, batch_size, beam_size, input_token_slider, output_token_slider, np.ceil(memory_req/total_memory)])
     # assert len(data) > 0, "No Model fits in the given # of GPUs. Increase GPUs or use different Model"

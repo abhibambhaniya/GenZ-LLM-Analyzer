@@ -18,7 +18,7 @@ def factors(n):
     return [x for tup in ([i, n//i]
                 for i in range(1, int(n**0.5)+1) if n % i == 0) for x in tup]
 
-def get_various_parallization(model='llama_7b', total_nodes=8):
+def get_various_parallization(model='llama2_7b', total_nodes=8):
     model_config = get_configs(model)
 
     if total_nodes == 1:
@@ -40,7 +40,7 @@ def get_various_parallization(model='llama_7b', total_nodes=8):
     return parallelism_combinations
 
 def get_best_parallization_strategy(
-        stage='decode', model='llama_7b', total_nodes=8, batch_size = 1, beam_size = 1,
+        stage='decode', model='llama2_7b', total_nodes=8, batch_size = 1, beam_size = 1,
         input_tokens = 2000, output_tokens = 256,
         system_name = {'Flops': 200, 'Memory_size': 32, 'Memory_BW': 1000, 'ICN': 300 , 'real_values':True},
         bits='bf16', debug=False
@@ -77,7 +77,7 @@ def get_best_parallization_strategy(
     return data_df.sort_values(by='Tokens/s', ascending=False).head(1)
 
 def get_pareto_optimal_performance(
-        stage='decode', model='llama_7b', total_nodes=8, batch_list = 1, beam_size = 1,
+        stage='decode', model='llama2_7b', total_nodes=8, batch_list = 1, beam_size = 1,
         input_tokens = 2000, output_tokens = 256,
         system_name = {'Flops': 200, 'Memory_size': 32, 'Memory_BW': 1000, 'ICN': 300 , 'real_values':True},
         bits='bf16', debug=False
