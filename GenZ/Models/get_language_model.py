@@ -11,6 +11,7 @@ from GenZ.Models.utils import OpType, ResidencyInfo, CollectiveType, parse_einsu
 from GenZ.Models.attention import mha_flash_attention_prefill, mha_flash_attention_decode
 from GenZ.Models.ffn import ffn_prefill, ffn_decode
 from GenZ.Models.mamba import mamba_prefill, mamba_decode
+from GenZ.Models.embedding import input_embedding, output_embedding
 
 def get_configs(name) -> ModelConfig:
     name = name.lower()
@@ -87,7 +88,7 @@ def create_full_prefill_model(input_sequence_length, name='BERT', data_path=DATA
         return layers
 
     full_model = []
-
+    full_model += input_embedding(model_config, parallelism_config, input_sequence_length)
     if pipeline_stages > 1:
         layers_per_stage = ceil(model_config.num_decoder_layers / pipeline_stages)
         layers_last_stage = model_config.num_decoder_layers - layers_per_stage * (pipeline_stages - 1)
@@ -105,6 +106,7 @@ def create_full_prefill_model(input_sequence_length, name='BERT', data_path=DATA
     else:
         full_model = add_layers(full_model, model_config.num_decoder_layers)
 
+    full_model += output_embedding(model_config, parallelism_config, input_sequence_length)
     return save_layers(layers=full_model, data_path=data_path, name=name + "_prefix_")
 
 
@@ -140,7 +142,7 @@ def create_full_decode_model(input_sequence_length, name='BERT', data_path=DATA_
         full_model = add_layers(full_model, layers_last_stage)
     else:
         full_model = add_layers(full_model, model_config.num_decoder_layers)
-
+    full_model += output_embedding(model_config, parallelism_config, 1)
     return save_layers(layers=full_model, data_path=data_path, name=name + "_decode_")
 
 def create_inference_mamba_prefix_model(input_sequence_length, name='jamba', data_path=DATA_PATH,

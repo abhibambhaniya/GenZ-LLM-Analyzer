@@ -14,6 +14,9 @@ class OpType(IntEnum):
     EINSUM = 12
     REPEAT = 13
     ENDREPEAT = 14
+    Norm = 15
+    Avg = 16
+    Special_Func = 17
 
 class ResidencyInfo(IntEnum):
     All_offchip = 0
@@ -33,6 +36,23 @@ class CollectiveType(IntEnum):
     AllGather = 3
     ReduceScatter = 4
     MessagePass = 5
+
+class SpecialFuncType(IntEnum):
+    gelu = 0
+    relu = 1
+    softmax = 2
+    tanh = 3
+    silu = 4
+    gelu_pytorch_tanh = 5
+    gelu_new = 6
+    gegelu = 7
+
+class NormType(IntEnum):
+    LayerNorm = 0
+    BatchNorm = 1
+    InstanceNorm = 2
+    GroupNorm = 3
+
 
 def parse_einsum_expression(expression, *tensors):
     einsum_vars = {}

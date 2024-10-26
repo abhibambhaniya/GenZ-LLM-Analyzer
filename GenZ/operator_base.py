@@ -4,12 +4,13 @@ from math import ceil
 from GenZ.unit import Unit
 
 from GenZ.Models import OpType, CollectiveType
-from GenZ.collective_times import get_AR_time, get_A2A_time, get_message_pass_time
+from GenZ.collective_times import get_AR_time, get_A2A_time, get_message_pass_time, get_AG_time
 
 # 4, 5 Regular Logit and Attend
 # 9, 10 Beam Merge Logit and attend
 op_type_dicts = {0: 'FC', 1: 'CONV2D', 2: 'DWCONV', 3: 'GEMM', 4: 'Logit', 5: 'Attend', 6:'Sync',
-                9:'Logit', 10:'Attend', 11:'CONV1D', 12:'Einsum', 13:'Repeat', 14:'EndRepeat'}
+                9:'Logit', 10:'Attend', 11:'CONV1D', 12:'Einsum', 13:'Repeat', 14:'EndRepeat',
+                15:'Norm', 16:'Avg', 17:'Special_Func'}
 class Operator(object):
     def __init__(self, dim, density=(1.0,1.0,1.0)):
         self.dim = [int(x) if isinstance(x, (int, float, np.int32, np.int64)) else x for x in dim]
@@ -122,6 +123,8 @@ class Operator(object):
                 return get_A2A_time(data_size , self.num_collective_nodes, system) / 1000
             elif  self.collective_type == CollectiveType.MessagePass:
                 return get_message_pass_time(data_size, system) / 1000
+            elif self.collective_type == CollectiveType.AllGather:
+                return get_AG_time(data_size, self.num_collective_nodes, system) / 1000
             else:
                 raise ValueError(f'Unknown collective type: {self.collective_type}.')
 

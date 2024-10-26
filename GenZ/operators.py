@@ -326,3 +326,67 @@ class EndRepeat(Operator):   ## Layer/Model Repetition
 
     def get_num_ops(self):
         return 0
+
+class Norm(Operator):          ## Vector Execution Unit
+    def __init__(self, node, density=(1.0, 1.0, 1.0)):
+        super().__init__(node, density)
+        self.alu_type = 'vxu'
+
+    def get_tensors(self):
+        # input and output
+        return self.node.inputs[0].shape, self.node.outputs[0].shape
+
+    def get_num_ops(self):
+        # macs
+        if self.node.operator in ["batch_norm", "instance_norm"]:
+            affine = self.node.inputs[1].shape is not None
+        elif self.node.operator in ["layer_norm", "group_norm"]:
+            affine = self.node.inputs[2].shape is not None
+        else:
+            raise ValueError(self.node.operator)
+        os = self.node.outputs[0].shape
+        return np.prod(os) if affine else 0
+
+    def get_gemms(self):
+        # TODO might have some problems
+        return 0, 0, 0, 1
+
+
+class Avg(Operator):          ## Vector Execution Unit
+    def __init__(self, node, density=(1.0, 1.0, 1.0)):
+        super().__init__(node, density)
+        self.alu_type = 'vxu'
+
+    def get_tensors(self):
+        # input and output
+        return self.node.inputs[0].shape, self.node.outputs[0].shape
+
+    def get_num_ops(self):
+        os = self.node.outputs[0].shape
+        return np.prod(os)
+
+    def get_gemms(self):
+        # TODO might have some problems
+        return 0, 0, 0, 1
+
+
+class Special_Func(Operator):          ## Vector Execution Unit
+    def __init__(self, node, density=(1.0, 1.0, 1.0)):
+        super().__init__(node, density)
+        self.alu_type = 'vxu'
+
+    def get_tensors(self):
+        # input and output
+        if self.node.inputs[0].shape is not None:
+            return self.node.inputs[0].shape, self.node.outputs[0].shape
+        else:
+            return self.node.inputs[1].shape, self.node.outputs[0].shape
+
+    def get_num_ops(self):
+        os = self.node.outputs[0].shape
+        return np.prod(os)
+
+    def get_gemms(self):
+        # TODO might have some problems
+        return 0, 0, 0, 1
+

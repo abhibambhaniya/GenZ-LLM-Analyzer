@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "genz_llm"
-version = "0.0.13"
+version = "0.0.13.1"
 authors = [
     { name="Abhimanyu Bambhaniya", email="abambhaniya3@gatech.edu" },
 ]

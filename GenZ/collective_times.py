@@ -1,4 +1,4 @@
-def get_AR_time(data, num_AR_nodes, system):
+def get_AR_time(data, numNodes, system):
     """get_AR_time
 
     Args:
@@ -9,14 +9,32 @@ def get_AR_time(data, num_AR_nodes, system):
     Returns:
         time(float): Total time(msec) to complete the All-Reduce
     """
-    if data == 0 or num_AR_nodes == 1:
+    if data == 0 or numNodes == 1:
         return 0
     ## Ring AR Time = Start Latency + N*Tlink +  2M*(N-1)/(N*BW)
     ## Source:  https://tech.preferred.jp/en/blog/technologies-behind-distributed-deep-learning-allreduce/
-    AR_time = (5e-6 + 2*(num_AR_nodes-1)*system.interchip_link_latency +  2 * (num_AR_nodes-1) * (data/num_AR_nodes) / system.interchip_mem_bw)*1000
+    allReduceTime = (5e-6 + 2*(numNodes-1)*system.interchip_link_latency +  2 * (numNodes-1) * (data/numNodes) / system.interchip_mem_bw)*1000
 
-    return AR_time
+    return allReduceTime
 
+def get_AG_time(data, numNodes, system):
+    """get_AG_time
+
+    Args:
+        data (int): Message size(Bytes) per node to complete all gather.
+        num_AG_nodes (int): Number of nodes among which all-gather is performed
+        system (System object): Object of class System
+
+    Returns:
+        time(float): Total time(msec) to complete the All-Gather
+    """
+    if data == 0 or numNodes == 1:
+        return 0
+    ## Ring AG Time = Start Latency + N*Tlink +  2M*(N-1)/(N*BW)
+    ## Source:  https://tech.preferred.jp/en/blog/technologies-behind-distributed-deep-learning-allreduce/
+    allGatherDuration = (5e-6 + (numNodes-1)*system.interchip_link_latency +  (numNodes-1) * (data/numNodes) / system.interchip_mem_bw)*1000
+
+    return allGatherDuration
 
 def get_message_pass_time(data, system):
     """get_message_pass_time
@@ -34,7 +52,7 @@ def get_message_pass_time(data, system):
     return msg_pass_time
 
 
-def get_A2A_time(data, num_A2A_nodes, system):
+def get_A2A_time(data, numNodes, system):
     """get_A2A_time
 
     Args:
@@ -55,10 +73,10 @@ def get_A2A_time(data, num_A2A_nodes, system):
     # Where N is the number of nodes, M is the message size per node pair,
     # Tlink is the inter-chip link latency, and BW is the inter-chip memory bandwidth
 
-    if data == 0 or num_A2A_nodes == 1:
+    if data == 0 or numNodes == 1:
         return 0
-    message_size_per_pair = data / num_A2A_nodes
-    A2A_time = (5e-6 + (num_A2A_nodes - 1) * system.interchip_link_latency +
-                (num_A2A_nodes - 1) * message_size_per_pair / system.interchip_mem_bw) * 1000
+    message_size_per_pair = data / numNodes
+    A2A_time = (5e-6 + (numNodes - 1) * system.interchip_link_latency +
+                (numNodes - 1) * message_size_per_pair / system.interchip_mem_bw) * 1000
 
     return A2A_time

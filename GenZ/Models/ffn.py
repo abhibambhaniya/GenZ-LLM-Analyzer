@@ -23,6 +23,8 @@ def ffn_prefill(model_config:ModelConfig, parallelism_config:ParallelismConfig, 
 
     assert E % ep == 0, f"Number of experts:{E} must be divisible by expert parallelism:{ep}"
 
+    assert E >= ep, f"Number of experts:{E} must be less than expert parallelism:{ep}"
+
     if moe_layer_freq:
         num_tokens_per_expert = (input_sequence_length//sp) * K // E
         ffup =   [[(E//ep)*Df*fi, num_tokens_per_expert, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
@@ -57,6 +59,7 @@ def ffn_decode(model_config:ModelConfig, parallelism_config:ParallelismConfig):
         warnings.warn(f"For dense model, expert parallelism:{ep} will be treated as model parallel")
 
     assert E % ep == 0, f"Number of experts:{E} must be divisible by expert parallelism:{ep}"
+    assert E >= ep, f"Number of experts:{E} must be less than expert parallelism:{ep}"
 
     ffup =           [[K*Df*fi, 1, D, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]    ## Df is already divided
     ffdown =           [[D, 1, K*Df, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
