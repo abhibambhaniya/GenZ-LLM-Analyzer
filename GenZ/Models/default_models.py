@@ -103,7 +103,7 @@ def get_all_model_configs():
             model_configs[obj.model] = obj
     return model_configs
 
-class ModelCollection:
+class ModelCollection():
     def __init__(self, models=None):
         if models is not None:
             self.models = models
@@ -116,14 +116,27 @@ class ModelCollection:
         self.models[model_config.model] = model_config
 
     def get_model(self, model_name):
-        return self.models.get(model_name, None)
+        model_name_lower = model_name.lower()
+        for name in self.models:
+            if name.lower() == model_name_lower:
+                return self.models[name]
+        return None
 
     def remove_model(self, model_name):
         if model_name in self.models:
             del self.models[model_name]
 
     def list_models(self):
-        return list(self.models.keys())
+        unique_models = {}
+        for key, value in self.models.items():
+            if value not in unique_models.values():
+                unique_models[key] = value
+            else:
+                existing_key = next(k for k, v in unique_models.items() if v == value)
+                if len(key) > len(existing_key):
+                    del unique_models[existing_key]
+                    unique_models[key] = value
+        return list(unique_models.keys())
 
     def add_model_collection(self, model_collection):
         if not isinstance(model_collection, ModelCollection):
