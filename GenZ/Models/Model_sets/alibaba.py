@@ -25,7 +25,7 @@ qwen1_14b_config = ModelConfig(model='Qwen/Qwen-14B',
 # https://huggingface.co/Qwen/Qwen-72B/blob/main/config.json
 qwen1_72b_config = ModelConfig(model='Qwen/Qwen-72B',
     hidden_size=8192, num_attention_heads=64,
-    num_key_value_heads=40, num_ffi = 1,
+    num_key_value_heads=64, num_ffi = 1,
     intermediate_size=49152, num_decoder_layers=80,
     vocab_size=152064, max_model_len=32*1024, sliding_window=32*1024,hidden_act="silu")
 
@@ -149,5 +149,5 @@ qwen2_72b_config = ModelConfig(model='Qwen/Qwen2-72B',
     vocab_size=152064, max_model_len=32*1024, sliding_window=32*1024,hidden_act="silu")
 
 
-alibaba_models = get_all_model_configs()
+alibaba_models = get_all_model_configs(__name__)
 

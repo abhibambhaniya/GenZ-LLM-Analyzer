@@ -60,7 +60,7 @@ mistral_large_config = ModelConfig(model='mistralai/Mistral-Large',
     vocab_size=32768, max_model_len=128*1024, hidden_act="silu",
 )
 
-mistral_models = get_all_model_configs()
+mistral_models = get_all_model_configs(__name__)
 mistral_models.update(
     {
     'mistral_7b': mistral_7b_config,

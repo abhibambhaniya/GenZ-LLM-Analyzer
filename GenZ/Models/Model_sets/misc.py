@@ -103,7 +103,7 @@ deep_seek_moe_16b_config = ModelConfig(model='deepseek-ai/deepseek-moe-16b-base'
 ## This has a special case where the first layer is dense and the rest are MoE with shared experts.
 ## MLP in this case is n_shared_experts*shared_expert_intermediate_size + Activated*moe_intermediate_size
 
-misc_models = get_all_model_configs()
+misc_models = get_all_model_configs(__name__)
 
 misc_models.update({
     'glm-9b': glm_9b_config,

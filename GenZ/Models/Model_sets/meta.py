@@ -131,7 +131,7 @@ llama3_2_3b_config = ModelConfig(model='meta-llama/Llama-3.2-3B',
     vocab_size=128256, max_model_len=128*1024, hidden_act="silu",
 )
 
-meta_models = get_all_model_configs()
+meta_models = get_all_model_configs(__name__)
 meta_models.update({
     'facebook/opt-1.3b': opt_1b_config,
     'facebook/opt-125m': opt_125m_config,

@@ -53,7 +53,7 @@ palm_config = ModelConfig(model='google/palm',
         intermediate_size=4*18432, num_decoder_layers=118
 )
 
-google_models = get_all_model_configs()
+google_models = get_all_model_configs(__name__)
 
 google_models.update({
     'gemma2_27b': gemma2_27b_config,

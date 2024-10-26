@@ -38,7 +38,7 @@ phi3moe_config = ModelConfig(model='microsoft/Phi-3.5-MoE',
     sliding_window=128*1024
 )
 
-microsoft_models = get_all_model_configs()
+microsoft_models = get_all_model_configs(__name__)
 microsoft_models.update({
     'microsoft/phi3medium': phi3medium_config,
     'microsoft/phi3mini': phi3mini_config,

@@ -1,7 +1,7 @@
 import streamlit as st
 import time
 from PIL import Image
-
+from GenZ.Models import MODEL_DICT
 def local_css(file_name):
     with open(file_name) as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
@@ -10,30 +10,7 @@ def local_css(file_name):
 genz_overview = Image.open('./Website/GenZ Overview.jpg')
 llm_parallization = Image.open('./Website/various parallelism.jpg')
 platform_abstraction = Image.open('./Website/GenZ Platform abstraction.jpg')
-st.session_state.models = [
-        'meta-llama/Meta-Llama-3.1-8B',
-        'meta-llama/Llama-2-7B',
-        'meta-llama/Llama-2-13B',
-        'meta-llama/Llama-2-70B',
-        'meta-llama/Meta-Llama-3.1-405B',
-        'google/gemma-2B',
-        'google/gemma-7B',
-        'google/gemma-2-9B',
-        'google/gemma-2-27B',
-        'mistralai/mistral-7B',
-        'mistralai/Mixtral-8x7B',
-        'microsoft/phi3mini',
-        'microsoft/phi3small',
-        'microsoft/phi3medium',
-        'databricks/dbrx-base',
-        'xai-org/grok-1',
-        'openai/gpt-3',
-        'openai/gpt-4',
-        'facebook/opt-125m',
-        'facebook/opt-350m',
-        'facebook/opt-1.3b',
-        'facebook/opt-175b',
-        ]
+st.session_state.models = MODEL_DICT.list_models()
 
 st.session_state.systems = ['H100_GPU', 'A100_40GB_GPU', 'A100_80GB_GPU', 'GH200_GPU', 'TPUv4','TPUv5e', 'MI300X', 'Gaudi3', 'Custom']
 

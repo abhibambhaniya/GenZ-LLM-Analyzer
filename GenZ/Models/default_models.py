@@ -95,8 +95,8 @@ class ModelConfig():
     def __str__(self):
         return str(vars(self))
 
-def get_all_model_configs():
-    current_module = sys.modules[__name__]
+def get_all_model_configs(file_name):
+    current_module = sys.modules[file_name]
     model_configs = {}
     for name, obj in inspect.getmembers(current_module):
         if isinstance(obj, ModelConfig):

@@ -36,7 +36,7 @@ minitron_8b_config = ModelConfig(model='nvidia/Mistral-NeMo-Minitron-8B-Base',
     vocab_size=131072, max_model_len=8*1024, hidden_act="silu",
 )
 
-nvidia_models = get_all_model_configs()
+nvidia_models = get_all_model_configs(__name__)
 nvidia_models.update({
     # 'nvidia/Llama-3_1-Nemotron-51B-Instruct': nemotron_51b_config,
     'nvidia/Mistral-NeMo-Minitron-8B-Base': minitron_8b_config,
