@@ -1,6 +1,6 @@
 from GenZ.Models import ModelConfig, ResidencyInfo, OpType, CollectiveType
 from GenZ.parallelism import ParallelismConfig
-
+from math import ceil
 
 def mha_flash_attention_prefill(model_config:ModelConfig, parallelism_config:ParallelismConfig, input_sequence_length:int):
     H = model_config.num_attention_heads
@@ -10,8 +10,8 @@ def mha_flash_attention_prefill(model_config:ModelConfig, parallelism_config:Par
 
     tp = parallelism_config.tensor_parallel * parallelism_config.expert_parallel
     sp = parallelism_config.sequence_parallel
-    per_node_H = max(H // tp, 1)
-    per_node_Hkv = max(Hkv // tp, 1)
+    per_node_H = max(ceil(H / tp), 1)
+    per_node_Hkv = max(ceil(Hkv / tp), 1)
 
     ## [Batch/dp, Seq/sp, Dmodel] * [2, Dmodel, Dq, Hkv/tp] + [Dmodel, Dq, Head/tp]= [Batch/dp, Seq/sp, 3, Dq, Head/tp]
     QKV =           [[(per_node_H*Dq + 2*per_node_Hkv*Dq), input_sequence_length//sp, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
@@ -41,8 +41,8 @@ def mha_flash_attention_decode(model_config:ModelConfig, parallelism_config:Para
     sp = parallelism_config.sequence_parallel
     dp = parallelism_config.data_parallel
 
-    per_node_H = max(H // tp, 1)
-    per_node_Hkv = max(Hkv // tp, 1)
+    per_node_H = max(ceil(H / tp), 1)
+    per_node_Hkv = max(ceil(Hkv / tp), 1)
 
     query =         [[(per_node_H*Dq + 2*per_node_Hkv*Dq), 1, D, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
     logit_pre =     [[per_node_H, 1, input_sequence_length//sp, Dq, per_node_Hkv, ResidencyInfo.AC_onchip, OpType.Logit_BM_PREFILL]]

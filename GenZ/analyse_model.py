@@ -43,7 +43,7 @@ def get_summary_table(df:pd.DataFrame, unit = Unit(), model_characterstics:bool=
             else:
                 total_weights += df.loc[i,f'Input_w ({unit.unit_mem})'] * multiplier
                 if df.loc[i, f'Num ops ({unit.unit_flop})'] == 0:
-                    unused_weights += df.loc[i,f'Input_w ({unit.unit_mem})']
+                    unused_weights += df.loc[i,f'Input_w ({unit.unit_mem})'] * multiplier
 
             if model_characterstics == False:
                 total_latencies += df.loc[i,f'Latency ({unit.unit_time})'] * multiplier

@@ -8,5 +8,6 @@ system_configs: Dict[str, Dict[str, Any]] = {
     'TPUv5e' :  {'Flops': 197, 'Memory_size': 16, 'Memory_BW': 820, 'ICN': 50 , 'real_values':True},
     'TPUv4' : {'Flops': 275, 'Memory_size': 32, 'Memory_BW': 1200, 'ICN': 50 , 'real_values':True},
     'MI300X' : {'Flops': 1307, 'Memory_size': 192, 'Memory_BW': 5300, 'ICN': 400 , 'real_values':True},
-    'Gaudi3' : {'Flops': 1600, 'Memory_size': 144, 'Memory_BW': 3675, 'ICN': 300 , 'real_values':True},
+    # https://www.intel.com/content/www/us/en/content-details/817486/intel-gaudi-3-ai-accelerator-white-paper.html
+    'Gaudi3' : {'Flops': 1835, 'Memory_size': 128, 'Memory_BW': 3675, 'ICN': 300 , 'real_values':True},
 }

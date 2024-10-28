@@ -171,6 +171,8 @@ class Operator(object):
         memory_time = self.get_memory_time(system=system) / system.memory_efficiency
 
         comm_time = self.get_communication_time(system=system) / system.comm_efficiency
+
+        ## This is special case when there is no calculations
         if compute_time == 0:
             memory_time = 0
         exec_time = max(compute_time, memory_time, comm_time)

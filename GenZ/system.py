@@ -12,12 +12,19 @@ class System(object):
                 frequency=940, bits='bf16',
                 compute_efficiency=1, memory_efficiency=1, comm_efficiency=1,
                 interchip_mem_bw = 25, num_nodes = 1, interchip_link_latency=1.9,
-                topology='FullyConnected'):
+                collective_type='GenZ',    # GenZ or ASTRA-SIM
+                topology='FullyConnected'
+                ):
 
         if unit is None:
             self.unit = Unit()
         else:
             self.unit = unit
+
+        self.flops = self.unit.unit_to_raw(flops, type='C')
+        self.op_per_sec = self.flops/2
+
+        self.frequency = self.unit.unit_to_raw(frequency, type='F')
         self.onchip_mem_bw = self.unit.unit_to_raw(onchip_mem_bw, type='BW')
         self.offchip_mem_bw = self.unit.unit_to_raw(offchip_mem_bw, type='BW')
         self.interchip_mem_bw = self.unit.unit_to_raw(interchip_mem_bw, type='BW')
@@ -30,12 +37,10 @@ class System(object):
         self.memory_efficiency = memory_efficiency
         self.comm_efficiency = comm_efficiency
         self.mxu_shape = mxu_shape
+        self.collective_type = collective_type
+        
         self.num_nodes = num_nodes
         self.topology = topology
-        self.flops = self.unit.unit_to_raw(flops, type='C')
-        self.op_per_sec = self.flops/2
-
-        self.frequency = self.unit.unit_to_raw(frequency, type='F')
         self.bits = bits
 
 
