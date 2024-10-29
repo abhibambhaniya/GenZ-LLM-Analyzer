@@ -60,18 +60,18 @@ def get_best_parallization_strategy(
                                         system_name = system_name,
                                         bits=bits,
                                         tensor_parallel = TP, pipeline_parallel = PP, debug=debug)
-                data.append([micro_batch_size, TP, PP , prefill_outputs['Latency'], prefill_outputs['Throughput']] + prefill_outputs['Runtime_breakdown'])
+                data.append([micro_batch_size, TP, PP , prefill_outputs['Latency'], prefill_outputs['Throughput']])
             elif stage == 'decode':
                 decode_outputs = decode_moddeling(model = model, batch_size = micro_batch_size, Bb = beam_size ,
                                     input_tokens = input_tokens, output_tokens = output_tokens,
                                     system_name = system_name,
                                     bits=bits,
                                     tensor_parallel = TP, pipeline_parallel =PP, debug=debug)
-                data.append([micro_batch_size, TP, PP,  decode_outputs['Latency'], decode_outputs['Throughput']] + decode_outputs['Runtime_breakdown'])
+                data.append([micro_batch_size, TP, PP,  decode_outputs['Latency'], decode_outputs['Throughput']])
             else:
                 raise ValueError('Stage should be prefill or decode')
 
-    data_df = pd.DataFrame(data, columns = ['micro batch', 'TP', 'PP', 'Latency(ms)', 'Tokens/s', 'GEMM time', 'SA time', 'Comm. time'])
+    data_df = pd.DataFrame(data, columns = ['micro batch', 'TP', 'PP', 'Latency(ms)', 'Tokens/s'])
     if debug:
         display(data_df)
     return data_df.sort_values(by='Tokens/s', ascending=False).head(1)
@@ -100,18 +100,18 @@ def get_pareto_optimal_performance(
                                             system_name = system_name,
                                             bits=bits,
                                             tensor_parallel = TP, pipeline_parallel = PP, debug=False)
-                    data.append([batch_size, micro_batch_size, TP, PP , prefill_outputs['Latency'], prefill_outputs['Throughput']] + prefill_outputs['Runtime_breakdown'])
+                    data.append([batch_size, micro_batch_size, TP, PP , prefill_outputs['Latency'], prefill_outputs['Throughput']])
                 elif stage == 'decode':
                     decode_outputs = decode_moddeling(model = model, batch_size = micro_batch_size, Bb = beam_size ,
-                                        input_tokens = input_tokens, output_tokens = output_tokens, 
+                                        input_tokens = input_tokens, output_tokens = output_tokens,
                                         system_name = system_name,
                                         bits=bits,
                                         tensor_parallel = TP, pipeline_parallel =PP, debug=False)
-                    data.append([batch_size, micro_batch_size, TP, PP,  decode_outputs['Latency'], decode_outputs['Throughput']] + decode_outputs['Runtime_breakdown'])
+                    data.append([batch_size, micro_batch_size, TP, PP,  decode_outputs['Latency'], decode_outputs['Throughput']])
                 else:
                     raise ValueError('Stage should be prefill or decode')
 
-    data_df = pd.DataFrame(data, columns = ['batch', 'micro batch', 'TP', 'PP', 'Latency(ms)', 'Tokens/s', 'GEMM time', 'SA time', 'Comm. time'])
+    data_df = pd.DataFrame(data, columns = ['batch', 'micro batch', 'TP', 'PP', 'Latency(ms)', 'Tokens/s'])
     datapoints = data_df[['Latency(ms)','Tokens/s']]
 
     ##  We want a pareto optimal frontier with minimum latency and maximum Throughput.

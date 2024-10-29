@@ -114,8 +114,8 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     attn_time = summary_table[f'Attn Latency ({unit.unit_time})'].values[0]                    ## In milliseconds
     total_communication_delay = summary_table[f'Comm Latency ({unit.unit_time})'].values[0]    ## In milliseconds
     total_time = linear_time + attn_time + total_communication_delay
-    runtime_breakdown = [linear_time, attn_time, total_communication_delay]
-
+    # runtime_breakdown = [linear_time, attn_time, total_communication_delay]
+    runtime_breakdown = get_runtime_breakdown(model_df)
     ##################################################################################################
     ### Output Generation
     ##################################################################################################

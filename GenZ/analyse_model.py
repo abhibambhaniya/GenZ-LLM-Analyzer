@@ -100,7 +100,10 @@ def simplify_df(df:pd.DataFrame):
             new_row = df.loc[i, column_no_change].copy()
             for col in column_to_update:
                 new_row[col] = df.loc[i, col] * multiplier
-            new_df = pd.concat([new_df, pd.DataFrame([new_row])], ignore_index=True)
+            if len(new_df) == 0:
+                new_df = pd.DataFrame([new_row])
+            else:
+                new_df = pd.concat([new_df, pd.DataFrame([new_row])], ignore_index=True)
     return new_df
 
 def get_runtime_breakdown(df:pd.DataFrame) -> RuntimeBreakdown:
