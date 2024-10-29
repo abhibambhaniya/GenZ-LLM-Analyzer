@@ -12,7 +12,9 @@ unit = Unit()
 
 def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     system_name = 'A100_40GB_GPU', system_eff=1, bits='bf16', debug= False, model_profilling = False,
-    tensor_parallel = 1, pipeline_parallel = 1, return_model_df=False,
+    tensor_parallel = 1, pipeline_parallel = 1, expert_parallel = 1,
+    collective_strategy='GenZ', network_config=None,
+    return_model_df=False, parallelism_heirarchy = "TP{1}_EP{1}_PP{1}",
     model_offload = False):
 
     if pipeline_parallel > 1:
@@ -26,13 +28,16 @@ def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     ### System Declaration
     ##################################################################################################
 
-    system = get_inference_system(system_name = system_name, bits = bits, ceff=system_eff, meff=system_eff)
-
+    system = get_inference_system(system_name = system_name, bits = bits, 
+                                ceff=system_eff, meff=system_eff, network_config=network_config,
+                                collective_strategy=collective_strategy, parallelism_heirarchy=parallelism_heirarchy)
     ##################################################################################################
     ### Model Characterization Calculation
     ##################################################################################################
     model_prefill = create_full_prefill_model(input_sequence_length=input_tokens, name=model,
-                                                    tensor_parallel=tensor_parallel)
+                                                    tensor_parallel=tensor_parallel,
+                                                    pipeline_parallel=pipeline_parallel,
+                                                    expert_parallel=expert_parallel)
 
 
     model_df = get_model_df(model_prefill, system=system, batch_size = ub, intermediate_on_chip=True , model_characterstics = True)
@@ -42,7 +47,7 @@ def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     kv_cache = summary_table[f'KV Cache ({unit.unit_mem})'].values[0]                  ## In MB
 
     total_memory_req = model_weights + kv_cache
-    num_nodes = pipeline_parallel * tensor_parallel
+    num_nodes = pipeline_parallel * tensor_parallel * expert_parallel
 
     #################################################################################
     ### Offloading calculations
@@ -69,7 +74,10 @@ def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     ### Prefill generation time
     ##################################################################################################
     model_prefill = create_full_prefill_model(input_sequence_length=input_tokens, name=model,
-                                        tensor_parallel=tensor_parallel)
+                                                tensor_parallel=tensor_parallel,
+                                                pipeline_parallel=pipeline_parallel,
+                                                expert_parallel=expert_parallel)
+    system.parallelism_heirarchy = parallelism_heirarchy
     model_df = get_model_df(model_prefill, system, unit, ub, intermediate_on_chip=True )
     summary_table = get_summary_table(model_df, unit)
     prefill_latency = summary_table[f'Latency ({unit.unit_time})'].values[0]                 # Latency in millisec

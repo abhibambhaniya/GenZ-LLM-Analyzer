@@ -2,7 +2,7 @@ import numpy as np
 from operator import mul
 from math import ceil
 from GenZ.unit import Unit
-
+from GenZ.system import System
 from GenZ.Models import OpType, CollectiveType
 from GenZ.collective_times import get_AR_time, get_A2A_time, get_message_pass_time, get_AG_time
 
@@ -132,10 +132,11 @@ class Operator(object):
                 from .Astra_sim.get_astra_sim_time import get_astrasim_collective_time, get_network_config
                 "ALLREDUCE", "ALLTOALL", "ALLGATHER", "REDUCESCATTER"
                 collective_convertion = { CollectiveType.AllReduce: 'ALLREDUCE', CollectiveType.All2All: 'ALLTOALL',
-                                CollectiveType.AllGather: 'ALLGATHER', CollectiveType.ReduceScatter: 'REDUCESCATTER'}
+                                CollectiveType.AllGather: 'ALLGATHER', CollectiveType.ReduceScatter: 'REDUCESCATTER', 
+                                }
                 if system.network_config is None:
                     return max(get_astrasim_collective_time(system=system, collective_type=collective_convertion[self.collective_type],
-                                                        collective_size=data_size).values())/1e6
+                                                        collective_size=data_size).values())/1e9
                 else:
                     if self.collective_type == CollectiveType.MessagePass:
                         parallelism = "PP"
@@ -151,8 +152,31 @@ class Operator(object):
                     network_config = get_network_config(network_config = system.network_config, 
                                                         parallelism_heirarchy = system.parallelism_heirarchy,
                                                         parallelism = parallelism)
-                    return max(get_astrasim_collective_time(collective_type=collective_convertion[self.collective_type],
-                                                        collective_size=data_size, network_config=network_config).values())/1e6
+                    if parallelism == "PP":
+                            BW = network_config['bandwidth'][0] 
+                            lat = network_config['latency'][0]
+                            # TODO : There is a bug with astrasim when num_nodes = 2
+                            # Using GenZ for now.
+                            temp_sys = System(num_nodes=2, topology='FullyConnected', interchip_link_bw=BW, interchip_link_latency=lat)
+                            # pipe_time = max(get_astrasim_collective_time(system=temp_sys,
+                            #                                     collective_type="ALLTOALL",
+                            #                                     collective_size=data_size/2).values())/1e6
+                            pipe_time = get_message_pass_time(data_size, temp_sys) / 1000
+                            if len(network_config['npus_count']) > 1:   ## PP over more than 1 dimension, we need average time.
+                                # Num hops: (dim[0]-1)*dim[1] + dim[1]-1
+                                first_dim_time = pipe_time * (network_config['npus_count'][0]-1) * network_config['dimensions-count'][1] 
+                                temp_sys = System(num_nodes=2, topology='FullyConnected',
+                                                interchip_link_bw=network_config['bandwidth'][1], interchip_link_latency=network_config['latency'][1]) 
+                                # second_dim_time = max(get_astrasim_collective_time(system=temp_sys,
+                                #                             collective_type="ALLTOALL",
+                                #                             collective_size=data_size/2).values())/1e6 * (network_config['npus_count'][1]-1)
+                                second_dim_time = (get_message_pass_time(data_size, temp_sys) / 1000) * (network_config['npus_count'][1]-1)
+                                return (first_dim_time + second_dim_time)/(network_config['npus_count'][0] * network_config['npus_count'][1] -1)
+                            else:
+                                return pipe_time
+                    else: 
+                        return max(get_astrasim_collective_time(collective_type=collective_convertion[self.collective_type],
+                                                        collective_size=data_size, network_config=network_config).values())/1e9
 
     def get_onchip_occupancy(self):
         sz_list = self.get_sz_list()

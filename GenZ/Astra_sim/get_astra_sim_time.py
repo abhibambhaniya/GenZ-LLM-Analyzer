@@ -55,7 +55,7 @@ def get_network_config(network_config:dict, parallelism_heirarchy:str, paralleli
     
     pattern = r'\{(\d+)\}'
     parallelism_sizes = re.findall(pattern, parallelism_heirarchy)
-    assert np.prod(network_config["npus_count"]) == np.prod([int(match) for match in parallelism_sizes]), "Sum of npus_count should be equal to num_nodes"
+    assert np.prod(network_config["npus_count"]) == np.prod([int(match) for match in parallelism_sizes]), f"Prof of npus_count:{np.prod(network_config['npus_count'])} should be equal to num_nodes:{np.prod([int(match) for match in parallelism_sizes])}"
 
     assert parallelism in parallelism_heirarchy, "parallelism should be present in parallelism_heirarchy"
 
@@ -72,13 +72,31 @@ def get_network_config(network_config:dict, parallelism_heirarchy:str, paralleli
     network_config_for_parallelism = {}
     for key, value in network_config.items():
         if key == "npus_count":
-            network_config_for_parallelism[key] = dims[parallelism_position]
+            network_config_for_parallelism[key] = [int(x) for x in dims[parallelism_position]]
         else:
             network_config_for_parallelism[key] = [value[i] for i in parallelism_index]
-    
+
+    network_config_for_parallelism["dimensions-count"] = len(dims[parallelism_position])
     return network_config_for_parallelism
+
+import json
+
+def replace_collective_implementation(file_path, new_value):
+    with open(file_path, 'r') as file:
+        data = json.load(file)
     
-def get_astrasim_collective_time(collective_size, collective_type, system:System,
+    data["all-reduce-implementation"] = new_value
+    data["all-to-all-implementation"] = new_value
+    data["all-gather-implementation"] = new_value
+    data["reduce-scatter-implementation"] = new_value
+    
+    with open(file_path, 'w') as file:
+        json.dump(data, file, indent=4)
+
+# Example usage
+
+
+def get_astrasim_collective_time(collective_size, collective_type, system:System=None,
                                 network_config=None) -> dict:
     """
     collective_type: str: Should be one of the following: "ALLREDUCE"/"ALLTOALL"/"ALLGATHER"/"REDUCESCATTER"
@@ -98,7 +116,7 @@ def get_astrasim_collective_time(collective_size, collective_type, system:System
     os.makedirs(os.path.dirname(et_output_path), exist_ok=True)
 
     if network_config is not None:
-        nodes = np.prod(network_config["npus_count"])
+        nodes = int(np.prod(network_config["npus_count"]))
     else:
         nodes = system.num_nodes
     # Wait for the subprocess to complete
@@ -120,10 +138,9 @@ def get_astrasim_collective_time(collective_size, collective_type, system:System
         convert_chakra_file(input_file, output_file)
     
     # Step 4: Create network.yml
-    assert system.topology in ["Ring", "FullyConnected", "Switch"], \
-        "Invalid collective_type. Must be one of: Ring, FullyConnected, Switch"
-
     if network_config is None:
+        assert system.topology in ["Ring", "FullyConnected", "Switch"], \
+            "Invalid collective_type. Must be one of: Ring, FullyConnected, Switch"
         network_config = {
             "topology": [system.topology],    #(“Ring”, “FullyConnected”, or “Switch”)
             "npus_count": [system.num_nodes],
@@ -137,7 +154,15 @@ def get_astrasim_collective_time(collective_size, collective_type, system:System
     with open(network_yml_path, "w+") as network_yml_file:
         yaml.dump(network_config, network_yml_file)
     
-    # Step 5: Run astra-sim
+    # Step 5: Replace the system implementation
+    topology_to_algorithm = {
+        "Ring": "ring",
+        "FullyConnected": "direct",
+        "Switch": "halvingDoubling"
+    }
+    collective_impl = [topology_to_algorithm[i] for i in network_config['topology']]
+    replace_collective_implementation('/home/abhimanyu/synergy3/work/GenZ-LLM-Analyzer/GenZ/Astra_sim/system.json', collective_impl) 
+    # Step 6: Run astra-sim
     print(subprocess.run(f"bash {run_file}>{ASTRA_SIM_OUTPUT_PATH}", shell=True, check=True, stderr=subprocess.PIPE).stdout)
 
     def get_cycles_count(file_path):

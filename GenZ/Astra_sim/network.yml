@@ -1,8 +1,9 @@
 bandwidth:
-- 50.0
+- 25
+dimensions-count: 1
 latency:
-- 1899.9999999999998
+- 500
 npus_count:
 - 4
 topology:
-- FullyConnected
+- Switch

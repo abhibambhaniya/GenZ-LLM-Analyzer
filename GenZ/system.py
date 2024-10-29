@@ -13,7 +13,9 @@ class System(object):
                 compute_efficiency=1, memory_efficiency=1, comm_efficiency=1,
                 interchip_link_bw = 25, num_nodes = 1, interchip_link_latency=1.9,
                 collective_strategy='GenZ',    # GenZ or ASTRA-SIM
-                topology='FullyConnected'
+                topology='FullyConnected',
+                parallelism_heirarchy = "TP{1}_EP{1}_PP{1}",
+                network_config = None
                 ):
 
         if unit is None:
@@ -43,7 +45,8 @@ class System(object):
         self.num_nodes = num_nodes
         self.topology = topology
         self.bits = bits
-
+        self.parallelism_heirarchy = parallelism_heirarchy   ## TP{1}_EP{1}_PP{1}
+        self.network_config = network_config
 
     def __str__(self):
         unit = Unit()

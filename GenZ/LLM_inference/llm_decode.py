@@ -14,7 +14,10 @@ unit = Unit()
 def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     output_tokens = 0,   Bb = 4 ,           ## Only for Decode
     system_name = 'A100_40GB_GPU', system_eff = 1, bits='bf16', debug= False, model_profilling = False,
-    tensor_parallel = 1, pipeline_parallel = 1, return_model_df=False,
+    tensor_parallel = 1, pipeline_parallel = 1,
+    expert_parallel = 1,
+    collective_strategy='GenZ', network_config=None,
+    return_model_df=False, parallelism_heirarchy = "TP{1}_EP{1}_PP{1}",
     model_offload = False, ceff = None, meff = None):
 
     if pipeline_parallel > 1:
@@ -29,14 +32,19 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     ### System Declaration
     ##################################################################################################
 
-    system = get_inference_system(system_name = system_name, bits = bits, ceff=system_eff , meff=system_eff )
+    system = get_inference_system(system_name = system_name, bits = bits, ceff=system_eff , meff=system_eff,
+                                network_config=network_config, 
+                                collective_strategy=collective_strategy, 
+                                parallelism_heirarchy=parallelism_heirarchy )
 
     ##################################################################################################
     ### Model Characterization Calculation
     ##################################################################################################
     # if is_moe:
     model_decode = create_full_decode_model(input_sequence_length=input_tokens,output_gen_tokens = output_tokens ,
-                                        name=model,  tensor_parallel=tensor_parallel)
+                                        name=model,  tensor_parallel=tensor_parallel,
+                                                    pipeline_parallel=pipeline_parallel,
+                                                    expert_parallel=expert_parallel)
 
     model_df = get_model_df(model_decode, system=system, batch_size= ub*Bb, intermediate_on_chip=True , beam_merge= (Bb > 1), beam_size= Bb, model_characterstics = True)
     summary_table = get_summary_table(model_df, unit, model_characterstics = True)
@@ -46,7 +54,7 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     unused_weights = summary_table[f'Unused Weights ({unit.unit_mem})'].values[0]      ## In MB
 
     total_memory_req = model_weights + kv_cache
-    num_nodes = pipeline_parallel * tensor_parallel
+    num_nodes = pipeline_parallel * tensor_parallel * expert_parallel
 
     #################################################################################
     ### Offloading calculations
@@ -74,7 +82,9 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     ### Token generation time
     ##################################################################################################
     model_decode = create_full_decode_model(input_sequence_length=input_tokens,output_gen_tokens = output_tokens ,
-                                        name=model, tensor_parallel=tensor_parallel, beam_merge= (Bb > 1), beam_size = Bb)
+                                        name=model, tensor_parallel=tensor_parallel,
+                                        pipeline_parallel=pipeline_parallel,
+                                        expert_parallel=expert_parallel)
 
     model_df = get_model_df(model_decode, system, unit, ub*Bb,  intermediate_on_chip=True , beam_merge= (Bb > 1), beam_size= Bb)
     summary_table = get_summary_table(model_df, unit)

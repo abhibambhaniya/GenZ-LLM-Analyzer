@@ -99,7 +99,7 @@ def create_full_prefill_model(input_sequence_length, name='GPT-2', data_path=DAT
         ## Single stage will have layers_per_stage layers
         full_model = add_layers(full_model, layers_per_stage)
         ## Single stage layers end and message pass at the end
-        full_model += [[input_sequence_length // args.get('sequence_parallel', 1), model_config.hidden_size, 1, 1, 1, CollectiveType.MessagePass, OpType.Sync]]
+        full_model += [["Message Pass", input_sequence_length // args.get('sequence_parallel', 1), model_config.hidden_size, 1, 1, 1, CollectiveType.MessagePass, OpType.Sync]]
         full_model += end_repeat_layers(pipeline_stages - 1)
         ## Last stage will have layers_last_stage layers and no message pass at the end
         full_model = add_layers(full_model, layers_last_stage)
@@ -137,7 +137,7 @@ def create_full_decode_model(input_sequence_length, name='GPT-2', data_path=DATA
 
         full_model += repeat_layers(pipeline_stages - 1)
         full_model = add_layers(full_model, layers_per_stage)
-        full_model += [[input_sequence_length // args.get('sequence_parallel', 1), model_config.hidden_size, 1, 1, 1, CollectiveType.MessagePass, OpType.Sync]]
+        full_model += [["Message Pass", 1, model_config.hidden_size, 1, 1, 1, CollectiveType.MessagePass, OpType.Sync]]
         full_model += end_repeat_layers(pipeline_stages - 1)
         full_model = add_layers(full_model, layers_last_stage)
     else:
