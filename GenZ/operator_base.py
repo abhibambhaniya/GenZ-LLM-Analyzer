@@ -194,6 +194,7 @@ class Operator(object):
         op_intensity = num_ops/num_data  if num_data else 0
         input_a_size, input_w_size, output_size = self.get_sz_list()
         ret = {
+            'Layer Name': self.name,
             'Op Type': self.get_op_type(self.dim),
             'Dimension': self.get_dimensions(),
             'Op Intensity': op_intensity,
@@ -236,6 +237,7 @@ class Operator(object):
         input_a_size, input_w_size, output_size = self.get_sz_list()
 
         ret = {
+            'Layer Name': self.name,
             'Op Type': self.get_op_type(self.dim),
             'Dimension': self.get_dimensions(),
             'Bound': boundedness,

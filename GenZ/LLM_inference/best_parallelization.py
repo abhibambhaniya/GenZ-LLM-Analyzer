@@ -48,7 +48,7 @@ def get_best_parallization_strategy(
 
     parallelism_combinations = get_various_parallization(model=model, total_nodes=total_nodes)
     if debug:
-        print(f'For model:{model}, number cores:{total_nodes}, system:{system_name}, \n The parallelism combinatations are {parallelism_combinations} ')
+        print(f'For model:{model}, number cores:{total_nodes}, system:{system_name}, \n The parallelism combinations are {parallelism_combinations} ')
 
     data = []
     for TP,PP in parallelism_combinations:
@@ -63,7 +63,7 @@ def get_best_parallization_strategy(
                 data.append([micro_batch_size, TP, PP , prefill_outputs['Latency'], prefill_outputs['Throughput']] + prefill_outputs['Runtime_breakdown'])
             elif stage == 'decode':
                 decode_outputs = decode_moddeling(model = model, batch_size = micro_batch_size, Bb = beam_size ,
-                                    input_tokens = input_tokens, output_tokens = output_tokens, 
+                                    input_tokens = input_tokens, output_tokens = output_tokens,
                                     system_name = system_name,
                                     bits=bits,
                                     tensor_parallel = TP, pipeline_parallel =PP, debug=debug)

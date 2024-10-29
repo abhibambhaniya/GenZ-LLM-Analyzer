@@ -55,13 +55,13 @@ def generate_demand_curve(system_box, system_eff, num_nodes_slider,
                                             system_name = system_box, system_eff = system_eff,
                                             bits=quantization_box,
                                             tensor_parallel = num_nodes_slider, debug=False)
-                    data.append([model_name,'Prefill',batch_size, prefill_outputs['Latency'], prefill_outputs['Throughput']] + prefill_outputs['Runtime_breakdown'])
+                    data.append([model_name,'Prefill',batch_size, prefill_outputs['Latency'], prefill_outputs['Throughput']])
                     decode_outputs = decode_moddeling(model = model, batch_size = batch_size, Bb = beam_size ,
                                             input_tokens = input_token_slider, output_tokens = output_token_slider,
                                             system_name = system_box, system_eff=system_eff,
                                             bits=quantization_box,
                                             tensor_parallel = num_nodes_slider, debug=False)
-                    data.append([model_name,'Decode',batch_size,  decode_outputs['Latency'], decode_outputs['Throughput']] + decode_outputs['Runtime_breakdown'])
+                    data.append([model_name,'Decode',batch_size,  decode_outputs['Latency'], decode_outputs['Throughput']])
                 except:
                     # ValueError
                     decode_outputs, decode_summary_table = decode_moddeling(model = model, batch_size = batch_size, Bb = beam_size ,
@@ -69,11 +69,11 @@ def generate_demand_curve(system_box, system_eff, num_nodes_slider,
                                             system_name = system_box, system_eff = system_eff,
                                             bits=quantization_box, model_profilling=True)
                     total_memory = int(system_box.get('Memory_size'))*1024  ## per device memory
-                    memory_req =  decode_summary_table['Model Weights (MB)'].values[0] + decode_summary_table['KV Cache (MB)'].values[0]
+                    memory_req =  decode_summary_table['Total Weights (MB)'].values[0] + decode_summary_table['KV Cache (MB)'].values[0]
 
                     mem_size_data.append([model, total_memory, batch_size, beam_size, input_token_slider, output_token_slider, np.ceil(memory_req/total_memory)])
 
-    data_df = pd.DataFrame(data, columns = ['Model', 'Stage','Batch', 'Latency(ms)', 'Tokens/s', 'GEMM Time', 'Attn Time', 'Communication Time'])
+    data_df = pd.DataFrame(data, columns = ['Model', 'Stage','Batch', 'Latency(ms)', 'Tokens/s'])
     chip_req_df = pd.DataFrame(mem_size_data, columns = ['Model', 'NPU memory','Batch', 'Beam size', 'Input Tokens', 'Output Tokens', 'Min. Chips'])
 
     data_df['Stage'] = pd.Categorical(data_df['Stage'], categories=['Prefill','Decode'])
@@ -245,11 +245,11 @@ def main():
             )
         with st.status("Computing metric...", expanded=True):
             st.write("Building Platforms...")
-            time.sleep(2)
+            time.sleep(1)
             st.write("Getting LLM inference analysis...")
-            time.sleep(1)
+            time.sleep(0.5)
             st.write("Generating charts...")
-            time.sleep(1)
+            time.sleep(0.5)
         if isinstance(outputs, pd.DataFrame):
             st.write("Number of nodes is insufficient, please increase the nodes to fit the model")
             st.dataframe(outputs)
@@ -259,7 +259,7 @@ def main():
             st.plotly_chart(outputs[0])
             st.write("Number of nodes is insufficient, please increase the nodes to fit the model")
             st.dataframe(outputs[1])
-        
+
         regenerate_plot = False
 
 

@@ -10,10 +10,29 @@ offload_bw = 128
 
 unit = Unit()
 
+class RuntimeBreakdown():
+    def __init__(self):
+        self.Embedding: float = 0
+        self.MHA: float = 0
+        self.FFN: float = 0
+        self.Collective: float = 0
+        self.LA_layers: float = 0
+        self.QKVO_layers: float = 0
+        self.softmax: float = 0
+        self.AR_time: float = 0
+        self.A2A_time: float = 0
+        self.Send_Recv_time: float = 0
+
+    def __repr__(self):
+        variables = vars(self)
+        return ', '.join(f'{name}: {value}' for name, value in variables.items())
+
+
+
 class ModdelingOutput(dict):
-    Latency: float = None
-    Throughput: float = None
-    Runtime_breakdown: Optional[list[float]] = None
+    Latency: float = 0
+    Throughput: float = 0
+    Runtime_breakdown: Optional[RuntimeBreakdown] = None
     is_offload: Optional[bool] = False
 
 def get_offload_system(system, total_memory_req, debug):

@@ -7,6 +7,8 @@ import numpy as np
 import os
 from GenZ.Models import OpType, ResidencyInfo
 
+from GenZ.LLM_inference.utils import RuntimeBreakdown
+
 def get_attn_index(df:pd.DataFrame):
     ret = []
     for idx in range(len(df)):
@@ -80,11 +82,10 @@ def get_summary_table(df:pd.DataFrame, unit = Unit(), model_characterstics:bool=
 
 def simplify_df(df:pd.DataFrame):
     unit = Unit()
-    # column_no_change =  ['Op Type', 'Dimension','Bound', 'C/M ratio', 'Op Intensity', 'C Effcy', f'Throughput ({unit.unit_compute})']
     column_to_update = [f'Latency ({unit.unit_time})',
                 f'Compute time ({unit.unit_time})', f'Memory time ({unit.unit_time})', f'Communication time ({unit.unit_time})',
                 f'Cycles', f'Compute cycle', f'Memory cycle', f'Communication cycle',
-                f'Num ops ({unit.unit_flop})', f'Input_a ({unit.unit_mem})', f'Input_w ({unit.unit_mem})', f'Output ({unit.unit_mem})', f'Total Data ({unit.unit_mem})',                
+                f'Num ops ({unit.unit_flop})', f'Input_a ({unit.unit_mem})', f'Input_w ({unit.unit_mem})', f'Output ({unit.unit_mem})', f'Total Data ({unit.unit_mem})',
                 ]
     column_no_change = df.columns.difference(column_to_update).tolist()
 
@@ -101,6 +102,60 @@ def simplify_df(df:pd.DataFrame):
                 new_row[col] = df.loc[i, col] * multiplier
             new_df = pd.concat([new_df, pd.DataFrame([new_row])], ignore_index=True)
     return new_df
+
+def get_runtime_breakdown(df:pd.DataFrame) -> RuntimeBreakdown:
+    df = simplify_df(df)
+    unit = Unit()
+    runtime_breakdown = RuntimeBreakdown()
+    assert 'Layer Name' in df.columns, "Layer Name not found in the dataframe"
+    assert f'Latency ({unit.unit_time})' in df.columns, "Latency (ms) not found in the dataframe"
+
+    possible_layer_names = ['embeddings', 'classifier', 'Emb_AR', 'classifier_AG', 
+                            'QKV', 'Out Proj',
+                            'Logit', 'Attend',
+                            'Logit Pre', 'Logit Suf',
+                            'Attend Pre', 'Attend Suf',
+                            'Gate', 'up+gate', 'down',
+                            'Message Pass', 'MHA AR', 'Gate AR',
+                            'Dispatch A2A', 'Collect A2A', 'FFN AR']
+
+    for i in range(len(df)):
+        layer_name = df.loc[i, 'Layer Name']
+        layer_latency = df.loc[i, f'Latency ({unit.unit_time})']
+        if layer_name in ['embeddings', 'classifier']:
+            runtime_breakdown.Embedding += layer_latency
+        elif layer_name in ['QKV', 'Out Proj']:
+            runtime_breakdown.MHA += layer_latency
+            runtime_breakdown.QKVO_layers += layer_latency
+        elif layer_name in ['Logit', 'Attend', 'Logit Pre', 'Logit Suf',
+                            'Attend Pre', 'Attend Suf',]:
+            runtime_breakdown.MHA += layer_latency
+            runtime_breakdown.LA_layers += layer_latency
+        elif layer_name in ['Gate', 'up+gate', 'down']:
+            runtime_breakdown.FFN += layer_latency
+        elif layer_name in ['Message Pass']:
+            runtime_breakdown.Collective += layer_latency
+            runtime_breakdown.Send_Recv_time += layer_latency
+        elif layer_name in ['MHA AR']:
+            runtime_breakdown.MHA += layer_latency
+            runtime_breakdown.Collective += layer_latency
+            runtime_breakdown.AR_time += layer_latency
+        elif layer_name in ['Gate AR', 'FFN AR']:
+            runtime_breakdown.FFN += layer_latency
+            runtime_breakdown.Collective += layer_latency
+            runtime_breakdown.AR_time += layer_latency
+        elif layer_name in ['Dispatch A2A', 'Collect A2A']:
+            runtime_breakdown.Collective += layer_latency
+            runtime_breakdown.A2A_time += layer_latency
+            runtime_breakdown.FFN += layer_latency
+        elif layer_name in ['Emb_AR', 'classifier_AG']:
+            runtime_breakdown.AR_time += layer_latency
+            runtime_breakdown.Embedding += layer_latency
+            runtime_breakdown.Collective += layer_latency
+        else:
+            raise ValueError(f'Layer Name:{layer_name} not found in the breakdown function')
+
+    return runtime_breakdown
 
 def analysis_model(model_dims, system=None, unit=Unit(), densities = None,intermediate_on_chip=False,
                     beam_size=1, beam_merge=False, model_characterstics=False):

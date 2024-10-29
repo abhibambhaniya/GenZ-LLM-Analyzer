@@ -16,7 +16,7 @@ def get_minimum_system_size(
         model_df, summary_table = decode_moddeling(model = model, batch_size = max_batch_size, Bb = beam_size ,
                             input_tokens = input_tokens, output_tokens = output_tokens, model_profilling=True,
                             tensor_parallel = 1, pipeline_parallel = 1, bits=bits, debug=debug)
-    Total_memory_required = (summary_table.loc[0,'Model Weights (MB)'] + summary_table.loc[0,'KV Cache (MB)'])   ## MBs
+    Total_memory_required = (summary_table.loc[0,'Total Weights (MB)'] + summary_table.loc[0,'KV Cache (MB)'])   ## MBs
     system = get_inference_system(system_name =system_name , bits = bits)
     Node_memory_size = system.get_off_chip_mem_size()       ## In MBs
     Num_nodes = Total_memory_required / Node_memory_size

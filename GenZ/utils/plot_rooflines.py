@@ -61,7 +61,7 @@ def display_df(df):
     pd.set_option("display.precision", 2)
 
     ## Reordering columns
-    first_cols = ['Op Type','Dimension','Op Intensity','Num ops (MFLOP)','Input_a (MB)','Input_w (MB)','Output (MB)','Total Data (MB)',f'Compute time ({unit.unit_time})',f'Memory time ({unit.unit_time})',f'Communication time ({unit.unit_time})','Bound','C/M ratio','Cycles', '% of total time','Throughput (Tflops)',f'Compute cycle',f'Memory cycle']
+    first_cols = ['Layer Name', 'Op Type','Dimension','Op Intensity', 'Latency (msec)', 'Num ops (MFLOP)','Input_a (MB)','Input_w (MB)','Output (MB)','Total Data (MB)',f'Compute time ({unit.unit_time})',f'Memory time ({unit.unit_time})',f'Communication time ({unit.unit_time})','Bound','C/M ratio','Cycles', '% of total time','Throughput (Tflops)',f'Compute cycle',f'Memory cycle']
     last_cols = [col for col in df.columns if col not in first_cols]
     df = df.loc[:,first_cols+last_cols]
 
