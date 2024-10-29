@@ -117,16 +117,42 @@ class Operator(object):
             return 0
         else:
             data_size = self.communication_data() * system.get_bit_multiplier(type='M', data='a')
-            if self.collective_type == CollectiveType.AllReduce:
-                return get_AR_time(data_size , self.num_collective_nodes, system) / 1000
-            elif  self.collective_type == CollectiveType.All2All:
-                return get_A2A_time(data_size , self.num_collective_nodes, system) / 1000
-            elif  self.collective_type == CollectiveType.MessagePass:
-                return get_message_pass_time(data_size, system) / 1000
-            elif self.collective_type == CollectiveType.AllGather:
-                return get_AG_time(data_size, self.num_collective_nodes, system) / 1000
-            else:
-                raise ValueError(f'Unknown collective type: {self.collective_type}.')
+            if system.collective_strategy == 'GenZ':
+                if self.collective_type == CollectiveType.AllReduce:
+                    return get_AR_time(data_size , self.num_collective_nodes, system) / 1000
+                elif  self.collective_type == CollectiveType.All2All:
+                    return get_A2A_time(data_size , self.num_collective_nodes, system) / 1000
+                elif  self.collective_type == CollectiveType.MessagePass:
+                    return get_message_pass_time(data_size, system) / 1000
+                elif self.collective_type == CollectiveType.AllGather:
+                    return get_AG_time(data_size, self.num_collective_nodes, system) / 1000
+                else:
+                    raise ValueError(f'Unknown collective type: {self.collective_type}.')
+            elif system.collective_strategy == 'ASTRA-SIM':
+                from .Astra_sim.get_astra_sim_time import get_astrasim_collective_time, get_network_config
+                "ALLREDUCE", "ALLTOALL", "ALLGATHER", "REDUCESCATTER"
+                collective_convertion = { CollectiveType.AllReduce: 'ALLREDUCE', CollectiveType.All2All: 'ALLTOALL',
+                                CollectiveType.AllGather: 'ALLGATHER', CollectiveType.ReduceScatter: 'REDUCESCATTER'}
+                if system.network_config is None:
+                    return max(get_astrasim_collective_time(system=system, collective_type=collective_convertion[self.collective_type],
+                                                        collective_size=data_size).values())/1e6
+                else:
+                    if self.collective_type == CollectiveType.MessagePass:
+                        parallelism = "PP"
+                    elif self.collective_type == CollectiveType.AllReduce:
+                        parallelism = "TP"
+                    elif self.collective_type == CollectiveType.All2All:
+                        parallelism = "EP"
+                    elif self.collective_type == CollectiveType.AllGather:
+                        parallelism = "TP"
+                    else:
+                        raise ValueError(f'Unknown parallelism for collective type: {self.collective_type}.')
+                    
+                    network_config = get_network_config(network_config = system.network_config, 
+                                                        parallelism_heirarchy = system.parallelism_heirarchy,
+                                                        parallelism = parallelism)
+                    return max(get_astrasim_collective_time(collective_type=collective_convertion[self.collective_type],
+                                                        collective_size=data_size, network_config=network_config).values())/1e6
 
     def get_onchip_occupancy(self):
         sz_list = self.get_sz_list()

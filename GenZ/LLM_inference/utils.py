@@ -68,4 +68,4 @@ def get_inference_system(system_name='A100_40GB_GPU', bits='bf16', ceff=1, meff=
         raise TypeError('System should be weight str or dict with Flops,Memory, ICN values')
 
     return System(unit,frequency=1000 , flops=NUM_FLOPS, off_chip_mem_size=(per_chip_memory*1024), compute_efficiency=ceff, memory_efficiency=meff,
-                    offchip_mem_bw=OFFCHIP_MEM_BW, bits=bits, external_mem_bw=offload_bw, interchip_mem_bw=C2C_BW, interchip_link_latency=C2C_LL)
+                    offchip_mem_bw=OFFCHIP_MEM_BW, bits=bits, external_mem_bw=offload_bw, interchip_link_bw=C2C_BW, interchip_link_latency=C2C_LL)

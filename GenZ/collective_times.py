@@ -13,7 +13,7 @@ def get_AR_time(data, numNodes, system):
         return 0
     ## Ring AR Time = Start Latency + N*Tlink +  2M*(N-1)/(N*BW)
     ## Source:  https://tech.preferred.jp/en/blog/technologies-behind-distributed-deep-learning-allreduce/
-    allReduceTime = (5e-6 + 2*(numNodes-1)*system.interchip_link_latency +  2 * (numNodes-1) * (data/numNodes) / system.interchip_mem_bw)*1000
+    allReduceTime = (5e-6 + 2*(numNodes-1)*system.interchip_link_latency +  2 * (numNodes-1) * (data/numNodes) / system.interchip_link_bw)*1000
 
     return allReduceTime
 
@@ -32,7 +32,7 @@ def get_AG_time(data, numNodes, system):
         return 0
     ## Ring AG Time = Start Latency + N*Tlink +  2M*(N-1)/(N*BW)
     ## Source:  https://tech.preferred.jp/en/blog/technologies-behind-distributed-deep-learning-allreduce/
-    allGatherDuration = (5e-6 + (numNodes-1)*system.interchip_link_latency +  (numNodes-1) * (data/numNodes) / system.interchip_mem_bw)*1000
+    allGatherDuration = (5e-6 + (numNodes-1)*system.interchip_link_latency +  (numNodes-1) * (data/numNodes) / system.interchip_link_bw)*1000
 
     return allGatherDuration
 
@@ -48,7 +48,7 @@ def get_message_pass_time(data, system):
     """
     if data == 0:
         return 0
-    msg_pass_time = ((4.2e-6 + (2-1)*system.interchip_link_latency) +  data / system.interchip_mem_bw)*1000
+    msg_pass_time = ((4.2e-6 + (2-1)*system.interchip_link_latency) +  data / system.interchip_link_bw)*1000
     return msg_pass_time
 
 
@@ -77,6 +77,6 @@ def get_A2A_time(data, numNodes, system):
         return 0
     message_size_per_pair = data / numNodes
     A2A_time = (5e-6 + (numNodes - 1) * system.interchip_link_latency +
-                (numNodes - 1) * message_size_per_pair / system.interchip_mem_bw) * 1000
+                (numNodes - 1) * message_size_per_pair / system.interchip_link_bw) * 1000
 
     return A2A_time

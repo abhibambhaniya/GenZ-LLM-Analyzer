@@ -11,8 +11,8 @@ class System(object):
                 external_mem_bw=100,
                 frequency=940, bits='bf16',
                 compute_efficiency=1, memory_efficiency=1, comm_efficiency=1,
-                interchip_mem_bw = 25, num_nodes = 1, interchip_link_latency=1.9,
-                collective_type='GenZ',    # GenZ or ASTRA-SIM
+                interchip_link_bw = 25, num_nodes = 1, interchip_link_latency=1.9,
+                collective_strategy='GenZ',    # GenZ or ASTRA-SIM
                 topology='FullyConnected'
                 ):
 
@@ -27,7 +27,7 @@ class System(object):
         self.frequency = self.unit.unit_to_raw(frequency, type='F')
         self.onchip_mem_bw = self.unit.unit_to_raw(onchip_mem_bw, type='BW')
         self.offchip_mem_bw = self.unit.unit_to_raw(offchip_mem_bw, type='BW')
-        self.interchip_mem_bw = self.unit.unit_to_raw(interchip_mem_bw, type='BW')
+        self.interchip_link_bw = self.unit.unit_to_raw(interchip_link_bw, type='BW')
         self.interchip_link_latency = interchip_link_latency * 1e-6     ## us
         self.external_mem_bw = self.unit.unit_to_raw(external_mem_bw, type='BW')
         self.on_chip_mem_size = self.unit.unit_to_raw(on_chip_mem_size, type='M')
@@ -37,8 +37,9 @@ class System(object):
         self.memory_efficiency = memory_efficiency
         self.comm_efficiency = comm_efficiency
         self.mxu_shape = mxu_shape
-        self.collective_type = collective_type
         
+        self.collective_strategy = collective_strategy
+        assert self.collective_strategy in ['GenZ', 'ASTRA-SIM'], "Invalid collective_strategy. Must be one of: GenZ, ASTRA-SIM"
         self.num_nodes = num_nodes
         self.topology = topology
         self.bits = bits
@@ -71,8 +72,8 @@ class System(object):
     def get_external_mem_bw(self):
         return self.unit.raw_to_unit(self.external_mem_bw,type='BW')
 
-    def get_interchip_mem_bw(self):
-        return self.unit.raw_to_unit(self.interchip_mem_bw,type='BW')
+    def get_interchip_link_bw(self):
+        return self.unit.raw_to_unit(self.interchip_link_bw,type='BW')
 
     def get_off_chip_mem_size(self):
         return self.unit.raw_to_unit(self.off_chip_mem_size,type='M')

@@ -1,0 +1,155 @@
+import os
+import subprocess
+import yaml
+from GenZ.system import System
+from GenZ.unit import Unit
+import numpy as np
+
+from .fix_chakra_traces import convert_chakra_file
+import re
+
+txt_file_path = "/tmp/genz/chakra/txt_file.txt"
+et_output_path = "/tmp/genz/chakra/et/"
+et_cleaned_output_path = "/tmp/genz/chakra/et_cleaned"
+
+SCRIPT_DIR=os.path.dirname(os.path.realpath(__file__))
+run_file = os.path.join(SCRIPT_DIR, "run.sh")
+ASTRA_SIM_OUTPUT_PATH = os.path.join(SCRIPT_DIR, "astra_output.txt") 
+
+def divide_npus_count(network_config, parallelism_sizes):
+    result = []
+    dims = []
+    npus_count = network_config["npus_count"].copy()
+    dim_index = np.arange(len(npus_count)).tolist()
+    for size in parallelism_sizes:
+        current_nodes = []
+        current_dims = []
+        while np.prod(current_nodes) < size:
+            last_dim_nodes = npus_count.pop(0)
+            index = dim_index.pop(0)
+            if last_dim_nodes * max(1, np.prod(current_nodes)) <= size:
+                current_nodes.append(last_dim_nodes)
+                current_dims.append(index)
+            else:
+                dim_used = size/max(1, np.prod(current_nodes))
+                current_nodes.append(dim_used)
+                current_dims.append(index)
+                last_dim_nodes /= dim_used
+                npus_count.insert(0, last_dim_nodes)
+                dim_index.insert(0, index)
+        result.append(current_nodes)
+        dims.append(current_dims)
+    return result, dims
+
+def get_network_config(network_config:dict, parallelism_heirarchy:str, parallelism:str) -> dict:
+    """
+    network_config: dict: A dictionary with the following keys:
+            "topology":   ## List of topology (“Ring”, “FullyConnected”, or “Switch”)
+            "npus_count": ## List of number of npus per node
+            "bandwidth":  ## List of Link Bw in GB/s
+            "latency":    ## Link expects latency in ns
+    parallelism_heirarchy: str: A string with the following format: Ex: "TP{x}_EP{y}_PP{z}"
+        In the above example, TP is among the closest nodes, then EP and finally PP accross the last dimension.
+    """ 
+    assert type(network_config) == dict, "network_config must be a dictionary"
+    
+    pattern = r'\{(\d+)\}'
+    parallelism_sizes = re.findall(pattern, parallelism_heirarchy)
+    assert np.prod(network_config["npus_count"]) == np.prod([int(match) for match in parallelism_sizes]), "Sum of npus_count should be equal to num_nodes"
+
+    assert parallelism in parallelism_heirarchy, "parallelism should be present in parallelism_heirarchy"
+
+    # find the parallelism in parallelism_heirarchy, it would be distributed by '_', find the position. 
+    # Ex1:parallelism_heirarchy = 'TP{2}_EP{4}_PP{2}' , parallelism = EP
+    # output = 1
+    # Ex2:parallelism_heirarchy = 'TP{2}_EP{4}_PP{2}' , parallelism = TP
+    # output = 0
+    parallelism_position = re.sub(pattern,'',parallelism_heirarchy ).split('_').index(parallelism)
+    
+    dims, indexes = divide_npus_count(network_config, [int(match) for match in parallelism_sizes])
+
+    parallelism_index = indexes[parallelism_position]
+    network_config_for_parallelism = {}
+    for key, value in network_config.items():
+        if key == "npus_count":
+            network_config_for_parallelism[key] = dims[parallelism_position]
+        else:
+            network_config_for_parallelism[key] = [value[i] for i in parallelism_index]
+    
+    return network_config_for_parallelism
+    
+def get_astrasim_collective_time(collective_size, collective_type, system:System,
+                                network_config=None) -> dict:
+    """
+    collective_type: str: Should be one of the following: "ALLREDUCE"/"ALLTOALL"/"ALLGATHER"/"REDUCESCATTER"
+    collective_size: int: Size of the collective operation in Bytes
+    
+    Returns: dict: A dictionary with the key as the system id and the value is latency in ns
+    
+    """
+    assert collective_type in ["ALLREDUCE", "ALLTOALL", "ALLGATHER", "REDUCESCATTER"], \
+        "Invalid collective_type. Must be one of: ALLREDUCE, ALLTOALL, ALLGATHER, REDUCESCATTER"
+    # Step 1: Create the text file
+    os.makedirs(os.path.dirname(txt_file_path), exist_ok=True)
+    with open(txt_file_path, "w+") as txt_file:
+        txt_file.write("MICRO\n1\nDUMMYNAME -1 5 NONE 0 5 NONE 0 5 {} {} 5\n".format(collective_type, collective_size))
+    
+    # Step 2: Generate ET trace
+    os.makedirs(os.path.dirname(et_output_path), exist_ok=True)
+
+    if network_config is not None:
+        nodes = np.prod(network_config["npus_count"])
+    else:
+        nodes = system.num_nodes
+    # Wait for the subprocess to complete
+    subprocess.run([
+        "python", "-m", "chakra.src.converter.converter", "Text",
+        "--input", txt_file_path,
+        "--output", et_output_path + "collective_traces",
+        "--num-npus", str(nodes),
+        "--num-passes", "1"
+    ], check=True)
+    # Step 3: Clean up the generated traces
+    os.makedirs(et_cleaned_output_path, exist_ok=True)
+    files = os.listdir(et_output_path)
+    for file in files:
+        if not file.endswith(".et"):
+            continue
+        input_file = os.path.join(et_output_path, file)
+        output_file = os.path.join(et_cleaned_output_path, file)
+        convert_chakra_file(input_file, output_file)
+    
+    # Step 4: Create network.yml
+    assert system.topology in ["Ring", "FullyConnected", "Switch"], \
+        "Invalid collective_type. Must be one of: Ring, FullyConnected, Switch"
+
+    if network_config is None:
+        network_config = {
+            "topology": [system.topology],    #(“Ring”, “FullyConnected”, or “Switch”)
+            "npus_count": [system.num_nodes],
+            "bandwidth": [Unit().raw_to_unit(system.interchip_link_bw, type="BW")],
+            "latency": [system.interchip_link_latency*1e9],## AStrasim expects latency in ns 
+        }
+    else:
+        assert type(network_config) == dict, "network_config must be a dictionary"
+
+    network_yml_path = SCRIPT_DIR+"/network.yml"
+    with open(network_yml_path, "w+") as network_yml_file:
+        yaml.dump(network_config, network_yml_file)
+    
+    # Step 5: Run astra-sim
+    print(subprocess.run(f"bash {run_file}>{ASTRA_SIM_OUTPUT_PATH}", shell=True, check=True, stderr=subprocess.PIPE).stdout)
+
+    def get_cycles_count(file_path):
+        cycles_count = {}
+        with open(file_path, 'r') as file:
+            for line in file:
+                if 'finished' in line:
+                    parts = line.split(',')
+                    sys_id = parts[0].split('[')[1].split(']')[0]
+                    cycles = int(parts[1].split()[0])
+                    cycles_count[sys_id] = cycles
+        return cycles_count
+    
+    cycles_count = get_cycles_count(ASTRA_SIM_OUTPUT_PATH)
+    return cycles_count

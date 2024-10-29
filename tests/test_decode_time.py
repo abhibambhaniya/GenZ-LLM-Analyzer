@@ -22,7 +22,7 @@ def test_dense_LLM_decode():
 def test_dense_LLM_decode_with_tensor_parallel():
     # Generate the current result
     TPU = System(flops=300, offchip_mem_bw=1200, compute_efficiency=0.8, memory_efficiency=0.8, bits='bf16',
-                interchip_mem_bw=50, interchip_link_latency=1)
+                interchip_link_bw=50, interchip_link_latency=1)
     Model = 'gpt-2'
     Bb = 4
     # Save the current result to a CSV file
