@@ -28,30 +28,30 @@ def ffn_prefill(model_config:ModelConfig, parallelism_config:ParallelismConfig, 
 
     layers = []
     if moe_layer:
-        router = [[E, input_sequence_length//sp, D//tp, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+        router = [["Gate",E, input_sequence_length//sp, D//tp, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
         layers += router
         if tp > 1:
-            router_AR = [[input_sequence_length//sp, E, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
+            router_AR = [["Gate AR",input_sequence_length//sp, E, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
             layers += router_AR
         num_tokens_per_expert = (input_sequence_length//sp) * K // E
         if ep > 1:
             # Total Size=Batch Size×Tokens per Batch×Hidden Dimension×Number of Experts per Token
-            dispatch_all2all = [[input_sequence_length//sp, K*D, 1, 1, ep, CollectiveType.All2All, OpType.Sync]]
+            dispatch_all2all = [["Dispatch A2A",input_sequence_length//sp, K*D, 1, 1, ep, CollectiveType.All2All, OpType.Sync]]
             layers += dispatch_all2all
-        ffup =   [[(E//ep)*Df*fi, num_tokens_per_expert, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
-        ffdown = [[D, num_tokens_per_expert, (E//ep)*Df, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+        ffup =   [["up+gate",(E//ep)*Df*fi, num_tokens_per_expert, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+        ffdown = [["down",D, num_tokens_per_expert, (E//ep)*Df, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
         
         layers += ffup + ffdown
         if ep > 1:
-            collect_all2all = [[input_sequence_length//sp, K*D, 1, 1, ep, CollectiveType.All2All, OpType.Sync]]
+            collect_all2all = [["Collect A2A",input_sequence_length//sp, K*D, 1, 1, ep, CollectiveType.All2All, OpType.Sync]]
             layers += collect_all2all
     else:
-        ffup =   [[Df*fi, input_sequence_length//sp, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
-        ffdown = [[D, input_sequence_length//sp, Df, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+        ffup =   [["up+gate",Df*fi, input_sequence_length//sp, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+        ffdown = [["down",D, input_sequence_length//sp, Df, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
         layers += ffup + ffdown
 
     if tp > 1:
-        sync =          [[input_sequence_length//sp, D, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
+        sync =          [["MLP AR",input_sequence_length//sp, D, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
     else:
         sync = []
 
@@ -81,14 +81,14 @@ def ffn_decode(model_config:ModelConfig, parallelism_config:ParallelismConfig):
 
     layers = []
     if moe_layer:
-        router = [[E, 1, D//tp, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+        router = [["Gate",E, 1, D//tp, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
         layers += router
         if tp > 1:
-            router_AR = [[1, E, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
+            router_AR = [["Gate AR",1, E, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
             layers += router_AR
         if ep > 1:
             # Total Size=Batch Size×Tokens per Batch×Hidden Dimension×Number of Experts per Token
-            dispatch_all2all = [[1, K*D, 1, 1, ep, CollectiveType.All2All, OpType.Sync]]
+            dispatch_all2all = [["Dispatch A2A",1, K*D, 1, 1, ep, CollectiveType.All2All, OpType.Sync]]
             layers += dispatch_all2all
 
         ## TODO: Define a function to calculate the number of activated experts
@@ -111,24 +111,24 @@ def ffn_decode(model_config:ModelConfig, parallelism_config:ParallelismConfig):
         #   Worst case: min(5, 16//4) = 4 expert per chip  
         
         ## Activated experts are distributed among EP
-        ffup =           [[npus_activated*Df*fi, 1, D, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]    ## Df is already divided
-        ffdown =           [[D, 1, npus_activated*Df, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
+        ffup =           [["up+gate",npus_activated*Df*fi, 1, D, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]    ## Df is already divided
+        ffdown =           [["down",D, 1, npus_activated*Df, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
         
         ## These are unused layers but kept just for weights calculation
-        ffup_unused =   [[(E-A)*Df*fi, 0, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
-        ffdown_unused =   [[D, 0, (E-A)*Df, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+        ffup_unused =   [["up+gate",(E-A)*Df*fi, 0, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+        ffdown_unused =   [["down",D, 0, (E-A)*Df, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
         
         layers += ffup + ffdown + ffup_unused + ffdown_unused
         if ep > 1:
-            collect_all2all = [[1, K*D, 1, 1, ep, CollectiveType.All2All, OpType.Sync]]
+            collect_all2all = [["Collect A2A",1, K*D, 1, 1, ep, CollectiveType.All2All, OpType.Sync]]
             layers += collect_all2all
     else:
-        ffup =           [[Df*fi, 1, D, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]    ## Df is already divided
-        ffdown =           [[D, 1, Df, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
+        ffup =           [["up+gate",Df*fi, 1, D, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]    ## Df is already divided
+        ffdown =           [["down",D, 1, Df, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
         layers += ffup + ffdown
 
     if tp > 1:
-        sync =          [[1, D, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
+        sync =          [["MLP AR",1, D, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
     else:
         sync = []
 

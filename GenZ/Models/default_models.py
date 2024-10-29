@@ -1,5 +1,5 @@
 import numpy as np
-from math import ceil
+from math import ceil, lcm
 import sys
 import inspect
 
@@ -50,46 +50,81 @@ class ModelConfig():
         num_experts = 1,
         expert_top_k = 1,
         # Mamba specific parameters
-        mamba_d_state=16,
-        mamba_d_conv=4,
-        mamba_expand=2,
+        mamba_d_state=None,
+        mamba_d_conv=None,
+        mamba_expand=None,
         mamba_dt_rank="auto",
         mamba_conv_bias=True,
         mamba_proj_bias=False,
+        mamba_layer_freq=None,
         **kwargs,
     ):
         self.model = model
         self.vocab_size = vocab_size
+        self.max_model_len = max_model_len      ## Maximum length of the model
+        self.num_decoder_layers = num_decoder_layers
+        self.num_encoder_layers = num_encoder_layers
+        
         self.hidden_size = hidden_size
         self.intermediate_size = intermediate_size
         self.num_ffi = num_ffi
-        self.num_decoder_layers = num_decoder_layers
-        self.num_encoder_layers = num_encoder_layers
+        self.hidden_act = hidden_act
+
+        
+        # Attention Parameters
         self.num_attention_heads = num_attention_heads
         self.sliding_window = sliding_window
         # for backward compatibility
         if num_key_value_heads is None:
             num_key_value_heads = num_attention_heads
-
         if head_dim is None:
             head_dim = self.hidden_size // self.num_attention_heads
-
         self.num_key_value_heads = num_key_value_heads
         self.head_dim = head_dim
-        self.hidden_act = hidden_act
+        
+        # MoE Parameters
+        self.is_moe = num_experts > 1
         self.moe_layer_freq = moe_layer_freq    ## If n, than every nth value is moe layer.
         self.num_experts = num_experts
         self.expert_top_k = expert_top_k
 
-        self.max_model_len = max_model_len      ## Maximum length of the model
-
+        # Mamba Parameters
+        self.mamba_layer_freq = mamba_layer_freq
         self.mamba_d_state = mamba_d_state
         self.mamba_d_conv = mamba_d_conv
-        self.mamba_expand = mamba_expand
+        self.mamba_expand = mamba_expand if mamba_expand is not None else 1
         self.mamba_dt_rank = ceil(self.hidden_size / 16) if mamba_dt_rank == "auto" else mamba_dt_rank
         self.mamba_conv_bias = mamba_conv_bias
         self.mamba_proj_bias = mamba_proj_bias
+        self.is_mamba = (mamba_d_state is not None) and (mamba_layer_freq is not None)
+        
 
+
+        # Create the 2D list of parameters
+        self.layer_type = []
+        if self.is_mamba and self.is_moe:
+            unique_layers = lcm(self.mamba_layer_freq, self.moe_layer_freq) 
+        elif self.is_mamba:
+            unique_layers = self.mamba_layer_freq
+        elif self.is_moe:
+            unique_layers = self.moe_layer_freq
+        else:
+            unique_layers = 1
+        num_repeats = self.num_decoder_layers / unique_layers
+        assert num_repeats.is_integer(), "Number of decoder layers must be divisible by the unique layers"
+        for i in range(unique_layers):
+            # Determine the attention type
+            if self.is_mamba and (i % self.mamba_layer_freq == 0):
+                attention_type = "Mamba"
+            else:
+                attention_type = "MHA-global"
+        
+            if self.is_moe and self.moe_layer_freq and (i % self.moe_layer_freq == 0):
+                layer_type = "MoE"
+            else:
+                layer_type = "Dense"
+            
+            self.layer_type.append([attention_type, layer_type])
         super().__init__()
 
     def __str__(self):

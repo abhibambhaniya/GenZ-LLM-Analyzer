@@ -76,7 +76,7 @@ def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     if return_model_df:
         return model_df, summary_table
     if debug:
-        display_df(model_df)
+        display_df(simplify_df(model_df))
         display(summary_table)
 
     ##################################################################################################

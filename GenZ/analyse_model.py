@@ -78,6 +78,30 @@ def get_summary_table(df:pd.DataFrame, unit = Unit(), model_characterstics:bool=
 
     return pd.DataFrame.from_dict(ret)
 
+def simplify_df(df:pd.DataFrame):
+    unit = Unit()
+    # column_no_change =  ['Op Type', 'Dimension','Bound', 'C/M ratio', 'Op Intensity', 'C Effcy', f'Throughput ({unit.unit_compute})']
+    column_to_update = [f'Latency ({unit.unit_time})',
+                f'Compute time ({unit.unit_time})', f'Memory time ({unit.unit_time})', f'Communication time ({unit.unit_time})',
+                f'Cycles', f'Compute cycle', f'Memory cycle', f'Communication cycle',
+                f'Num ops ({unit.unit_flop})', f'Input_a ({unit.unit_mem})', f'Input_w ({unit.unit_mem})', f'Output ({unit.unit_mem})', f'Total Data ({unit.unit_mem})',                
+                ]
+    column_no_change = df.columns.difference(column_to_update).tolist()
+
+    multiplier = 1
+    new_df = pd.DataFrame(columns=df.columns)
+    for i in range(len(df)):
+        if df.loc[i,'Op Type'] == 'Repeat':
+            multiplier *= df.loc[i,'Dimension']
+        elif df.loc[i,'Op Type'] == 'EndRepeat':
+            multiplier /= df.loc[i,'Dimension']
+        else:
+            new_row = df.loc[i, column_no_change].copy()
+            for col in column_to_update:
+                new_row[col] = df.loc[i, col] * multiplier
+            new_df = pd.concat([new_df, pd.DataFrame([new_row])], ignore_index=True)
+    return new_df
+
 def analysis_model(model_dims, system=None, unit=Unit(), densities = None,intermediate_on_chip=False,
                     beam_size=1, beam_merge=False, model_characterstics=False):
     roofline_list = []
@@ -89,7 +113,7 @@ def analysis_model(model_dims, system=None, unit=Unit(), densities = None,interm
         operators_residency = dim[-2]
         operator = getattr(operators, op_type)
         if beam_merge and (dim[-1] == OpType.Logit_BM_PREFILL or dim[-1] == OpType.Attend_BM_PREFILL):
-            dim[0] /= beam_size
+            dim[1] /= beam_size         ## Batch size is divided by beam size
         operator_instance = operator(dim=dim, density=density)
         # print(density[0],density[1],density[2])
         if (intermediate_on_chip):
@@ -140,8 +164,8 @@ def get_model_df(model, system=System(), unit=Unit(), batch_size=1, data_path="/
     density_file = os.path.join(sparsity_file_path, model)
     df = pd.read_csv(m_file)
     model_defs = df.to_numpy()
-    batch_sizes = np.ones((len(model_defs), 1)) * batch_size
-    model_defs = np.append(batch_sizes, model_defs, axis=1)
+    model_defs = np.insert(model_defs, 1, batch_size, axis=1)
+    # model_defs = np.append(batch_sizes, model_defs, axis=1)
     def verify_repeat_pairs(model_defs):
         pairs = []
         stack = []
@@ -164,11 +188,11 @@ def get_model_df(model, system=System(), unit=Unit(), batch_size=1, data_path="/
 
     new_model_defs = []
     for layer in model_defs:
-        if layer[-1] == OpType.EINSUM:
+        # if layer[-1] == OpType.EINSUM:
             new_layer = [int(x) if isinstance(x, (int, float)) else x for x in layer]
             new_model_defs.append(new_layer)
-        else:
-            new_model_defs.append(layer.astype(int))
+        # else:
+        #     new_model_defs.append(layer.astype(int))
 
     densities = np.ones((len(model_defs), 3), dtype=float)
 

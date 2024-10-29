@@ -5,7 +5,8 @@ from GenZ.Models import OpType, CollectiveType
 
 class FC(Operator):
     def __init__(self, dim, density):
-        super().__init__(dim=dim, density=density)
+        self.name = dim[0]
+        super().__init__(dim=dim[1:], density=density)
 
     def get_effective_dim_len(self):
         return 3
@@ -31,7 +32,8 @@ class FC(Operator):
 
 class CONV1D(Operator):
     def __init__(self, dim, density):
-        super().__init__(dim=dim, density=density)
+        self.name = dim[0]
+        super().__init__(dim=dim[1:], density=density)
 
     def get_effective_dim_len(self):
         return 5
@@ -63,7 +65,8 @@ class CONV1D(Operator):
 
 class CONV2D(Operator):
     def __init__(self, dim, density):
-        super().__init__(dim=dim, density=density)
+        self.name = dim[0]
+        super().__init__(dim=dim[1:], density=density)
 
     def get_effective_dim_len(self):
         return 7
@@ -90,7 +93,8 @@ class CONV2D(Operator):
 
 class GEMM(Operator):
     def __init__(self, dim, density):
-        super().__init__(dim=dim, density=density)
+        self.name = dim[0]
+        super().__init__(dim=dim[1:], density=density)
 
     def get_effective_dim_len(self):
         return 4
@@ -123,7 +127,8 @@ class GEMM(Operator):
 
 class Logit(Operator):
     def __init__(self, dim, density):
-        super().__init__(dim=dim, density=density)
+        self.name = dim[0]
+        super().__init__(dim=dim[1:], density=density)
 
     def get_effective_dim_len(self):
         return 6
@@ -159,7 +164,8 @@ class Logit(Operator):
 
 class Attend(Operator):
     def __init__(self, dim, density):
-        super().__init__(dim=dim, density=density)
+        self.name = dim[0]
+        super().__init__(dim=dim[1:], density=density)
 
     def get_effective_dim_len(self):
         return 6
@@ -186,7 +192,8 @@ class Attend(Operator):
 
 class DWCONV(Operator):
     def __init__(self, dim, density):
-        super().__init__(dim=dim, density=density)
+        self.name = dim[0]
+        super().__init__(dim=dim[1:], density=density)
 
     def get_effective_dim_len(self):
         return 7
@@ -212,9 +219,10 @@ class DWCONV(Operator):
 
 class Sync(Operator):   ## Just data movement.
     def __init__(self, dim, density):
+        self.name = dim[0]
         self.collective_type = dim[-2]
         self.num_collective_nodes = dim[-3]
-        super().__init__(dim=dim, density=density)
+        super().__init__(dim=dim[1:], density=density)
 
     def get_effective_dim_len(self):
         return 3
@@ -253,10 +261,11 @@ class Einsum(Operator):
         equation: Einstein summation notation string
         dims: Dictionary of tensor dimensions keyed by the corresponding label in the equation
         """
-        self.batch = dim[0]
-        self.equation = dim[1]
+        self.name = dim[0]
+        self.batch = dim[1]
+        self.equation = dim[2]
 
-        self.dimensions = {k: int(v) if isinstance(v, (int, float)) else v for k, v in ast.literal_eval(dim[2]).items()}
+        self.dimensions = {k: int(v) if isinstance(v, (int, float)) else v for k, v in ast.literal_eval(dim[3]).items()}
         for k, v in self.dimensions.items():
             if v == 'b':
                 self.dimensions[k] = self.batch
@@ -267,7 +276,7 @@ class Einsum(Operator):
             if var not in set(self.dimensions.keys()):
                 raise ValueError(f"Invalid variable {var} in equation {self.equation}")
 
-        super().__init__(dim=dim, density=density)
+        super().__init__(dim=dim[1:], density=density)
 
 
     def get_tensors(self):
@@ -290,7 +299,8 @@ class Einsum(Operator):
 
 class Repeat(Operator):   ## Layer/Model Repetition
     def __init__(self, dim, density):
-        super().__init__(dim=dim, density=density)
+        self.name = dim[0]
+        super().__init__(dim=dim[1:], density=density)
 
     def get_effective_dim_len(self):
         return 3
@@ -309,7 +319,8 @@ class Repeat(Operator):   ## Layer/Model Repetition
 
 class EndRepeat(Operator):   ## Layer/Model Repetition
     def __init__(self, dim, density):
-        super().__init__(dim=dim, density=density)
+        self.name = dim[0]
+        super().__init__(dim=dim[1:], density=density)
 
     def get_effective_dim_len(self):
         return 3
@@ -328,8 +339,9 @@ class EndRepeat(Operator):   ## Layer/Model Repetition
         return 0
 
 class Norm(Operator):          ## Vector Execution Unit
-    def __init__(self, node, density=(1.0, 1.0, 1.0)):
-        super().__init__(node, density)
+    def __init__(self, dim, density=(1.0, 1.0, 1.0)):
+        self.name = dim[0]
+        super().__init__(dim, density)
         self.alu_type = 'vxu'
 
     def get_tensors(self):
@@ -353,8 +365,9 @@ class Norm(Operator):          ## Vector Execution Unit
 
 
 class Avg(Operator):          ## Vector Execution Unit
-    def __init__(self, node, density=(1.0, 1.0, 1.0)):
-        super().__init__(node, density)
+    def __init__(self, dim, density=(1.0, 1.0, 1.0)):
+        self.name = dim[0]
+        super().__init__(dim[1:], density)
         self.alu_type = 'vxu'
 
     def get_tensors(self):
@@ -371,8 +384,9 @@ class Avg(Operator):          ## Vector Execution Unit
 
 
 class Special_Func(Operator):          ## Vector Execution Unit
-    def __init__(self, node, density=(1.0, 1.0, 1.0)):
-        super().__init__(node, density)
+    def __init__(self, dim, density=(1.0, 1.0, 1.0)):
+        self.name = dim[0]
+        super().__init__(dim[1:], density)
         self.alu_type = 'vxu'
 
     def get_tensors(self):

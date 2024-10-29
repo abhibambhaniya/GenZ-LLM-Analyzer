@@ -11,10 +11,10 @@ def input_embedding(model_config:ModelConfig, parallelism_config:ParallelismConf
     V = model_config.vocab_size
 
 
-    emb =   [[D, max(1,input_sequence_length//sp), V//tp, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+    emb =   [["embeddings", D, max(1,input_sequence_length//sp), V//tp, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
 
     if tp > 1:
-        sync =          [[max(1,input_sequence_length//sp), D, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
+        sync =          [["Emb_AR", max(1,input_sequence_length//sp), D, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
     else:
         sync = []
 
@@ -29,10 +29,10 @@ def output_embedding(model_config:ModelConfig, parallelism_config:ParallelismCon
     V = model_config.vocab_size
 
 
-    emb =   [[ V//tp, max(1,input_sequence_length//sp), D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+    emb =   [["classifier", V//tp, max(1,input_sequence_length//sp), D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
 
     if tp > 1:
-        sync =          [[max(1,input_sequence_length//sp), V, 1, 1, tp, CollectiveType.AllGather, OpType.Sync]]
+        sync =          [["classifier_AG",max(1,input_sequence_length//sp), V, 1, 1, tp, CollectiveType.AllGather, OpType.Sync]]
     else:
         sync = []
 
