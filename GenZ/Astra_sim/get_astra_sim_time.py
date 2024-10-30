@@ -1,10 +1,14 @@
+
+import warnings
+warnings.filterwarnings("ignore", message="UserWarning: Protobuf gencode version 5.27.2 is older than")
 import os
 import subprocess
 import yaml
 from GenZ.system import System
 from GenZ.unit import Unit
 import numpy as np
-
+import contextlib
+import io
 from .fix_chakra_traces import convert_chakra_file
 import re
 
@@ -105,6 +109,8 @@ def get_astrasim_collective_time(collective_size, collective_type, system:System
     Returns: dict: A dictionary with the key as the system id and the value is latency in ns
     
     """
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+
     assert collective_type in ["ALLREDUCE", "ALLTOALL", "ALLGATHER", "REDUCESCATTER"], \
         "Invalid collective_type. Must be one of: ALLREDUCE, ALLTOALL, ALLGATHER, REDUCESCATTER"
     # Step 1: Create the text file
@@ -120,13 +126,18 @@ def get_astrasim_collective_time(collective_size, collective_type, system:System
     else:
         nodes = system.num_nodes
     # Wait for the subprocess to complete
-    subprocess.run([
-        "python", "-m", "chakra.src.converter.converter", "Text",
-        "--input", txt_file_path,
-        "--output", et_output_path + "collective_traces",
-        "--num-npus", str(nodes),
-        "--num-passes", "1"
-    ], check=True)
+    with contextlib.redirect_stdout(io.StringIO()):
+        result = subprocess.run([
+            "python", "-m", "chakra.src.converter.converter", "Text",
+            "--input", txt_file_path,
+            "--output", et_output_path + "collective_traces",
+            "--num-npus", str(nodes),
+            "--num-passes", "1",
+        ], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        if result.stdout:
+            print(result.stdout)
+    
     # Step 3: Clean up the generated traces
     os.makedirs(et_cleaned_output_path, exist_ok=True)
     files = os.listdir(et_output_path)
@@ -163,7 +174,9 @@ def get_astrasim_collective_time(collective_size, collective_type, system:System
     collective_impl = [topology_to_algorithm[i] for i in network_config['topology']]
     replace_collective_implementation('/home/abhimanyu/synergy3/work/GenZ-LLM-Analyzer/GenZ/Astra_sim/system.json', collective_impl) 
     # Step 6: Run astra-sim
-    print(subprocess.run(f"bash {run_file}>{ASTRA_SIM_OUTPUT_PATH}", shell=True, check=True, stderr=subprocess.PIPE).stdout)
+    result = subprocess.run(f"bash {run_file}>{ASTRA_SIM_OUTPUT_PATH}", shell=True, check=True, stderr=subprocess.PIPE)
+    if result.stdout:
+        print(result.stdout)
 
     def get_cycles_count(file_path):
         cycles_count = {}
