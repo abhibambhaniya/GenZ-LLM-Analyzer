@@ -136,6 +136,7 @@ def get_runtime_breakdown(df:pd.DataFrame) -> RuntimeBreakdown:
             runtime_breakdown.LA_layers += layer_latency
         elif layer_name in ['Gate', 'up+gate', 'down']:
             runtime_breakdown.FFN += layer_latency
+            runtime_breakdown.FFN_layers += layer_latency
         elif layer_name in ['Message Pass']:
             runtime_breakdown.Collective += layer_latency
             runtime_breakdown.Send_Recv_time += layer_latency

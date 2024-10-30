@@ -12,13 +12,17 @@ unit = Unit()
 
 class RuntimeBreakdown():
     def __init__(self):
+        # Blockwise
         self.Embedding: float = 0
         self.MHA: float = 0
         self.FFN: float = 0
         self.Collective: float = 0
+        # Smaller Layers
         self.LA_layers: float = 0
         self.QKVO_layers: float = 0
-        self.softmax: float = 0
+        self.FFN_layers: float = 0
+        # Others
+        self.Softmax: float = 0
         self.AR_time: float = 0
         self.A2A_time: float = 0
         self.Send_Recv_time: float = 0
@@ -27,7 +31,8 @@ class RuntimeBreakdown():
         variables = vars(self)
         return ', '.join(f'{name}: {value}' for name, value in variables.items())
 
-
+    def to_dict(self):
+        return vars(self)
 
 class ModdelingOutput(dict):
     Latency: float = 0

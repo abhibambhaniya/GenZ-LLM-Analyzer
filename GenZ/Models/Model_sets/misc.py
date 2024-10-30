@@ -74,7 +74,7 @@ falcon_mamba_7b_config = ModelConfig(model='tiiuae/falcon-mamba-7b',
 )
 
 
-super_llm_config = ModelConfig(model='SuperLLM-10T',
+super_llm_config = ModelConfig(model='Hypothetical/SuperLLM-10T',
     hidden_size=108*128, num_attention_heads=108,
     num_key_value_heads=108, num_ffi = 2,
     intermediate_size=4*108*128, num_decoder_layers=128,
