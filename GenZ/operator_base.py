@@ -142,7 +142,7 @@ class Operator(object):
                     if self.collective_type == CollectiveType.MessagePass:
                         parallelism = "PP"
                     elif self.collective_type == CollectiveType.AllReduce:
-                        TP_nodes = re.sub(r'\{(\d+)\}','',parallelism_heirarchy ).split('_').index("TP")
+                        TP_nodes = int(re.search(r'TP\{(\d+)\}', parallelism_heirarchy).group(1))
                         if self.num_collective_nodes != TP_nodes:
                             # Only EP dimension is used as TP dimension
                             parallelism_heirarchy = merge_parallelism_heirarchy(parallelism_heirarchy, merge_dim='EP', merge_into='TP')
@@ -150,7 +150,7 @@ class Operator(object):
                     elif self.collective_type == CollectiveType.All2All:
                         parallelism = "EP"
                     elif self.collective_type == CollectiveType.AllGather:
-                        TP_nodes = re.sub(r'\{(\d+)\}','',parallelism_heirarchy ).split('_').index("TP")
+                        TP_nodes = int(re.search(r'TP\{(\d+)\}', parallelism_heirarchy).group(1))
                         if self.num_collective_nodes != TP_nodes:
                             # Only EP dimension is used as TP dimension
                             parallelism_heirarchy = merge_parallelism_heirarchy(parallelism_heirarchy, merge_dim='EP', merge_into='TP')

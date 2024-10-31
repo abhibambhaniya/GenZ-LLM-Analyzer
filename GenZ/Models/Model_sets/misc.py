@@ -74,13 +74,20 @@ falcon_mamba_7b_config = ModelConfig(model='tiiuae/falcon-mamba-7b',
 )
 
 
-super_llm_config = ModelConfig(model='Hypothetical/SuperLLM-10T',
+super_llm_moe_config = ModelConfig(model='Hypothetical/SuperLLM-10T-MoE',
     hidden_size=108*128, num_attention_heads=108,
     num_key_value_heads=108, num_ffi = 2,
     intermediate_size=4*108*128, num_decoder_layers=128,
-    expert_top_k=4, num_experts=32, moe_layer_freq=1
+    expert_top_k=4, num_experts=32, moe_layer_freq=1,
+    vocab_size=256000, max_model_len=100*1024,
 )
 
+super_llm_dense_config = ModelConfig(model='Hypothetical/SuperLLM-5T-Dense',
+    hidden_size=192*256, num_attention_heads=192,
+    num_key_value_heads=192, num_ffi = 2,
+    intermediate_size=4*192*256, num_decoder_layers=128,
+    vocab_size=256000, max_model_len=100*1024,
+)
 
 
 # https://huggingface.co/HuggingFaceH4/zephyr-7b-beta/blob/main/config.json
@@ -121,7 +128,7 @@ misc_models.update({
     'state-spaces/mamba-130m-hf': mamba_130m_config,
     'state-spaces/mamba-2.8b-hf': mamba_3b_config,
     'nvidia/mamba2-8b-3t-4k': mamba_3b_config,
-    'super_llm': super_llm_config,
+    'super_llm': super_llm_moe_config,
     'tiiuae/falcon-7b-instruct': falcon7b_config,
     'tiiuae/falcon-mamba-7b': falcon_mamba_7b_config,
     'xai-org/grok-1': grok_1_config,

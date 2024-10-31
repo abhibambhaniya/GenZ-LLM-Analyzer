@@ -14,14 +14,20 @@ from GenZ.Models.mamba import mamba_prefill, mamba_decode
 from GenZ.Models.embedding import input_embedding, output_embedding
 
 def get_configs(name) -> ModelConfig:
-    name = name.lower()
+    
+    if isinstance(name, ModelConfig):
+        return name
+    elif isinstance(name, str):
+        name = name.lower()
 
-    if model := MODEL_DICT.get_model(name):
-        model_config = model
+        if model := MODEL_DICT.get_model(name):
+            model_config = model
+        else:
+            print("ERROR, model name parsed incorrect, please check!!! Model Name:",name)
+
+        return model_config
     else:
         print("ERROR, model name parsed incorrect, please check!!! Model Name:",name)
-
-    return model_config
 
 def save_layers(layers:list, data_path:str, name:str):
     model_path = os.path.join(data_path,"model")
