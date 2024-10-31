@@ -20,6 +20,38 @@ SCRIPT_DIR=os.path.dirname(os.path.realpath(__file__))
 run_file = os.path.join(SCRIPT_DIR, "run.sh")
 ASTRA_SIM_OUTPUT_PATH = os.path.join(SCRIPT_DIR, "astra_output.txt") 
 
+def merge_parallelism_heirarchy(parallelism_heirarchy:str, merge_dim='EP', merge_into='TP') -> str:
+    """
+    parallelism_heirarchy: str: A string with the following format: Ex: "TP{x}_EP{y}_PP{z}"
+    merge_dim: str: A string with the following format: Ex: "EP"
+    merge_into: str: A string with the following format: Ex: "TP"
+    
+    The function merges the parallelism dimension 'merge_dim' into 'merge_into' dimension.
+    # Ex1:parallelism_heirarchy = 'TP{2}_EP{4}_PP{2}' , merge_dim = EP, merge_into = TP
+    # output = 'TP{8}_PP{2}'
+    # Ex2:parallelism_heirarchy = 'PP{2}_EP{4}_TP{2}' , merge_dim = EP, merge_into = TP
+    # output = 'PP{2}_TP{8}'
+    
+    return: str: A string with the following format: Ex: "TP{x}_EP{y}_PP{z}"
+    """
+    
+    pattern = r'\{(\d+)\}'
+    parallelism_sizes = re.findall(pattern, parallelism_heirarchy)   
+    merge_final_position = re.sub(pattern,'',parallelism_heirarchy ).split('_').index(merge_into)
+    to_merge_dim_position = re.sub(pattern,'',parallelism_heirarchy ).split('_').index(merge_dim)
+    
+    merge_final_size = int(parallelism_sizes[merge_final_position]) * int(parallelism_sizes[to_merge_dim_position])
+    
+    if to_merge_dim_position == 0:
+        new_parallelism_heirarchy = parallelism_heirarchy[parallelism_heirarchy.index('_') + 1:]
+        new_parallelism_heirarchy = re.sub(f'{merge_into}\{{\d+\}}', f'{merge_into}{{{merge_final_size}}}', new_parallelism_heirarchy)
+    else:
+        new_parallelism_heirarchy = re.sub(f'_{merge_dim}\{{\d+\}}','',parallelism_heirarchy ) 
+        new_parallelism_heirarchy = re.sub(f'{merge_into}\{{\d+\}}', f'{merge_into}{{{merge_final_size}}}', new_parallelism_heirarchy)
+    
+    return new_parallelism_heirarchy
+
+
 def divide_npus_count(network_config, parallelism_sizes):
     result = []
     dims = []
@@ -69,7 +101,6 @@ def get_network_config(network_config:dict, parallelism_heirarchy:str, paralleli
     # Ex2:parallelism_heirarchy = 'TP{2}_EP{4}_PP{2}' , parallelism = TP
     # output = 0
     parallelism_position = re.sub(pattern,'',parallelism_heirarchy ).split('_').index(parallelism)
-    
     dims, indexes = divide_npus_count(network_config, [int(match) for match in parallelism_sizes])
 
     parallelism_index = indexes[parallelism_position]

@@ -2,8 +2,8 @@ import numpy as np
 import math
 from GenZ.unit import Unit
 class System(object):
-    compute_multiplier = {'int8': 0.5, 'bf16': 1, 'f32': 2, 'int4': 0.25, 'int2':0.125, 'fp8': 0.5, 'fp4': 0.25}
-    mem_multiplier = {'int8': 1, 'bf16': 2, 'f32': 4, 'int4':0.5, 'int2':0.25, 'fp8':1, 'fp4':0.5}
+    compute_multiplier = {'int8': 0.5, 'bf16': 1, 'f32': 2, 'int4': 0.25, 'int2':0.125, 'fp8': 0.5,  'fp6':0.5, 'fp4': 0.25}
+    mem_multiplier = {'int8': 1, 'bf16': 2, 'f32': 4, 'int4':0.5, 'int2':0.25, 'fp8':1,  'fp6':0.75, 'fp4':0.5}
     def __init__(self, unit=None,
                 flops=123, mxu_shape=None,
                 onchip_mem_bw=18000, on_chip_mem_size=float('Inf'),

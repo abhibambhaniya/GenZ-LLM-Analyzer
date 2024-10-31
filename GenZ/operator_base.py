@@ -5,7 +5,7 @@ from GenZ.unit import Unit
 from GenZ.system import System
 from GenZ.Models import OpType, CollectiveType
 from GenZ.collective_times import get_AR_time, get_A2A_time, get_message_pass_time, get_AG_time
-
+import re
 # 4, 5 Regular Logit and Attend
 # 9, 10 Beam Merge Logit and attend
 op_type_dicts = {0: 'FC', 1: 'CONV2D', 2: 'DWCONV', 3: 'GEMM', 4: 'Logit', 5: 'Attend', 6:'Sync',
@@ -129,7 +129,7 @@ class Operator(object):
                 else:
                     raise ValueError(f'Unknown collective type: {self.collective_type}.')
             elif system.collective_strategy == 'ASTRA-SIM':
-                from .Astra_sim.get_astra_sim_time import get_astrasim_collective_time, get_network_config
+                from .Astra_sim.get_astra_sim_time import get_astrasim_collective_time, get_network_config, merge_parallelism_heirarchy
                 "ALLREDUCE", "ALLTOALL", "ALLGATHER", "REDUCESCATTER"
                 collective_convertion = { CollectiveType.AllReduce: 'ALLREDUCE', CollectiveType.All2All: 'ALLTOALL',
                                 CollectiveType.AllGather: 'ALLGATHER', CollectiveType.ReduceScatter: 'REDUCESCATTER', 
@@ -138,19 +138,28 @@ class Operator(object):
                     return max(get_astrasim_collective_time(system=system, collective_type=collective_convertion[self.collective_type],
                                                         collective_size=data_size).values())/1e9
                 else:
+                    parallelism_heirarchy = system.parallelism_heirarchy
                     if self.collective_type == CollectiveType.MessagePass:
                         parallelism = "PP"
                     elif self.collective_type == CollectiveType.AllReduce:
+                        TP_nodes = re.sub(r'\{(\d+)\}','',parallelism_heirarchy ).split('_').index("TP")
+                        if self.num_collective_nodes != TP_nodes:
+                            # Only EP dimension is used as TP dimension
+                            parallelism_heirarchy = merge_parallelism_heirarchy(parallelism_heirarchy, merge_dim='EP', merge_into='TP')
                         parallelism = "TP"
                     elif self.collective_type == CollectiveType.All2All:
                         parallelism = "EP"
                     elif self.collective_type == CollectiveType.AllGather:
+                        TP_nodes = re.sub(r'\{(\d+)\}','',parallelism_heirarchy ).split('_').index("TP")
+                        if self.num_collective_nodes != TP_nodes:
+                            # Only EP dimension is used as TP dimension
+                            parallelism_heirarchy = merge_parallelism_heirarchy(parallelism_heirarchy, merge_dim='EP', merge_into='TP')
                         parallelism = "TP"
                     else:
                         raise ValueError(f'Unknown parallelism for collective type: {self.collective_type}.')
                     
                     network_config = get_network_config(network_config = system.network_config, 
-                                                        parallelism_heirarchy = system.parallelism_heirarchy,
+                                                        parallelism_heirarchy = parallelism_heirarchy,
                                                         parallelism = parallelism)
                     if parallelism == "PP":
                             BW = network_config['bandwidth'][0] 
@@ -164,7 +173,7 @@ class Operator(object):
                             pipe_time = get_message_pass_time(data_size, temp_sys) / 1000
                             if len(network_config['npus_count']) > 1:   ## PP over more than 1 dimension, we need average time.
                                 # Num hops: (dim[0]-1)*dim[1] + dim[1]-1
-                                first_dim_time = pipe_time * (network_config['npus_count'][0]-1) * network_config['dimensions-count'][1] 
+                                first_dim_time = pipe_time * (network_config['npus_count'][0]-1) * network_config['npus_count'][1] 
                                 temp_sys = System(num_nodes=2, topology='FullyConnected',
                                                 interchip_link_bw=network_config['bandwidth'][1], interchip_link_latency=network_config['latency'][1]) 
                                 # second_dim_time = max(get_astrasim_collective_time(system=temp_sys,
