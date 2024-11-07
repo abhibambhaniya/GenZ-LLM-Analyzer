@@ -109,7 +109,7 @@ llama3_70b_config = ModelConfig(model='meta-llama/Llama-3.1-70B',
 # https://huggingface.co/meta-llama/Meta-Llama-3.1-405B
 llama3_405b_config = ModelConfig(model='meta-llama/Llama-3.1-405B',
     hidden_size=16384, num_attention_heads=128,
-    num_key_value_heads=16, num_ffi = 2,
+    num_key_value_heads=8, num_ffi = 2,
     intermediate_size=3.25*16384, num_decoder_layers=126,
     vocab_size=128256, max_model_len=128*1024, hidden_act="silu",
 

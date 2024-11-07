@@ -87,6 +87,7 @@ def simplify_df(df:pd.DataFrame):
                 f'Cycles', f'Compute cycle', f'Memory cycle', f'Communication cycle',
                 f'Num ops ({unit.unit_flop})', f'Input_a ({unit.unit_mem})', f'Input_w ({unit.unit_mem})', f'Output ({unit.unit_mem})', f'Total Data ({unit.unit_mem})',
                 ]
+    column_change = [col for col in df.columns if col in column_to_update]
     column_no_change = df.columns.difference(column_to_update).tolist()
 
     multiplier = 1
@@ -98,7 +99,7 @@ def simplify_df(df:pd.DataFrame):
             multiplier /= df.loc[i,'Dimension']
         else:
             new_row = df.loc[i, column_no_change].copy()
-            for col in column_to_update:
+            for col in column_change:
                 new_row[col] = df.loc[i, col] * multiplier
             if len(new_df) == 0:
                 new_df = pd.DataFrame([new_row])

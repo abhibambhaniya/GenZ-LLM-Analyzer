@@ -8,7 +8,7 @@ from GenZ.parallelism import ParallelismConfig
 from GenZ.Models.default_models import ModelConfig, MODEL_DICT
 
 from GenZ.Models.utils import OpType, ResidencyInfo, CollectiveType, parse_einsum_expression
-from GenZ.Models.attention import mha_flash_attention_prefill, mha_flash_attention_decode
+from GenZ.Models.attention import mha_flash_attention_prefill, mha_flash_attention_decode, mha_flash_attention_chunked
 from GenZ.Models.ffn import ffn_prefill, ffn_decode
 from GenZ.Models.mamba import mamba_prefill, mamba_decode
 from GenZ.Models.embedding import input_embedding, output_embedding
@@ -150,6 +150,48 @@ def create_full_decode_model(input_sequence_length, name='GPT-2', data_path=DATA
         full_model = add_layers(full_model, model_config.num_decoder_layers)
     full_model += output_embedding(model_config, parallelism_config, 1)
     return save_layers(layers=full_model, data_path=data_path, name=name + "_decode_")
+
+def create_full_chunked_model(chunk_size, name='GPT-2', decode_kv_sizes=[], data_path=DATA_PATH, **args):
+    model_config = get_configs(name)
+    pipeline_stages = args.get('pipeline_parallel',1)
+
+    parallelism_config = ParallelismConfig(
+        tensor_parallel=args.get('tensor_parallel',1),
+        expert_parallel=args.get('expert_parallel',1),
+        sequence_parallel=args.get('sequence_parallel',1),
+        data_parallel=args.get('data_parallel',1),
+        )
+
+    def add_layers(layers, num_layers):
+        layers += repeat_layers(num_layers)
+        layers += mha_flash_attention_chunked(model_config, parallelism_config, chunk_size, decode_kv_sizes=decode_kv_sizes)
+        layers += ffn_prefill(model_config, parallelism_config, chunk_size)
+        layers += end_repeat_layers(num_layers)
+        return layers
+
+    prefill_length = chunk_size - len(decode_kv_sizes)
+    full_model = []
+    full_model += input_embedding(model_config, parallelism_config, prefill_length)
+    if pipeline_stages > 1:
+        layers_per_stage = ceil(model_config.num_decoder_layers / pipeline_stages)
+        layers_last_stage = model_config.num_decoder_layers - layers_per_stage * (pipeline_stages - 1)
+
+        ## For PP stages
+        ## First PP-1 stages will have layers_per_stage layers and message pass at the end
+        full_model += repeat_layers(pipeline_stages - 1)
+        ## Single stage will have layers_per_stage layers
+        full_model = add_layers(full_model, layers_per_stage)
+        ## Single stage layers end and message pass at the end
+        full_model += [["Message Pass", chunk_size // args.get('sequence_parallel', 1), model_config.hidden_size, 1, 1, 1, CollectiveType.MessagePass, OpType.Sync]]
+        full_model += end_repeat_layers(pipeline_stages - 1)
+        ## Last stage will have layers_last_stage layers and no message pass at the end
+        full_model = add_layers(full_model, layers_last_stage)
+    else:
+        full_model = add_layers(full_model, model_config.num_decoder_layers)
+
+    full_model += output_embedding(model_config, parallelism_config, chunk_size)
+    return save_layers(layers=full_model, data_path=data_path, name=name + "_chunked_")
+
 
 def create_inference_mamba_prefix_model(input_sequence_length, name='jamba', data_path=DATA_PATH,
                          **args):

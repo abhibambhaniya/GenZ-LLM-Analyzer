@@ -57,3 +57,39 @@ def mha_flash_attention_decode(model_config:ModelConfig, parallelism_config:Para
 
     return query + logit_pre + logit_suf + attend_pre + attend_suf + output + sync
 
+
+
+def mha_flash_attention_chunked(model_config:ModelConfig, parallelism_config:ParallelismConfig, 
+                                chunk_size:int, decode_kv_sizes:list[int]):
+    H = model_config.num_attention_heads
+    Hkv = model_config.num_key_value_heads
+    D = model_config.hidden_size
+    Dq = model_config.head_dim
+
+    tp = parallelism_config.tensor_parallel * parallelism_config.expert_parallel
+    sp = parallelism_config.sequence_parallel
+    dp = parallelism_config.data_parallel
+
+    per_node_H = max(ceil(H / tp), 1)
+    per_node_Hkv = max(ceil(Hkv / tp), 1)
+
+    input_sequence_length = chunk_size -  len(decode_kv_sizes)
+    layers = []
+    query =      [["QKV", (per_node_H*Dq + 2*per_node_Hkv*Dq), chunk_size, D, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
+    layers += query
+    layers +=    [["Logit Pre",per_node_H, input_sequence_length, input_sequence_length, Dq, per_node_Hkv, ResidencyInfo.C_onchip, OpType.Logit]]
+    layers +=    [["Attend Pre",per_node_H, input_sequence_length, input_sequence_length, Dq, per_node_Hkv, ResidencyInfo.A_onchip, OpType.Attend]]
+
+    for kv_size in decode_kv_sizes:
+        layers +=     [["Logit Suf",per_node_H, 1, kv_size, Dq, per_node_Hkv, ResidencyInfo.AC_onchip, OpType.Logit]]
+        layers +=    [["Attend Suf",per_node_H, 1, kv_size, Dq, per_node_Hkv, ResidencyInfo.AC_onchip, OpType.Attend]]
+
+    
+    layers +=        [["Out Proj",D, chunk_size, (per_node_H) * Dq, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
+    if tp > 1:
+        layers +=          [["MHA AR",chunk_size, D, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
+    else:
+        sync = []
+
+    return layers
+
