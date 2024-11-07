@@ -119,6 +119,7 @@ def get_runtime_breakdown(df:pd.DataFrame) -> RuntimeBreakdown:
                             'Logit', 'Attend',
                             'Logit Pre', 'Logit Suf',
                             'Attend Pre', 'Attend Suf',
+                            'Logit Dec', 'Attend Dec',
                             'Gate', 'up+gate', 'down',
                             'Message Pass', 'MHA AR', 'Gate AR',
                             'Dispatch A2A', 'Collect A2A', 'FFN AR']
@@ -132,7 +133,7 @@ def get_runtime_breakdown(df:pd.DataFrame) -> RuntimeBreakdown:
             runtime_breakdown.MHA += layer_latency
             runtime_breakdown.QKVO_layers += layer_latency
         elif layer_name in ['Logit', 'Attend', 'Logit Pre', 'Logit Suf',
-                            'Attend Pre', 'Attend Suf',]:
+                            'Attend Pre', 'Attend Suf', 'Logit Dec', 'Attend Dec']:
             runtime_breakdown.MHA += layer_latency
             runtime_breakdown.LA_layers += layer_latency
         elif layer_name in ['Gate', 'up+gate', 'down']:

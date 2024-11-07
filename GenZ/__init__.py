@@ -12,7 +12,7 @@ from .LLM_inference import (
 )
 from .system import System
 from .unit import Unit
-from .analyse_model import get_model_df, get_summary_table, simplify_df
+from .analyse_model import get_model_df, get_summary_table, simplify_df, get_runtime_breakdown
 from .collective_times import get_AR_time, get_message_pass_time
 from .Models import (
     ModelConfig,

@@ -74,4 +74,4 @@ def display_df(df):
 
     pd.set_option('display.float_format', '{:.5f}'.format)
     display(df)
-    return df
+    # return df
