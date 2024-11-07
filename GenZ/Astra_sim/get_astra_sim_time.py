@@ -141,10 +141,17 @@ def get_astrasim_collective_time(collective_size, collective_type, system:System
     
     """
     warnings.filterwarnings("ignore", category=DeprecationWarning)
-
+    if network_config is not None:
+        nodes = int(np.prod(network_config["npus_count"]))
+    else:
+        nodes = system.num_nodes
+        
     assert collective_type in ["ALLREDUCE", "ALLTOALL", "ALLGATHER", "REDUCESCATTER"], \
         "Invalid collective_type. Must be one of: ALLREDUCE, ALLTOALL, ALLGATHER, REDUCESCATTER"
     # Step 1: Create the text file
+    if collective_type == "ALLGATHER":
+        ## For Allgather, astra-sim expects the collective size to be the size of the message sent by each node
+        collective_size = int(collective_size/nodes)
     os.makedirs(os.path.dirname(txt_file_path), exist_ok=True)
     with open(txt_file_path, "w+") as txt_file:
         txt_file.write("MICRO\n1\nDUMMYNAME -1 5 NONE 0 5 NONE 0 5 {} {} 5\n".format(collective_type, collective_size))
@@ -152,10 +159,7 @@ def get_astrasim_collective_time(collective_size, collective_type, system:System
     # Step 2: Generate ET trace
     os.makedirs(os.path.dirname(et_output_path), exist_ok=True)
 
-    if network_config is not None:
-        nodes = int(np.prod(network_config["npus_count"]))
-    else:
-        nodes = system.num_nodes
+
     # Wait for the subprocess to complete
     with contextlib.redirect_stdout(io.StringIO()):
         result = subprocess.run([
