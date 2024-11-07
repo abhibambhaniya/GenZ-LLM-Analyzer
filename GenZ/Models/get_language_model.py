@@ -12,6 +12,7 @@ from GenZ.Models.attention import mha_flash_attention_prefill, mha_flash_attenti
 from GenZ.Models.ffn import ffn_prefill, ffn_decode
 from GenZ.Models.mamba import mamba_prefill, mamba_decode
 from GenZ.Models.embedding import input_embedding, output_embedding
+from difflib import get_close_matches
 
 def get_configs(name) -> ModelConfig:
     
@@ -22,12 +23,18 @@ def get_configs(name) -> ModelConfig:
 
         if model := MODEL_DICT.get_model(name):
             model_config = model
+            return model_config
         else:
-            print("ERROR, model name parsed incorrect, please check!!! Model Name:",name)
-
-        return model_config
+            model_list = MODEL_DICT.list_models()
+            close_matches = get_close_matches(name, model_list, cutoff=0.4)
+            if close_matches:
+                print("Did you mean one of these models?")
+                for match in close_matches:
+                    print(f" - {match}")
+            raise ValueError("ERROR, model name parsed incorrect, please check!!! Model Name:",name)
+        
     else:
-        print("ERROR, model name parsed incorrect, please check!!! Model Name:",name)
+        raise ValueError("ERROR, model name parsed incorrect, please check!!! Model Name:",name)
 
 def save_layers(layers:list, data_path:str, name:str):
     model_path = os.path.join(data_path,"model")
@@ -151,7 +158,9 @@ def create_full_decode_model(input_sequence_length, name='GPT-2', data_path=DATA
     full_model += output_embedding(model_config, parallelism_config, 1)
     return save_layers(layers=full_model, data_path=data_path, name=name + "_decode_")
 
-def create_full_chunked_model(chunk_size, name='GPT-2', decode_kv_sizes=[], data_path=DATA_PATH, **args):
+def create_full_chunked_model(chunk_size:int, name:str ='GPT-2', 
+                                prefill_kv_sizes:int =1, decode_kv_sizes: list[int]=[], 
+                                data_path:str = DATA_PATH, **args):
     model_config = get_configs(name)
     pipeline_stages = args.get('pipeline_parallel',1)
 
@@ -164,12 +173,14 @@ def create_full_chunked_model(chunk_size, name='GPT-2', decode_kv_sizes=[], data
 
     def add_layers(layers, num_layers):
         layers += repeat_layers(num_layers)
-        layers += mha_flash_attention_chunked(model_config, parallelism_config, chunk_size, decode_kv_sizes=decode_kv_sizes)
+        layers += mha_flash_attention_chunked(model_config, parallelism_config, chunk_size, 
+                                                prefill_kv_sizes=prefill_kv_sizes,decode_kv_sizes=decode_kv_sizes)
         layers += ffn_prefill(model_config, parallelism_config, chunk_size)
         layers += end_repeat_layers(num_layers)
         return layers
 
     prefill_length = chunk_size - len(decode_kv_sizes)
+    assert prefill_length > 0, "Chunk size should be greater than the decode batches"
     full_model = []
     full_model += input_embedding(model_config, parallelism_config, prefill_length)
     if pipeline_stages > 1:

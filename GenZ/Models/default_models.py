@@ -136,6 +136,8 @@ def get_all_model_configs(file_name):
     for name, obj in inspect.getmembers(current_module):
         if isinstance(obj, ModelConfig):
             model_configs[obj.model] = obj
+            if "/" in obj.model:
+                model_configs[obj.model.split('/')[1]] = obj
     return model_configs
 
 class ModelCollection():
