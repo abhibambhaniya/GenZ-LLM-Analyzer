@@ -34,10 +34,11 @@ def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     ##################################################################################################
     ### Model Characterization Calculation
     ##################################################################################################
-    model_prefill = create_full_prefill_model(input_sequence_length=input_tokens, name=model,
-                                                    tensor_parallel=tensor_parallel,
-                                                    pipeline_parallel=pipeline_parallel,
-                                                    expert_parallel=expert_parallel)
+    model_prefill = create_full_prefill_model(  name=model,
+                                                input_sequence_length=input_tokens,
+                                                tensor_parallel=tensor_parallel,
+                                                pipeline_parallel=pipeline_parallel,
+                                                expert_parallel=expert_parallel)
 
 
     model_df = get_model_df(model_prefill, system=system, batch_size = ub, intermediate_on_chip=True , model_characterstics = True)
@@ -73,7 +74,8 @@ def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     ##################################################################################################
     ### Prefill generation time
     ##################################################################################################
-    model_prefill = create_full_prefill_model(input_sequence_length=input_tokens, name=model,
+    model_prefill = create_full_prefill_model(  name=model,
+                                                input_sequence_length=input_tokens,
                                                 tensor_parallel=tensor_parallel,
                                                 pipeline_parallel=pipeline_parallel,
                                                 expert_parallel=expert_parallel)

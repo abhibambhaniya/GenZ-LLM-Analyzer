@@ -84,7 +84,36 @@ def create_inference_moe_decode_layer(input_sequence_length, name='GPT-2', data_
         name = name.model
     return save_layers(layers=layers, data_path=data_path, name=name+"_decode_")
 
-def create_full_prefill_model(input_sequence_length, name='GPT-2', data_path=DATA_PATH, **args):
+def create_full_prefill_model(
+    name: str|ModelConfig ='GPT-2', 
+    input_sequence_length: int=1024,
+    data_path:str=DATA_PATH,
+    **args) -> str:
+    """
+    The function `create_full_prefill_model` constructs a model with specified configurations and
+    parallelism settings, saving the layers to a specified data path.
+    
+    name: The `name` parameter in the `create_full_prefill_model` function is used to specify the
+    model configuration to be used. It can either be a string representing the name of the model
+    (default is 'GPT-2') or an instance of `ModelConfig` class, defaults to GPT-2
+    
+    input_sequence_length: The `input_sequence_length` parameter specifies the length of the
+    input sequence for the model. In this function, it is set to a default value of 1024. This parameter
+    determines how many tokens or elements can be processed in a single input sequence, defaults to 1024
+    
+    data_path: The `data_path` parameter in the `create_full_prefill_model` function is a string
+    that represents the path where the data will be saved or loaded from. It is a default parameter with
+    a value of `DATA_PATH`, which is likely a constant or variable defined elsewhere in your codebase
+
+    tensor_parallel: The `tensor_parallel` to define the degree of tensor parallelism, defaults to 1
+    expert_parallel: The `expert_parallel` to define the degree of expert parallelism, defaults to 1
+    sequence_parallel: The `sequence_parallel` to define the degree of sequence parallelism, defaults to 1
+    data_parallel: The `data_parallel` to define the degree of data parallelism, defaults to 1
+    pipeline_parallel: The `pipeline_parallel` to define the degree of pipeline parallelism, defaults to 1 
+    
+    return: The function `create_full_prefill_model` returns a string, which is the result of calling
+    the `save_layers` function with the `full_model`, `data_path`, and a modified `name` as arguments.
+    """
     model_config = get_configs(name)
     pipeline_stages = args.get('pipeline_parallel',1)
 
@@ -127,8 +156,40 @@ def create_full_prefill_model(input_sequence_length, name='GPT-2', data_path=DAT
     return save_layers(layers=full_model, data_path=data_path, name=name + "_prefix_")
 
 
-def create_full_decode_model(input_sequence_length, name='GPT-2', data_path=DATA_PATH, output_gen_tokens=1, **args):
+def create_full_decode_model(
+    name: str|ModelConfig ='GPT-2',
+    input_sequence_length: int = 1024,
+    output_gen_tokens: int = 0,
+    data_path: str=DATA_PATH, 
+    **args) -> str:
+    """
+    The function `create_full_decode_model` constructs a decode model with specified configurations and
+    parallelism settings, saving the layers to a specified data path.
+    
+    name: The `name` parameter in the `create_full_decode_model` function is used to specify the
+    model configuration to be used. It can either be a string representing the name of the model
+    (default is 'GPT-2') or an instance of `ModelConfig` class, defaults to GPT-2
+    
+    input_sequence_length: The `input_sequence_length` parameter specifies the length of the
+    input sequence for the model. In this function, it is set to a default value of 1024. This parameter
+    determines how many tokens or elements can be processed in a single input sequence, defaults to 1024
 
+    output_gen_tokens: The `output_gen_tokens` parameter specifies the number of tokens to generated since the prefill.
+                        This is to keep a track of multiple beams. Defaults to 1    
+        
+    data_path: The `data_path` parameter in the `create_full_decode_model` function is a string
+    that represents the path where the data will be saved or loaded from. It is a default parameter with
+    a value of `DATA_PATH`, which is likely a constant or variable defined elsewhere in your codebase
+
+    tensor_parallel: The `tensor_parallel` to define the degree of tensor parallelism, defaults to 1
+    expert_parallel: The `expert_parallel` to define the degree of expert parallelism, defaults to 1
+    sequence_parallel: The `sequence_parallel` to define the degree of sequence parallelism, defaults to 1
+    data_parallel: The `data_parallel` to define the degree of data parallelism, defaults to 1
+    pipeline_parallel: The `pipeline_parallel` to define the degree of pipeline parallelism, defaults to 1 
+    
+    return: The function `create_full_decode_model` returns a string, which is the result of calling
+    the `save_layers` function with the `full_model`, `data_path`, and a modified `name` as arguments.
+    """
     model_config = get_configs(name)
     pipeline_stages = args.get('pipeline_parallel', 1)
 
