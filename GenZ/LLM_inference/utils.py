@@ -3,7 +3,7 @@ from typing import Optional
 from GenZ.unit import Unit
 import warnings
 from GenZ.system import System
-
+import pandas as pd
 from Systems.system_configs import system_configs
 
 offload_bw = 128
@@ -39,6 +39,8 @@ class ModdelingOutput(dict):
     Throughput: float = 0
     Runtime_breakdown: Optional[RuntimeBreakdown] = None
     is_offload: Optional[bool] = False
+    model_df: Optional[pd.DataFrame] = None
+    summary_table: Optional[pd.DataFrame] = None
 
 def get_offload_system(system, total_memory_req, debug):
     """Create a new system with offloaded memory connections
