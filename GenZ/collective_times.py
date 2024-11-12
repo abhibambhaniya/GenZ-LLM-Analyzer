@@ -48,7 +48,7 @@ def get_message_pass_time(data, system):
     """
     if data == 0:
         return 0
-    msg_pass_time = ((4.2e-6 + (2-1)*system.interchip_link_latency) +  data / system.interchip_link_bw)*1000
+    msg_pass_time = (system.interchip_link_latency +  data / system.interchip_link_bw)*1000
     return msg_pass_time
 
 

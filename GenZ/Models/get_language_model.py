@@ -65,7 +65,8 @@ def create_inference_moe_prefill_layer(input_sequence_length, name='GPT-2', data
         )
 
     layers = mha_flash_attention_prefill(model_config, parallelism_config, input_sequence_length) + ffn_prefill(model_config, parallelism_config, input_sequence_length)
-
+    if isinstance(name, ModelConfig):
+        name = name.model
     return save_layers(layers=layers, data_path=data_path, name=name+"_prefix_")
 
 def create_inference_moe_decode_layer(input_sequence_length, name='GPT-2', data_path=DATA_PATH,
@@ -79,7 +80,8 @@ def create_inference_moe_decode_layer(input_sequence_length, name='GPT-2', data_
         data_parallel=args.get('data_parallel',1)
         )
     layers = mha_flash_attention_decode(model_config, parallelism_config, input_sequence_length, output_gen_tokens) + ffn_decode(model_config, parallelism_config)
-
+    if isinstance(name, ModelConfig):
+        name = name.model
     return save_layers(layers=layers, data_path=data_path, name=name+"_decode_")
 
 def create_full_prefill_model(input_sequence_length, name='GPT-2', data_path=DATA_PATH, **args):
@@ -120,6 +122,8 @@ def create_full_prefill_model(input_sequence_length, name='GPT-2', data_path=DAT
         full_model = add_layers(full_model, model_config.num_decoder_layers)
 
     full_model += output_embedding(model_config, parallelism_config, input_sequence_length)
+    if isinstance(name, ModelConfig):
+        name = name.model
     return save_layers(layers=full_model, data_path=data_path, name=name + "_prefix_")
 
 
@@ -156,6 +160,8 @@ def create_full_decode_model(input_sequence_length, name='GPT-2', data_path=DATA
     else:
         full_model = add_layers(full_model, model_config.num_decoder_layers)
     full_model += output_embedding(model_config, parallelism_config, 1)
+    if isinstance(name, ModelConfig):
+        name = name.model
     return save_layers(layers=full_model, data_path=data_path, name=name + "_decode_")
 
 def create_full_chunked_model(chunk_size:int, name:str ='GPT-2', 
@@ -201,7 +207,9 @@ def create_full_chunked_model(chunk_size:int, name:str ='GPT-2',
         full_model = add_layers(full_model, model_config.num_decoder_layers)
 
     full_model += output_embedding(model_config, parallelism_config, chunk_size)
-    return save_layers(layers=full_model, data_path=data_path, name=name + "_chunked_")
+    if isinstance(name, ModelConfig):
+        name = name.model
+    return save_layers(layers=full_model, data_path=data_path, name=name+"_chunked_")
 
 
 def create_inference_mamba_prefix_model(input_sequence_length, name='jamba', data_path=DATA_PATH,
@@ -217,7 +225,8 @@ def create_inference_mamba_prefix_model(input_sequence_length, name='jamba', dat
         )
 
     layers = mamba_prefill(model_config, parallelism_config, input_sequence_length) + ffn_prefill(model_config, parallelism_config, input_sequence_length)
-
+    if isinstance(name, ModelConfig):
+        name = name.model
     return save_layers(layers=layers, data_path=data_path, name=name+"_prefix_")
 
 
@@ -232,7 +241,8 @@ def create_inference_mamba_decode_model(input_sequence_length, name='jamba', dat
         data_parallel=args.get('data_parallel',1)
         )
     layers = mamba_decode(model_config, parallelism_config, input_sequence_length) + ffn_decode(model_config, parallelism_config)
-
+    if isinstance(name, ModelConfig):
+        name = name.model
     return save_layers(layers=layers, data_path=data_path, name=name+"_decode_")
 
 
