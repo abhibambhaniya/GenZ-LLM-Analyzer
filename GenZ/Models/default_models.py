@@ -44,7 +44,7 @@ class ModelConfig():
         head_dim=None,
         num_key_value_heads=None,
         hidden_act="silu",
-        sliding_window=4096,
+        sliding_window=None,
         # MoE specific parameters
         moe_layer_freq = None,
         num_experts = 1,

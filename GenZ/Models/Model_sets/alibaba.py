@@ -6,28 +6,28 @@ qwen1_8b_config = ModelConfig(model='Qwen/Qwen-1_8B',
     hidden_size=2048, num_attention_heads=16,
     num_key_value_heads=16, num_ffi = 1,
     intermediate_size=11008, num_decoder_layers=24,
-    vocab_size=151936, max_model_len=8*1024, sliding_window=32*1024,hidden_act="silu")
+    vocab_size=151936, max_model_len=8*1024, hidden_act="silu")
 
 # https://huggingface.co/Qwen/Qwen-7B/blob/main/config.json
 qwen1_7b_config = ModelConfig(model='Qwen/Qwen-7B',
     hidden_size=4096, num_attention_heads=32,
     num_key_value_heads=32, num_ffi = 1,
     intermediate_size=22016, num_decoder_layers=32,
-    vocab_size=151936, max_model_len=8*1024, sliding_window=32*1024,hidden_act="silu")
+    vocab_size=151936, max_model_len=8*1024, hidden_act="silu")
 
 # https://huggingface.co/Qwen/Qwen-14B/blob/main/config.json
 qwen1_14b_config = ModelConfig(model='Qwen/Qwen-14B',
     hidden_size=5120, num_attention_heads=40,
     num_key_value_heads=40, num_ffi = 1,
     intermediate_size=27392, num_decoder_layers=40,
-    vocab_size=152064, max_model_len=2*1024, sliding_window=32*1024,hidden_act="silu")
+    vocab_size=152064, max_model_len=2*1024, hidden_act="silu")
 
 # https://huggingface.co/Qwen/Qwen-72B/blob/main/config.json
 qwen1_72b_config = ModelConfig(model='Qwen/Qwen-72B',
     hidden_size=8192, num_attention_heads=64,
     num_key_value_heads=64, num_ffi = 1,
     intermediate_size=49152, num_decoder_layers=80,
-    vocab_size=152064, max_model_len=32*1024, sliding_window=32*1024,hidden_act="silu")
+    vocab_size=152064, max_model_len=32*1024, hidden_act="silu")
 
 ##### Qwen1.5 Models ########
 # https://huggingface.co/Qwen/Qwen1.5-0.5B/blob/main/config.json
@@ -111,42 +111,42 @@ qwen2_1_5b_config = ModelConfig(model='Qwen/Qwen2.5-1.5B',
     hidden_size=1536, num_attention_heads=12,
     num_key_value_heads=2, num_ffi = 2,
     intermediate_size=8960, num_decoder_layers=28,
-    vocab_size=151936, max_model_len=32*1024, sliding_window=32*1024,hidden_act="silu")
+    vocab_size=151936, max_model_len=32*1024, sliding_window=128*1024,hidden_act="silu")
 
-# https://huggingface.co/Qwen/Qwen2-3B-Instruct/blob/main/config.json
-qwen2_3b_config = ModelConfig(model='Qwen/Qwen2-3B',
+# https://huggingface.co/Qwen/Qwen2.5-3B-Instruct/blob/main/config.json
+qwen2_3b_config = ModelConfig(model='Qwen/Qwen2.5-3B',
     hidden_size=2048, num_attention_heads=16,
     num_key_value_heads=2, num_ffi = 2,
     intermediate_size=11008, num_decoder_layers=36,
-    vocab_size=151936, max_model_len=32*1024, sliding_window=32*1024,hidden_act="silu")
+    vocab_size=151936, max_model_len=32*1024, sliding_window=128*1024,hidden_act="silu")
 
-# https://huggingface.co/Qwen/Qwen2-7B-Instruct/blob/main/config.json
-qwen2_7b_config = ModelConfig(model='Qwen/Qwen2-7B',
+# https://huggingface.co/Qwen/Qwen2.5-7B-Instruct/blob/main/config.json
+qwen2_7b_config = ModelConfig(model='Qwen/Qwen2.5-7B',
     hidden_size=3584, num_attention_heads=28,
     num_key_value_heads=4, num_ffi = 2,
     intermediate_size=18944, num_decoder_layers=28,
-    vocab_size=152064, max_model_len=32*1024, sliding_window=32*1024,hidden_act="silu")
+    vocab_size=152064, max_model_len=32*1024, sliding_window=128*1024,hidden_act="silu")
 
-# https://huggingface.co/Qwen/Qwen2-14B-Instruct/blob/main/config.json
-qwen2_14b_config = ModelConfig(model='Qwen/Qwen2-14B',
+# https://huggingface.co/Qwen/Qwen2.5-14B-Instruct/blob/main/config.json
+qwen2_14b_config = ModelConfig(model='Qwen/Qwen2.5-14B',
     hidden_size=5120, num_attention_heads=40,
     num_key_value_heads=8, num_ffi = 2,
     intermediate_size=13824, num_decoder_layers=48,
-    vocab_size=152064, max_model_len=32*1024, sliding_window=32*1024,hidden_act="silu")
+    vocab_size=152064, max_model_len=32*1024, sliding_window=128*1024,hidden_act="silu")
 
-# https://huggingface.co/Qwen/Qwen2-32B-Instruct/blob/main/config.json
-qwen2_32b_config = ModelConfig(model='Qwen/Qwen2-32B',
+# https://huggingface.co/Qwen/Qwen2.5-32B-Instruct/blob/main/config.json
+qwen2_32b_config = ModelConfig(model='Qwen/Qwen2.5-32B',
     hidden_size=5120, num_attention_heads=40,
     num_key_value_heads=8, num_ffi = 2,
     intermediate_size=27648, num_decoder_layers=64,
-    vocab_size=152064, max_model_len=32*1024, sliding_window=32*1024,hidden_act="silu")
+    vocab_size=152064, max_model_len=32*1024, sliding_window=128*1024,hidden_act="silu")
 
-# https://huggingface.co/Qwen/Qwen2-72B-Instruct/blob/main/config.json
-qwen2_72b_config = ModelConfig(model='Qwen/Qwen2-72B',
+# https://huggingface.co/Qwen/Qwen2.5-72B-Instruct/blob/main/config.json
+qwen2_72b_config = ModelConfig(model='Qwen/Qwen2.5-72B',
     hidden_size=8192, num_attention_heads=64,
     num_key_value_heads=8, num_ffi = 2,
     intermediate_size=29568, num_decoder_layers=80,
-    vocab_size=152064, max_model_len=32*1024, sliding_window=32*1024,hidden_act="silu")
+    vocab_size=152064, max_model_len=32*1024, sliding_window=128*1024,hidden_act="silu")
 
 
 alibaba_models = get_all_model_configs(__name__)

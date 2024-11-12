@@ -16,7 +16,6 @@ phi3small_config = ModelConfig(model='microsoft/Phi-3-small',
     num_key_value_heads=8, head_dim=128,
     intermediate_size=14336, num_decoder_layers=32,
     vocab_size=100352, max_model_len=128*1024, hidden_act="gegelu",
-    sliding_window=256*1024
 )
 
 # https://huggingface.co/microsoft/Phi-3-medium-4k-instruct/blob/main/config.json
