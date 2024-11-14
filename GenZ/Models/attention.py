@@ -59,25 +59,25 @@ def mha_flash_attention_decode(model_config:ModelConfig, parallelism_config:Para
 
 
 
-def mha_flash_attention_chunked(model_config:ModelConfig, parallelism_config:ParallelismConfig, 
-                                chunk_size: int, prefill_kv_sizes: int, decode_kv_sizes: list[int]):
+def mha_flash_attention_chunked(model_config:ModelConfig, parallelism_config:ParallelismConfig,
+                                chunk_size: int, prefill_kv_sizes: list[int,int], decode_kv_sizes: list[int]):
     '''
-        Generates a list of operators for multi-head attention (MHA) with flash attention, 
+        Generates a list of operators for multi-head attention (MHA) with flash attention,
         chunked processing, and parallelism configurations.
         Args:
-            model_config (ModelConfig): Configuration object containing model parameters such as 
+            model_config (ModelConfig): Configuration object containing model parameters such as
                                         number of attention heads, key-value heads, hidden size, and head dimension.
-            parallelism_config (ParallelismConfig): Configuration object containing parallelism parameters 
+            parallelism_config (ParallelismConfig): Configuration object containing parallelism parameters
                                                     such as tensor parallelism, expert parallelism, sequence parallelism, and data parallelism.
             chunk_size (int): Maximum chunk size of the values to be processed.
-            prefill_kv_sizes (int): Size of the key-value pairs for the prefill stage.
-                                    We assume the only 1 prefill stage is processed per chunk.
+            prefill_kv_sizes (int): List of sizes of the prefill
+                                    First value of tuple is the tokens processed till now and second value is the tokens processed in the current chunk.
             decode_kv_sizes (list[int]): List of sizes for the key-value pairs during the decode stage.
-            
+
             The call to this function should handle the prefill_kv_sizes calculation.
         Returns:
             list: A list of layers with their respective configurations for the MHA with flash attention.
-    
+
     '''
     H = model_config.num_attention_heads
     Hkv = model_config.num_key_value_heads
@@ -91,23 +91,22 @@ def mha_flash_attention_chunked(model_config:ModelConfig, parallelism_config:Par
     per_node_H = max(ceil(H / tp), 1)
     per_node_Hkv = max(ceil(Hkv / tp), 1)
 
-    input_sequence_length = chunk_size -  len(decode_kv_sizes)
-    
-    
+
     layers = []
     query =      [["QKV", (per_node_H*Dq + 2*per_node_Hkv*Dq), chunk_size, D, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
     layers += query
-    
+
     ## Prefill LA layers
-    layers +=    [["Logit Pre",per_node_H, input_sequence_length, prefill_kv_sizes+input_sequence_length, Dq, per_node_Hkv, ResidencyInfo.C_onchip, OpType.Logit]]
-    layers +=    [["Attend Pre",per_node_H, input_sequence_length, prefill_kv_sizes+input_sequence_length, Dq, per_node_Hkv, ResidencyInfo.A_onchip, OpType.Attend]]
+    for kv_size in prefill_kv_sizes:
+        layers +=    [["Logit Pre",per_node_H, kv_size[1], kv_size[0]+kv_size[1], Dq, per_node_Hkv, ResidencyInfo.C_onchip, OpType.Logit]]
+        layers +=    [["Attend Pre",per_node_H, kv_size[1], kv_size[0]+kv_size[1], Dq, per_node_Hkv, ResidencyInfo.A_onchip, OpType.Attend]]
 
     ## Decode LA layers
     for kv_size in decode_kv_sizes:
         layers +=     [["Logit Dec",per_node_H, 1, kv_size, Dq, per_node_Hkv, ResidencyInfo.AC_onchip, OpType.Logit]]
         layers +=    [["Attend Dec",per_node_H, 1, kv_size, Dq, per_node_Hkv, ResidencyInfo.AC_onchip, OpType.Attend]]
 
-    
+
     layers +=        [["Out Proj",D, chunk_size, (per_node_H) * Dq, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
     if tp > 1:
         layers +=          [["MHA AR",chunk_size, D, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]

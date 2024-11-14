@@ -225,9 +225,10 @@ def create_full_decode_model(
         name = name.model
     return save_layers(layers=full_model, data_path=data_path, name=name + "_decode_")
 
-def create_full_chunked_model(chunk_size:int, name:str ='GPT-2', 
-                                prefill_kv_sizes:int =1, decode_kv_sizes: list[int]=[], 
-                                data_path:str = DATA_PATH, **args):
+def create_full_chunked_model(name:str ='GPT-2',
+                            prefill_kv_sizes:list[(int,int)] =[], decode_kv_sizes: list[int]=[],
+                            data_path:str = DATA_PATH, **args):
+    ## Prefill KV sizes is a list of request by request, num tokens calculated and to be calculated.
     model_config = get_configs(name)
     pipeline_stages = args.get('pipeline_parallel',1)
 
@@ -238,15 +239,21 @@ def create_full_chunked_model(chunk_size:int, name:str ='GPT-2',
         data_parallel=args.get('data_parallel',1),
         )
 
+    ## Calculate the chunk size
+    prefill_length = sum([i[1] for i in prefill_kv_sizes])
+    chunk_size = len(decode_kv_sizes) + prefill_length
+
     def add_layers(layers, num_layers):
         layers += repeat_layers(num_layers)
-        layers += mha_flash_attention_chunked(model_config, parallelism_config, chunk_size, 
-                                                prefill_kv_sizes=prefill_kv_sizes,decode_kv_sizes=decode_kv_sizes)
+        layers += mha_flash_attention_chunked(  model_config=model_config,
+                                                parallelism_config=parallelism_config,
+                                                chunk_size=chunk_size,
+                                                prefill_kv_sizes=prefill_kv_sizes,
+                                                decode_kv_sizes=decode_kv_sizes)
         layers += ffn_prefill(model_config, parallelism_config, chunk_size)
         layers += end_repeat_layers(num_layers)
         return layers
 
-    prefill_length = chunk_size - len(decode_kv_sizes)
     assert prefill_length > 0, "Chunk size should be greater than the decode batches"
     full_model = []
     full_model += input_embedding(model_config, parallelism_config, prefill_length)
