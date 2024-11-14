@@ -63,7 +63,7 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     #################################################################################
     is_offloaded = False
     per_chip_memory = system.get_off_chip_mem_size()   ## MB
-    if  per_chip_memory < total_memory_req:
+    if  per_chip_memory * pipeline_parallel < total_memory_req:
         if model_offload:
             system = get_offload_system(system=system, total_memory_req = total_memory_req , debug=debug)
             warnings.warn(f"Some Parameter offloaded, effective Memory BW:{unit.raw_to_unit(system.offchip_mem_bw, type='BW')} ")

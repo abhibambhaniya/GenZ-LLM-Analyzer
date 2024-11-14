@@ -1,6 +1,7 @@
 import numpy as np
 import math
 from GenZ.unit import Unit
+import json
 class System(object):
     compute_multiplier = {'int8': 0.5, 'bf16': 1, 'f32': 2, 'int4': 0.25, 'int2':0.125, 'fp8': 0.5,  'fp6':0.5, 'fp4': 0.25}
     mem_multiplier = {'int8': 1, 'bf16': 2, 'f32': 4, 'int4':0.5, 'int2':0.25, 'fp8':1,  'fp6':0.75, 'fp4':0.5}
@@ -8,7 +9,7 @@ class System(object):
                 flops=123, mxu_shape=None,
                 onchip_mem_bw=18000, on_chip_mem_size=float('Inf'),
                 offchip_mem_bw=900, off_chip_mem_size=float('Inf'),
-                external_mem_bw=100,
+                external_mem_bw=0,
                 frequency=940, bits='bf16',
                 compute_efficiency=1, memory_efficiency=1, comm_efficiency=1,
                 interchip_link_bw = 25, num_nodes = 1, interchip_link_latency=1.9,
@@ -61,7 +62,17 @@ class System(object):
         b = f" Off-chip mem size:{unit.raw_to_unit(self.off_chip_mem_size, type='M')/1024} GB "
         c = f" Off-chip mem BW:{unit.raw_to_unit(self.offchip_mem_bw, type='BW')} GB/s, External-mem BW:{unit.raw_to_unit(self.external_mem_bw, type='BW')} GB/s"
         return a+b+c
-
+    
+    @classmethod
+    def from_dict(cls, config_dict):
+        init_params = cls.__init__.__code__.co_varnames[1:cls.__init__.__code__.co_argcount]
+        filtered_params = {k: v for k, v in config_dict.items() if k in init_params}
+        return cls(**filtered_params)
+        
+    @classmethod
+    def from_json(cls, json_str):
+        config_dict = json.loads(json_str)
+        return cls.from_dict(config_dict)
 
     def set_onchip_mem_bw(self,onchip_mem_bw):
         self.onchip_mem_bw = self.unit.unit_to_raw(onchip_mem_bw, type='BW')
