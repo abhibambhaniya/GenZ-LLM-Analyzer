@@ -94,7 +94,7 @@ def ffn_decode(model_config:ModelConfig, parallelism_config:ParallelismConfig):
         ## TODO: Define a function to calculate the number of activated experts
         A = K
 
-        npus_activated = max(1,ceil(A/ep))
+        experts_activated_per_chip = max(1,ceil(A/ep))
         ## Understanding load imbalance among experts
         # Lets' say we have 4 experts and 2 experts per token
         # E = 4, k = 2 ,ep = 2, Activated = 2
@@ -111,12 +111,13 @@ def ffn_decode(model_config:ModelConfig, parallelism_config:ParallelismConfig):
         #   Worst case: min(5, 16//4) = 4 expert per chip
 
         ## Activated experts are distributed among EP
-        ffup =           [["up+gate",npus_activated*Df*fi, 1, D, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]    ## Df is already divided
-        ffdown =           [["down",D, 1, npus_activated*Df, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
+        ffup =           [["up+gate",experts_activated_per_chip*Df*fi, 1, D, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]    ## Df is already divided
+        ffdown =           [["down",D, 1, experts_activated_per_chip*Df, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
 
         ## These are unused layers but kept just for weights calculation
-        ffup_unused =   [["up+gate",(E-A)*Df*fi, 0, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
-        ffdown_unused =   [["down",D, 0, (E-A)*Df, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+        unsed_experts_per_chip = ceil(E/ep) - experts_activated_per_chip
+        ffup_unused =   [["up+gate",unsed_experts_per_chip*Df*fi, 0, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+        ffdown_unused =   [["down",D, 0, unsed_experts_per_chip*Df, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
 
         layers += ffup + ffdown + ffup_unused + ffdown_unused
         if ep > 1:
