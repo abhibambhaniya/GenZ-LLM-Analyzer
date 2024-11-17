@@ -8,4 +8,5 @@ from .get_language_model import (
     create_inference_mamba_decode_model,
     create_full_prefill_model,
     create_full_decode_model,
+    create_full_chunked_model
 )

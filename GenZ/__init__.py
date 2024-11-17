@@ -4,6 +4,7 @@ from .LLM_inference import (
     get_offload_system,
     decode_moddeling,
     prefill_moddeling,
+    chunked_moddeling,
     get_minimum_system_size,
     factors,
     get_various_parallization,
@@ -23,5 +24,6 @@ from .Models import (
     create_inference_mamba_decode_model,
     create_full_prefill_model,
     create_full_decode_model,
+    create_full_chunked_model,
 )
 from .parallelism import ParallelismConfig
