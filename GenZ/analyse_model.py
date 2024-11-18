@@ -249,11 +249,9 @@ def get_model_df(model, system=System(), unit=Unit(), batch_size=1, data_path="/
 
     new_model_defs = []
     for layer in model_defs:
-        # if layer[-1] == OpType.EINSUM:
-            new_layer = [int(x) if isinstance(x, (int, float)) else x for x in layer]
+            if isinstance(layer, np.ndarray):
+                new_layer = [int(x) if isinstance(x, str) and x.isdigit() else float(x) if isinstance(x, str) and x.replace('.', '', 1).isdigit() else x for x in layer]
             new_model_defs.append(new_layer)
-        # else:
-        #     new_model_defs.append(layer.astype(int))
 
     densities = np.ones((len(model_defs), 3), dtype=float)
 
