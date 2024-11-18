@@ -4,7 +4,7 @@ from ..default_models import ModelConfig, get_all_model_configs
 # https://huggingface.co/nvidia/Nemotron-4-340B-Instruct/blob/main/model_config.yaml
 nemotron_340b_config = ModelConfig(model='nvidia/Nemotron-4-340B-Instruct',
     hidden_size=18432, num_attention_heads=96,
-    num_key_value_heads=8, num_ffi = 2,
+    num_key_value_heads=8, num_ffi = 1,
     intermediate_size=73728, num_decoder_layers=96,
     vocab_size=256000, max_model_len=4*1024, hidden_act="silu",
 )
@@ -23,7 +23,7 @@ nemotron_340b_config = ModelConfig(model='nvidia/Nemotron-4-340B-Instruct',
 # https://arxiv.org/pdf/2402.16819
 nemotron_15b_config = ModelConfig(model='nvidia/Nemotron-4-15B',
     hidden_size=6144, num_attention_heads=48,
-    num_key_value_heads=8, num_ffi = 2,
+    num_key_value_heads=8, num_ffi = 1,
     intermediate_size=4*6144, num_decoder_layers=32,
     vocab_size=256000, max_model_len=4*1024, hidden_act="relu",
 )
