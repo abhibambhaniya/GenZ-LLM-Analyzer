@@ -126,7 +126,13 @@ def create_full_prefill_model(
 
     def add_layers(layers, num_layers):
         layers += repeat_layers(num_layers)
-        layers += mha_flash_attention_prefill(model_config, parallelism_config, input_sequence_length)
+        if model_config.unique_layers == 1:
+            if model_config.layer_type[0][0] == "MHA-global":
+                layers += mha_flash_attention_prefill(model_config, parallelism_config, input_sequence_length)
+            elif model_config.layer_type[0][0] == "Mamba":
+                layers += mamba_prefill(model_config, parallelism_config, input_sequence_length)
+        else:
+            raise ValueError("More then 1 unique layers not supported. Work in progress")
         layers += ffn_prefill(model_config, parallelism_config, input_sequence_length)
         layers += end_repeat_layers(num_layers)
         return layers
@@ -202,7 +208,13 @@ def create_full_decode_model(
 
     def add_layers(layers, num_layers):
         layers += repeat_layers(num_layers)
-        layers += mha_flash_attention_decode(model_config, parallelism_config, input_sequence_length, output_gen_tokens)
+        if model_config.unique_layers == 1:
+            if model_config.layer_type[0][0] == "MHA-global":
+                layers += mha_flash_attention_decode(model_config, parallelism_config, input_sequence_length, output_gen_tokens)
+            elif model_config.layer_type[0][0] == "Mamba":
+                layers += mamba_decode(model_config, parallelism_config, input_sequence_length)
+        else:
+            raise ValueError("More then 1 unique layers not supported. Work in progress")
         layers += ffn_decode(model_config, parallelism_config)
         layers += end_repeat_layers(num_layers)
         return layers

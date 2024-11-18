@@ -103,16 +103,16 @@ class ModelConfig():
         # Create the 2D list of parameters
         self.layer_type = []
         if self.is_mamba and self.is_moe:
-            unique_layers = lcm(self.mamba_layer_freq, self.moe_layer_freq) 
+            self.unique_layers = lcm(self.mamba_layer_freq, self.moe_layer_freq) 
         elif self.is_mamba:
-            unique_layers = self.mamba_layer_freq
+            self.unique_layers = self.mamba_layer_freq
         elif self.is_moe:
-            unique_layers = self.moe_layer_freq
+            self.unique_layers = self.moe_layer_freq
         else:
-            unique_layers = 1
-        num_repeats = self.num_decoder_layers / unique_layers
+            self.unique_layers = 1
+        num_repeats = self.num_decoder_layers / self.unique_layers
         assert num_repeats.is_integer(), "Number of decoder layers must be divisible by the unique layers"
-        for i in range(unique_layers):
+        for i in range(self.unique_layers):
             # Determine the attention type
             if self.is_mamba and (i % self.mamba_layer_freq == 0):
                 attention_type = "Mamba"
