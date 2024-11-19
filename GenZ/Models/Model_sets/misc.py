@@ -99,7 +99,7 @@ jamba_v1_config = ModelConfig(model='ai21labs/Jamba-v0.1',
 
 super_llm_moe_config = ModelConfig(model='Hypothetical/SuperLLM-10T-MoE',
     hidden_size=108*128, num_attention_heads=108,
-    num_key_value_heads=108, num_ffi = 2,
+    num_key_value_heads=12, num_ffi = 2,
     intermediate_size=4*108*128, num_decoder_layers=128,
     expert_top_k=4, num_experts=32,
     vocab_size=256000, max_model_len=100*1024,

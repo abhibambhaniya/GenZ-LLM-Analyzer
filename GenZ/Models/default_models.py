@@ -117,7 +117,7 @@ class ModelConfig():
         elif self.is_mamba:
             self.unique_layers = self.mamba_layer_freq
         elif self.is_moe:
-            self.unique_layers = self.moe_layer_freq
+            self.unique_layers = self.expert_layer_period
         else:
             self.unique_layers = 1
         num_repeats = self.num_decoder_layers / self.unique_layers
@@ -127,6 +127,8 @@ class ModelConfig():
             if self.is_mamba and (i % self.mamba_layer_freq == 0):
                 attention_type = "Mamba"
             elif (i % self.attn_layer_period == self.attn_layer_offset):
+                attention_type = "MHA-global"
+            else:
                 attention_type = "MHA-global"
         
             if self.is_moe and self.expert_layer_period and (i % self.expert_layer_period == self.expert_layer_offset):

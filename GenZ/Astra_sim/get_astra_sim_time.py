@@ -207,7 +207,7 @@ def get_astrasim_collective_time(collective_size, collective_type, system:System
         "Switch": "halvingDoubling"
     }
     collective_impl = [topology_to_algorithm[i] for i in network_config['topology']]
-    replace_collective_implementation('/home/abhimanyu/synergy3/work/GenZ-LLM-Analyzer/GenZ/Astra_sim/system.json', collective_impl[0:1]) 
+    replace_collective_implementation('/home/abhimanyu/synergy3/work/GenZ-LLM-Analyzer/GenZ/Astra_sim/system.json', collective_impl) 
     # Step 6: Run astra-sim
     result = subprocess.run(f"bash {run_file}>{ASTRA_SIM_OUTPUT_PATH}", shell=True, check=True, stderr=subprocess.PIPE)
     if result.stdout:
