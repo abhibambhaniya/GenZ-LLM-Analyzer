@@ -56,8 +56,8 @@ class ModelConfig():
         mamba_dt_rank="auto",
         mamba_conv_bias=True,
         mamba_proj_bias=False,
-        mamba_layer_freq=None,
         # Multi-Type model parameters
+        mamba_layer_period=1,
         attn_layer_offset = 0,
         attn_layer_period = 1,
         expert_layer_offset = 0,
@@ -94,14 +94,13 @@ class ModelConfig():
         self.expert_top_k = expert_top_k
 
         # Mamba Parameters
-        self.mamba_layer_freq = mamba_layer_freq
         self.mamba_d_state = mamba_d_state
         self.mamba_d_conv = mamba_d_conv
         self.mamba_expand = mamba_expand if mamba_expand is not None else 1
         self.mamba_dt_rank = ceil(self.hidden_size / 16) if mamba_dt_rank == "auto" else mamba_dt_rank
         self.mamba_conv_bias = mamba_conv_bias
         self.mamba_proj_bias = mamba_proj_bias
-        self.is_mamba = (mamba_d_state is not None) and (mamba_layer_freq is not None)
+        self.is_mamba = (mamba_d_state is not None)
         
 
         # Multi-Type Model Parameters
@@ -109,13 +108,15 @@ class ModelConfig():
         self.expert_layer_offset = expert_layer_offset
         self.attn_layer_period = attn_layer_period
         self.attn_layer_offset = attn_layer_offset
+        self.mamba_layer_period = mamba_layer_period
 
         # Create the 2D list of parameters
+        # print(self.is_mamba, self.is_moe)
         self.layer_type = []
         if self.is_mamba and self.is_moe:
-            self.unique_layers = lcm(self.mamba_layer_freq, self.expert_layer_period, self.attn_layer_period) 
+            self.unique_layers = lcm(self.mamba_layer_period, self.expert_layer_period, self.attn_layer_period) 
         elif self.is_mamba:
-            self.unique_layers = self.mamba_layer_freq
+            self.unique_layers = self.mamba_layer_period
         elif self.is_moe:
             self.unique_layers = self.expert_layer_period
         else:
@@ -124,7 +125,7 @@ class ModelConfig():
         assert num_repeats.is_integer(), "Number of decoder layers must be divisible by the unique layers"
         for i in range(self.unique_layers):
             # Determine the attention type
-            if self.is_mamba and (i % self.mamba_layer_freq == 0):
+            if self.is_mamba and (i % self.mamba_layer_period == 0):
                 attention_type = "Mamba"
             elif (i % self.attn_layer_period == self.attn_layer_offset):
                 attention_type = "MHA-global"
