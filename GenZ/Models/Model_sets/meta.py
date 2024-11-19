@@ -51,6 +51,14 @@ opt_30b_config = ModelConfig(model='facebook/opt-30B',
     max_model_len=2*1024, vocab_size=50272, hidden_act="relu",
 )
 
+# https://huggingface.co/facebook/opt-66b/blob/main/config.json
+opt_66b_config = ModelConfig(model='facebook/opt-66B',
+    hidden_size=9216, num_attention_heads=72,
+    intermediate_size=4*9216, num_decoder_layers=64,
+    max_model_len=2*1024, vocab_size=50272, hidden_act="relu",
+)
+
+
 # https://huggingface.co/intlsy/opt-175b-hyperparam/blob/main/config.json
 gpt3_config = ModelConfig(model='openai/GPT3-175B',
     hidden_size=12288, num_attention_heads=96, num_ffi = 1,

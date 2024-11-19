@@ -42,5 +42,6 @@ nvidia_models.update({
     'nvidia/Mistral-NeMo-Minitron-8B-Base': minitron_8b_config,
     'nvidia/Nemotron-4-15B': nemotron_15b_config,
     'nvidia/Nemotron-4-340B-Instruct': nemotron_340b_config,
+    'nvidia/Nemotron-4-340B': nemotron_340b_config,
 
 })
