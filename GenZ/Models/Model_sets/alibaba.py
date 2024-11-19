@@ -91,7 +91,7 @@ qwen1_5_moe_2_7b_config = ModelConfig(model='Qwen/Qwen1.5-MoE-A2.7B',
     hidden_size=2048, num_attention_heads=16,
     num_key_value_heads=16, num_ffi = 2,
     intermediate_size=5632, num_decoder_layers=40,
-    expert_top_k=4, num_experts=60, moe_layer_freq=1,
+    expert_top_k=4, num_experts=60,
     moe_intermediate_size=1408, shared_expert_intermediate_size=5632,
     vocab_size=151936, max_model_len=8*1024, sliding_window=32*1024, hidden_act="silu",
 )

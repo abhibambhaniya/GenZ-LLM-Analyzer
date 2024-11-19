@@ -13,7 +13,7 @@ mixtral_8x7b_config = ModelConfig(model='mistralai/Mixtral-8x7B',
     hidden_size=4096, num_attention_heads=32,
     num_key_value_heads=8, num_ffi = 2,
     intermediate_size=14336, num_decoder_layers=32,
-    expert_top_k=2, num_experts=8, moe_layer_freq=1,
+    expert_top_k=2, num_experts=8,
     vocab_size=32000, max_model_len=32*1024, hidden_act="silu",
 )
 
@@ -40,7 +40,7 @@ mixtral_8x22b_config = ModelConfig(model='mistralai/Mixtral-8x22B',
     hidden_size=6144, num_attention_heads=48,
     num_key_value_heads=8, num_ffi = 2,
     intermediate_size=16384, num_decoder_layers=56,
-    expert_top_k=2, num_experts=8, moe_layer_freq=1,
+    expert_top_k=2, num_experts=8,
     vocab_size=32768, max_model_len=64*1024, hidden_act="silu",
 )
 

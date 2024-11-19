@@ -14,7 +14,7 @@ dbrx_config = ModelConfig(model='databricks/dbrx-base',
     hidden_size=6144, num_attention_heads=48,
     num_key_value_heads=8, num_ffi = 2,
     intermediate_size=10752, num_decoder_layers=40,
-    expert_top_k=4, num_experts=16, moe_layer_freq=1,
+    expert_top_k=4, num_experts=16,
     max_model_len=32*1024, vocab_size=100352, hidden_act="silu",
 )
 
@@ -22,7 +22,7 @@ gpt_4_config = ModelConfig(model='openai/GPT-4',
     hidden_size=84*128, num_attention_heads=84,
     num_key_value_heads=84, num_ffi = 1,
     intermediate_size=4*84*128, num_decoder_layers=128,
-    expert_top_k=2, num_experts=16, moe_layer_freq=1,
+    expert_top_k=2, num_experts=16,
     vocab_size=128256, max_model_len=128*1024, hidden_act="silu",
 )
 
@@ -31,7 +31,7 @@ grok_1_config = ModelConfig(model='xai-org/grok-1',
     hidden_size=6144, num_attention_heads=48,
     num_key_value_heads=8, num_ffi = 1,
     intermediate_size=8*6144, num_decoder_layers=64,
-    expert_top_k=2, num_experts=8, moe_layer_freq=1,
+    expert_top_k=2, num_experts=8,
     vocab_size=128*1024, max_model_len=8*1024, hidden_act="gelu",
 )
 
@@ -50,7 +50,6 @@ mamba_130m_config = ModelConfig(model='state-spaces/mamba-130m-hf',
     intermediate_size=1536, num_decoder_layers=24,
     max_model_len=131072, vocab_size=50280, hidden_act="silu",
     mamba_d_state = 16, mamba_dt_rank = 48, mamba_expand = 2, mamba_d_conv=4,
-    mamba_layer_freq = 1,
 )
 
 # https://huggingface.co/state-spaces/mamba-2.8b-hf/blob/main/config.json
@@ -60,7 +59,6 @@ mamba_3b_config = ModelConfig(model='state-spaces/mamba-2.8b-hf',
     intermediate_size=5120, num_decoder_layers=64,
     max_model_len=131072, vocab_size=50280, hidden_act="silu",
     mamba_d_state = 16, mamba_dt_rank = 160, mamba_expand = 2, mamba_d_conv=4,
-    mamba_layer_freq = 1,
 )
 
 # https://huggingface.co/tiiuae/falcon-mamba-7b/blob/main/config.json
@@ -70,15 +68,40 @@ falcon_mamba_7b_config = ModelConfig(model='tiiuae/falcon-mamba-7b',
     intermediate_size=0, num_decoder_layers=64,
     max_model_len=131072, vocab_size=50280, hidden_act="silu",
     mamba_d_state = 16, mamba_dt_rank = 256, mamba_expand = 2, mamba_d_conv=4,
-    mamba_layer_freq = 1,
 )
 
+# https://huggingface.co/ai21labs/AI21-Jamba-1.5-Large/blob/main/config.json
+jamba_1_5_large_config = ModelConfig(model='ai21labs/AI21-Jamba-1.5-Large',
+    attn_layer_offset = 4, attn_layer_period = 8, expert_layer_offset = 1, expert_layer_period = 2,
+    hidden_size = 8192, intermediate_size = 24576,
+    mamba_d_conv= 4, mamba_d_state= 16, mamba_dt_rank= 512, mamba_expand= 2,
+    num_attention_heads= 64, num_key_value_heads= 8, num_experts= 16, expert_top_k= 2, num_decoder_layers= 72,
+    max_model_len= 262144, hidden_act = "silu", vocab_size= 65536,
+)
+
+# https://huggingface.co/ai21labs/AI21-Jamba-1.5-Mini/blob/main/config.json
+jamba_1_5_mini_config = ModelConfig(model='ai21labs/AI21-Jamba-1.5-Mini',
+    attn_layer_offset = 4, attn_layer_period = 8, expert_layer_offset = 1, expert_layer_period = 2,
+    hidden_size = 4096, intermediate_size = 14336,
+    mamba_d_conv= 4, mamba_d_state= 16, mamba_dt_rank= 256, mamba_expand= 2,
+    num_attention_heads= 32, num_key_value_heads= 8, num_experts= 16, expert_top_k= 2, num_decoder_layers= 32,
+    max_model_len= 262144, hidden_act = "silu", vocab_size= 65536,
+) 
+
+# https://huggingface.co/ai21labs/Jamba-v0.1/blob/main/config.json
+jamba_v1_config = ModelConfig(model='ai21labs/Jamba-v0.1',
+    attn_layer_offset = 4, attn_layer_period = 8, expert_layer_offset = 1, expert_layer_period = 2,
+    hidden_size = 4096, intermediate_size = 14336,
+    mamba_d_conv= 4, mamba_d_state= 16, mamba_dt_rank= 256, mamba_expand= 2,
+    num_attention_heads= 32, num_key_value_heads= 8, num_experts= 16, expert_top_k= 2, num_decoder_layers= 32,
+    max_model_len= 262144, hidden_act = "silu", vocab_size= 65536,
+)
 
 super_llm_moe_config = ModelConfig(model='Hypothetical/SuperLLM-10T-MoE',
     hidden_size=108*128, num_attention_heads=108,
     num_key_value_heads=108, num_ffi = 2,
     intermediate_size=4*108*128, num_decoder_layers=128,
-    expert_top_k=4, num_experts=32, moe_layer_freq=1,
+    expert_top_k=4, num_experts=32,
     vocab_size=256000, max_model_len=100*1024,
 )
 
@@ -103,7 +126,7 @@ deep_seek_moe_16b_config = ModelConfig(model='deepseek-ai/deepseek-moe-16b-base'
     hidden_size=2048, num_attention_heads=16,
     num_key_value_heads=16, num_ffi = 2,
     intermediate_size=10944, num_decoder_layers=28,
-    expert_top_k=6, num_experts=64, moe_layer_freq=1,
+    expert_top_k=6, num_experts=64,
     moe_intermediate_size=1408,
     n_shared_experts=2, shared_expert_intermediate_size=1408,
     first_k_dense_replace = 1,

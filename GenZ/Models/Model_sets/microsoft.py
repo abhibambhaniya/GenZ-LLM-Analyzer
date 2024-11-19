@@ -32,7 +32,7 @@ phi3moe_config = ModelConfig(model='microsoft/Phi-3.5-MoE',
         hidden_size=4096, num_attention_heads=32,
     num_key_value_heads=8, num_ffi = 2,
     intermediate_size=6400, num_decoder_layers=32,
-    expert_top_k=2, num_experts=16, moe_layer_freq=1,
+    expert_top_k=2, num_experts=16,
     vocab_size=32064, max_model_len=128*1024, hidden_act="silu",
     sliding_window=128*1024
 )

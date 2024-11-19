@@ -57,6 +57,11 @@ class ModelConfig():
         mamba_conv_bias=True,
         mamba_proj_bias=False,
         mamba_layer_freq=None,
+        # Multi-Type model parameters
+        attn_layer_offset = 0,
+        attn_layer_period = 1,
+        expert_layer_offset = 0,
+        expert_layer_period = 1,
         **kwargs,
     ):
         self.model = model
@@ -99,11 +104,16 @@ class ModelConfig():
         self.is_mamba = (mamba_d_state is not None) and (mamba_layer_freq is not None)
         
 
+        # Multi-Type Model Parameters
+        self.expert_layer_period = expert_layer_period
+        self.expert_layer_offset = expert_layer_offset
+        self.attn_layer_period = attn_layer_period
+        self.attn_layer_offset = attn_layer_offset
 
         # Create the 2D list of parameters
         self.layer_type = []
         if self.is_mamba and self.is_moe:
-            self.unique_layers = lcm(self.mamba_layer_freq, self.moe_layer_freq) 
+            self.unique_layers = lcm(self.mamba_layer_freq, self.expert_layer_period, self.attn_layer_period) 
         elif self.is_mamba:
             self.unique_layers = self.mamba_layer_freq
         elif self.is_moe:
@@ -116,10 +126,10 @@ class ModelConfig():
             # Determine the attention type
             if self.is_mamba and (i % self.mamba_layer_freq == 0):
                 attention_type = "Mamba"
-            else:
+            elif (i % self.attn_layer_period == self.attn_layer_offset):
                 attention_type = "MHA-global"
         
-            if self.is_moe and self.moe_layer_freq and (i % self.moe_layer_freq == 0):
+            if self.is_moe and self.expert_layer_period and (i % self.expert_layer_period == self.expert_layer_offset):
                 layer_type = "MoE"
             else:
                 layer_type = "Dense"
@@ -127,6 +137,20 @@ class ModelConfig():
             self.layer_type.append([attention_type, layer_type])
         super().__init__()
 
+    @property
+    def layers_block_type(self):
+        return [
+            "MHA-global" if i % self.attn_layer_period == self.attn_layer_offset else "Mamba"
+            for i in range(self.num_hidden_layers)
+        ]
+
+    @property
+    def layers_num_experts(self):
+        return [
+            self.num_experts if i % self.expert_layer_period == self.expert_layer_offset else 1
+            for i in range(self.num_hidden_layers)
+        ]
+        
     def __str__(self):
         return str(vars(self))
 
