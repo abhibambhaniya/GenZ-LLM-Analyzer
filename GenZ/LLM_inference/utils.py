@@ -26,6 +26,7 @@ class RuntimeBreakdown():
         self.AR_time: float = 0
         self.A2A_time: float = 0
         self.Send_Recv_time: float = 0
+        self.Mamba_time: float = 0
 
     def __repr__(self):
         variables = vars(self)

@@ -16,9 +16,18 @@ def get_attn_index(df:pd.DataFrame):
             ret.append(idx)
     return ret
 
+def get_mamba_index(df:pd.DataFrame):
+    ret = []
+    for idx in range(len(df)):
+        if 'CONV1D' in df.loc[idx, 'Op Type'] or 'x calc' in df.loc[idx, 'Layer Name']:
+            ret.append(idx)
+    return ret
+
+
 def get_summary_table(df:pd.DataFrame, unit = Unit(), model_characterstics:bool=False):
 
     attn_idx = get_attn_index(df)
+    mamba_idx = get_mamba_index(df)
 
     total_macs = 0
     total_data = 0
@@ -42,7 +51,12 @@ def get_summary_table(df:pd.DataFrame, unit = Unit(), model_characterstics:bool=
             total_data += (df.loc[i,f'Input_a ({unit.unit_mem})'] + df.loc[i,f'Input_w ({unit.unit_mem})'] + df.loc[i,f'Output ({unit.unit_mem})']) * multiplier
             if i in attn_idx:
                 kv_cache += df.loc[i,f'Input_w ({unit.unit_mem})'] * multiplier
-            else:
+            elif i in mamba_idx:
+                if 'CONV1D' in df.loc[i, 'Op Type']:
+                    kv_cache += df.loc[i,f'Input_w ({unit.unit_mem})'] * multiplier
+                elif 'x calc' in df.loc[i, 'Layer Name']:
+                    kv_cache += df.loc[i,f'Input_w ({unit.unit_mem})'] * multiplier / df.loc[i,'Dimension'][0][0]
+            elif 'GEMM' in df.loc[i, 'Op Type']:
                 total_weights += df.loc[i,f'Input_w ({unit.unit_mem})'] * multiplier
                 if df.loc[i, f'Num ops ({unit.unit_flop})'] == 0:
                     unused_weights += df.loc[i,f'Input_w ({unit.unit_mem})'] * multiplier
@@ -142,7 +156,7 @@ def get_runtime_breakdown(df:pd.DataFrame) -> RuntimeBreakdown:
         elif layer_name in ['Message Pass']:
             runtime_breakdown.Collective += layer_latency
             runtime_breakdown.Send_Recv_time += layer_latency
-        elif layer_name in ['MHA AR']:
+        elif layer_name in ['MHA AR', 'Mamba AR']:
             runtime_breakdown.MHA += layer_latency
             runtime_breakdown.Collective += layer_latency
             runtime_breakdown.AR_time += layer_latency
@@ -158,10 +172,13 @@ def get_runtime_breakdown(df:pd.DataFrame) -> RuntimeBreakdown:
             runtime_breakdown.AR_time += layer_latency
             runtime_breakdown.Embedding += layer_latency
             runtime_breakdown.Collective += layer_latency
+        elif layer_name in ['Inproj', 'Conv', 'BC proj', 'xt proj', 'deltaA', 'deltaB', 'deltaBu', 'x calc', 'y calc', 'D addition', 'out mult z', 'Out proj', 'Mamba AR']:
+            runtime_breakdown.Mamba_time += layer_latency
         else:
             raise ValueError(f'Layer Name:{layer_name} not found in the breakdown function')
 
     return runtime_breakdown
+
 
 def analysis_model(model_dims, system=None, unit=Unit(), densities = None,intermediate_on_chip=False,
                     beam_size=1, beam_merge=False, model_characterstics=False):

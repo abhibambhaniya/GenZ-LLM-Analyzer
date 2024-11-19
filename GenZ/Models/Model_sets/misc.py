@@ -66,10 +66,10 @@ mamba_3b_config = ModelConfig(model='state-spaces/mamba-2.8b-hf',
 # https://huggingface.co/tiiuae/falcon-mamba-7b/blob/main/config.json
 falcon_mamba_7b_config = ModelConfig(model='tiiuae/falcon-mamba-7b',
     hidden_size=4096, num_attention_heads=1,
-    num_key_value_heads=1, num_ffi = 2,
-    intermediate_size=8192, num_decoder_layers=64,
+    num_key_value_heads=1, num_ffi = 0,
+    intermediate_size=0, num_decoder_layers=64,
     max_model_len=131072, vocab_size=50280, hidden_act="silu",
-    mamba_d_state = 16, mamba_dt_rank = 256, mamba_expand = 16, mamba_d_conv=4,
+    mamba_d_state = 16, mamba_dt_rank = 256, mamba_expand = 2, mamba_d_conv=4,
     mamba_layer_freq = 1,
 )
 
@@ -84,7 +84,7 @@ super_llm_moe_config = ModelConfig(model='Hypothetical/SuperLLM-10T-MoE',
 
 super_llm_dense_config = ModelConfig(model='Hypothetical/SuperLLM-5T-Dense',
     hidden_size=192*256, num_attention_heads=192,
-    num_key_value_heads=192, num_ffi = 2,
+    num_key_value_heads=24, num_ffi = 2,
     intermediate_size=4*192*256, num_decoder_layers=128,
     vocab_size=256000, max_model_len=100*1024,
 )

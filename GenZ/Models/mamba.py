@@ -1,4 +1,4 @@
-from GenZ.Models import ModelConfig, ResidencyInfo, OpType, parse_einsum_expression
+from GenZ.Models import ModelConfig, ResidencyInfo, OpType, parse_einsum_expression, CollectiveType
 from GenZ.parallelism import ParallelismConfig
 
 def mamda_ssn_slow(model_config:ModelConfig, parallelism_config:ParallelismConfig, input_sequence_length:int):
@@ -60,8 +60,7 @@ def mamba_prefill(model_config:ModelConfig, parallelism_config:ParallelismConfig
 
     L  = input_sequence_length ## input Seq Len
 
-    D = model_config.hidden_size
-    Df = model_config.intermediate_size
+    D = round(model_config.hidden_size/tp)
 
     ## Mamba parameters
     S = model_config.mamba_d_state
@@ -70,7 +69,6 @@ def mamba_prefill(model_config:ModelConfig, parallelism_config:ParallelismConfig
     R = model_config.mamba_dt_rank
 
     # assert H % tensor_parallel == 0, f'Heads should be equally divisible, H:{H}, TP:{tensor_parallel}'
-    Df = max(Df//tp,1)
 
     in_proj =      [["Inproj",2*F, L, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]        ## BLD * D2F = BL2F
     conv_1d =      [["Conv",F, F, L, C, 1, ResidencyInfo.All_offchip, OpType.CONV1D]]         ## BLF conv FC -> BLF
@@ -80,7 +78,12 @@ def mamba_prefill(model_config:ModelConfig, parallelism_config:ParallelismConfig
 
     output =       [["Out proj",D, L, F, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
 
-    return in_proj + conv_1d + dbc_proj + xt_proj + ssn + output
+    if tp > 1:
+        sync =          [["Mamba AR", input_sequence_length//sp, D, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
+    else:
+        sync = []
+
+    return in_proj + conv_1d + dbc_proj + xt_proj + ssn + output + sync
 
 
 def mamba_decode(model_config:ModelConfig, parallelism_config:ParallelismConfig,
@@ -93,7 +96,8 @@ def mamba_decode(model_config:ModelConfig, parallelism_config:ParallelismConfig,
     dp = parallelism_config.data_parallel
 
     ## Mamba parameters
-    D = model_config.hidden_size
+    D = round(model_config.hidden_size/tp)
+
     S = model_config.mamba_d_state
     C = model_config.mamba_d_conv
     F = D * model_config.mamba_expand
@@ -105,5 +109,9 @@ def mamba_decode(model_config:ModelConfig, parallelism_config:ParallelismConfig,
     xt_proj =      [["xt proj",F, 1, R, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
     ssn =   mamda_ssn_slow(model_config, parallelism_config, 1)
     output =       [["Out proj",D, 1, F, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+    if tp > 1:
+        sync =          [["Mamba AR",1, D, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
+    else:
+        sync = []
 
-    return in_proj + conv_1d + dbc_proj + xt_proj + ssn + output
+    return in_proj + conv_1d + dbc_proj + xt_proj + ssn + output + sync
