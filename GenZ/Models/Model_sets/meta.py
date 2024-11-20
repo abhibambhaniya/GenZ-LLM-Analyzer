@@ -1,5 +1,5 @@
 from ..default_models import ModelConfig, get_all_model_configs
-
+from ..model_quality import QualityMetricsCollection, MMLU, MATH
 #### OPT Models ####
 
 # https://huggingface.co/openai-community/gpt2/blob/main/config.json
@@ -129,6 +129,7 @@ llama3_2_1b_config = ModelConfig(model='meta-llama/Llama-3.2-1B',
     num_key_value_heads=8, num_ffi = 2,
     intermediate_size=4*2048, num_decoder_layers=16,
     vocab_size=128256, max_model_len=128*1024, hidden_act="silu",
+    model_quality=QualityMetricsCollection([MMLU(accuracy=49.3), MATH(accuracy=30.6)]),
 )
 
 # https://huggingface.co/meta-llama/Llama-3.2-3B/blob/main/config.json
@@ -137,6 +138,7 @@ llama3_2_3b_config = ModelConfig(model='meta-llama/Llama-3.2-3B',
     num_key_value_heads=8, num_ffi = 2,
     intermediate_size=4*2048, num_decoder_layers=28,
     vocab_size=128256, max_model_len=128*1024, hidden_act="silu",
+    model_quality=QualityMetricsCollection([MMLU(accuracy=63.4), MATH(accuracy=48.0)]),
 )
 
 meta_models = get_all_model_configs(__name__)

@@ -1,7 +1,10 @@
 import numpy as np
 from math import ceil, lcm
 import sys
+from typing import Optional
 import inspect
+from .model_quality import QualityMetricsCollection
+
 
 class ModelConfig():
     r"""
@@ -62,6 +65,8 @@ class ModelConfig():
         attn_layer_period = 1,
         expert_layer_offset = 0,
         expert_layer_period = 1,
+        # Quality of Model
+        model_quality: Optional[QualityMetricsCollection] = None,
         **kwargs,
     ):
         self.model = model
@@ -138,6 +143,9 @@ class ModelConfig():
                 layer_type = "Dense"
             
             self.layer_type.append([attention_type, layer_type])
+            
+        # Quality of Model
+        self.model_quality = model_quality
         super().__init__()
 
     @property
