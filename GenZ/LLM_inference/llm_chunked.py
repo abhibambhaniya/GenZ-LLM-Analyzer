@@ -18,7 +18,7 @@ def chunked_moddeling(model = 'BERT',
     tensor_parallel = 1, pipeline_parallel = 1,
     expert_parallel = 1,
     collective_strategy='GenZ', network_config=None,
-    return_model_df=False, parallelism_heirarchy = "TP{1}_EP{1}_PP{1}",
+    parallelism_heirarchy = "TP{1}_EP{1}_PP{1}",
     model_offload = False, ceff = None, meff = None):
 
     ##################################################################################################
@@ -83,8 +83,7 @@ def chunked_moddeling(model = 'BERT',
 
     model_df = get_model_df(model_chunked, system, unit, 1,  intermediate_on_chip=True )
     summary_table = get_summary_table(model_df, unit)
-    if return_model_df:
-        return model_df, summary_table
+
     if debug:
         display_df(simplify_df(model_df))
         display(summary_table)

@@ -17,7 +17,7 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     tensor_parallel = 1, pipeline_parallel = 1,
     expert_parallel = 1,
     collective_strategy='GenZ', network_config=None,
-    return_model_df=False, parallelism_heirarchy = "TP{1}_EP{1}_PP{1}",
+    parallelism_heirarchy = "TP{1}_EP{1}_PP{1}",
     model_offload = False, ceff = None, meff = None):
 
     if pipeline_parallel > 1:
@@ -92,8 +92,7 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
 
     model_df = get_model_df(model_decode, system, unit, ub*Bb,  intermediate_on_chip=True , beam_merge= (Bb > 1), beam_size= Bb)
     summary_table = get_summary_table(model_df, unit)
-    if return_model_df:
-        return model_df, summary_table
+
     if debug:
         display_df(simplify_df(model_df))
         display(summary_table)

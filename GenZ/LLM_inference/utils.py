@@ -42,6 +42,7 @@ class ModdelingOutput(dict):
     is_offload: Optional[bool] = False
     model_df: Optional[pd.DataFrame] = None
     summary_table: Optional[pd.DataFrame] = None
+    tokens_generated: Optional[int] = 0
 
 def get_offload_system(system, total_memory_req, debug):
     """Create a new system with offloaded memory connections
