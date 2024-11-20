@@ -84,7 +84,7 @@ def ffn_decode(model_config:ModelConfig, parallelism_config:ParallelismConfig):
         router = [["Gate",E, 1, D//tp, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
         layers += router
         if tp > 1:
-            router_AR = [["Gate AR",1, E, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
+            router_AR = [["Gate AR",1, D, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
             layers += router_AR
         if ep > 1:
             # Total Size=Batch Size×Tokens per Batch×Hidden Dimension×Number of Experts per Token

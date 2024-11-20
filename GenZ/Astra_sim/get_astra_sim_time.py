@@ -121,7 +121,7 @@ def replace_collective_implementation(file_path, new_value):
         data = json.load(file)
     
     data["all-reduce-implementation"] = new_value
-    data["all-to-all-implementation"] = new_value
+    # data["all-to-all-implementation"] = new_value
     data["all-gather-implementation"] = new_value
     data["reduce-scatter-implementation"] = new_value
     
