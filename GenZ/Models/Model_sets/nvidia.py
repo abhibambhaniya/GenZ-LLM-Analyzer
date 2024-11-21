@@ -1,4 +1,5 @@
 from ..default_models import ModelConfig, get_all_model_configs
+from ..model_quality import QualityMetricsCollection, MMLU, MATH, GSM8K,  IFEval,  GPQA, Hellaswag, TLDR, TriviaQA, BIG_Bench
 
 ##### Nvidia Models ########
 # https://huggingface.co/nvidia/Nemotron-4-340B-Instruct/blob/main/model_config.yaml
@@ -7,6 +8,7 @@ nemotron_340b_config = ModelConfig(model='nvidia/Nemotron-4-340B-Instruct',
     num_key_value_heads=8, num_ffi = 1,
     intermediate_size=73728, num_decoder_layers=96,
     vocab_size=256000, max_model_len=4*1024, hidden_act="silu",
+    model_quality=QualityMetricsCollection([MMLU(accuracy=78.7, shots=0), IFEval(accuracy=86.1), GSM8K(accuracy=92.3, shots=0)]),
 )
 
 # TODO: Addition changes required in Genz as has different layerwise configs
@@ -26,6 +28,7 @@ nemotron_15b_config = ModelConfig(model='nvidia/Nemotron-4-15B',
     num_key_value_heads=8, num_ffi = 1,
     intermediate_size=4*6144, num_decoder_layers=32,
     vocab_size=256000, max_model_len=4*1024, hidden_act="relu",
+    model_quality=QualityMetricsCollection([MMLU(accuracy=64.2), GSM8K(accuracy=46.0), MATH(accuracy=47.0)]),
 )
 
 # https://huggingface.co/nvidia/Mistral-NeMo-Minitron-8B-Base/blob/main/config.json
@@ -34,6 +37,7 @@ minitron_8b_config = ModelConfig(model='nvidia/Mistral-NeMo-Minitron-8B-Base',
     num_key_value_heads=8, num_ffi = 2,
     intermediate_size=11520, num_decoder_layers=40,
     vocab_size=131072, max_model_len=8*1024, hidden_act="silu",
+    model_quality=QualityMetricsCollection([MMLU(accuracy=69.5), GSM8K(accuracy=58.5), Hellaswag(accuracy=83.0)]),
 )
 
 nvidia_models = get_all_model_configs(__name__)

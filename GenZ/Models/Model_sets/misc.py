@@ -1,5 +1,5 @@
 from ..default_models import ModelConfig, get_all_model_configs
-
+from ..model_quality import QualityMetricsCollection, MMLU, MATH, GSM8K,  IFEval,  GPQA, Hellaswag, TLDR, TriviaQA, BIG_Bench
 
 # https://huggingface.co/tiiuae/falcon-7b-instruct/blob/main/config.json
 falcon7b_config = ModelConfig(model='tiiuae/falcon-7b-instruct',
@@ -16,6 +16,7 @@ dbrx_config = ModelConfig(model='databricks/dbrx-base',
     intermediate_size=10752, num_decoder_layers=40,
     expert_top_k=4, num_experts=16,
     max_model_len=32*1024, vocab_size=100352, hidden_act="silu",
+    model_quality=QualityMetricsCollection([IFEval(accuracy=54.16), GPQA(accuracy=12.19), MMLU(accuracy=29.81)]),
 )
 
 gpt_4_config = ModelConfig(model='openai/GPT-4',
@@ -24,6 +25,7 @@ gpt_4_config = ModelConfig(model='openai/GPT-4',
     intermediate_size=4*84*128, num_decoder_layers=128,
     expert_top_k=2, num_experts=16,
     vocab_size=128256, max_model_len=128*1024, hidden_act="silu",
+    model_quality=QualityMetricsCollection([MMLU(accuracy=86.4, shots=5), Hellaswag(accuracy=95.3, shots=10)]),
 )
 
 # https://huggingface.co/xai-org/grok-1/blob/main/RELEASE
@@ -68,6 +70,7 @@ falcon_mamba_7b_config = ModelConfig(model='tiiuae/falcon-mamba-7b',
     intermediate_size=0, num_decoder_layers=64,
     max_model_len=131072, vocab_size=50280, hidden_act="silu",
     mamba_d_state = 16, mamba_dt_rank = 256, mamba_expand = 2, mamba_d_conv=4,
+    model_quality=QualityMetricsCollection([MMLU(accuracy=62.03), Hellaswag(accuracy=80.82), IFEval(accuracy=33.36, shots=0), GPQA(accuracy=8.05, shots=0), GSM8K(accuracy=52.54)]),
 )
 
 # https://huggingface.co/ai21labs/AI21-Jamba-1.5-Large/blob/main/config.json
@@ -77,6 +80,7 @@ jamba_1_5_large_config = ModelConfig(model='ai21labs/AI21-Jamba-1.5-Large',
     mamba_d_conv= 4, mamba_d_state= 16, mamba_dt_rank= 512, mamba_expand= 2,
     num_attention_heads= 64, num_key_value_heads= 8, num_experts= 16, expert_top_k= 2, num_decoder_layers= 72,
     max_model_len= 262144, hidden_act = "silu", vocab_size= 65536,
+    model_quality=QualityMetricsCollection([MMLU(accuracy=81.2), GPQA(accuracy=36.9), GSM8K(accuracy=87)]),
 )
 
 # https://huggingface.co/ai21labs/AI21-Jamba-1.5-Mini/blob/main/config.json
