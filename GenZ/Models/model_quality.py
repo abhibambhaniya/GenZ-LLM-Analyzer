@@ -16,7 +16,7 @@ class MMLU(QualityMetric):
     '''
     5-Shot MMLU Accuracy
     '''
-    def __init__(self, accuracy:float, shots:int):
+    def __init__(self, accuracy:float, shots:int=None):
         self.name = 'MMLU'
         self.accuracy = accuracy
         self.shots = shots
@@ -27,7 +27,7 @@ class GSM8K(QualityMetric):
     '''
     GSM8K Accuracy
     '''
-    def __init__(self, accuracy:float, shots:int):
+    def __init__(self, accuracy:float, shots:int=None):
         self.name = 'GSM8K'
         self.accuracy = accuracy
         self.shots = shots
@@ -38,7 +38,7 @@ class IFEval(QualityMetric):
     '''
     IFEval Accuracy
     '''
-    def __init__(self, accuracy:float, shots:int):
+    def __init__(self, accuracy:float, shots:int=None):
         self.name = 'IFEval'
         self.accuracy = accuracy
         self.shots = shots
@@ -49,7 +49,7 @@ class TLDR(QualityMetric):
     '''
     TLDR Accuracy
     '''
-    def __init__(self, accuracy:float, shots:int):
+    def __init__(self, accuracy:float, shots:int=None):
         self.name = 'TLDR'
         self.accuracy = accuracy
         self.shots = shots
@@ -60,7 +60,7 @@ class BIG_Bench(QualityMetric):
     '''
     BIG_Bench Accuracy
     '''
-    def __init__(self, accuracy:float, shots:int):
+    def __init__(self, accuracy:float, shots:int=None):
         self.name = 'BIG_Bench'
         self.accuracy = accuracy
         self.shots = shots
@@ -71,7 +71,7 @@ class GPQA(QualityMetric):
     '''
     GPQA Accuracy
     '''
-    def __init__(self, accuracy:float, shots:int):
+    def __init__(self, accuracy:float, shots:int=None):
         self.name = 'GPQA'
         self.accuracy = accuracy
         self.shots = shots
@@ -82,7 +82,7 @@ class Hellaswag(QualityMetric):
     '''
     Hellaswag Accuracy
     '''
-    def __init__(self, accuracy:float, shots:int):
+    def __init__(self, accuracy:float, shots:int=None):
         self.name = 'Hellaswag'
         self.accuracy = accuracy
         self.shots = shots
@@ -93,7 +93,7 @@ class TriviaQA(QualityMetric):
     '''
     TriviaQA Accuracy
     '''
-    def __init__(self, accuracy:float, shots:int):
+    def __init__(self, accuracy:float, shots:int=None):
         self.name = 'TriviaQA'
         self.accuracy = accuracy
         self.shots = shots
@@ -104,7 +104,7 @@ class MATH(QualityMetric):
     '''
     0-Shot MATH Accuracy
     '''
-    def __init__(self, accuracy:float, shots:int):
+    def __init__(self, accuracy:float, shots:int=None):
         self.name = 'MATH'
         self.accuracy = accuracy
         self.shots = shots
