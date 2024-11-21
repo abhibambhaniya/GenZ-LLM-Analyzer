@@ -1,5 +1,5 @@
 from ..default_models import ModelConfig, get_all_model_configs
-
+from ..model_quality import QualityMetricsCollection, MMLU, MATH, GSM8K,  IFEval,  GPQA, Hellaswag, TLDR, TriviaQA, BIG_Bench
 
 #### Phi3 Models ####
 
@@ -8,7 +8,8 @@ phi3mini_config = ModelConfig(model='microsoft/Phi-3-mini',
     hidden_size=3072, num_attention_heads=32, num_ffi = 2,
     intermediate_size=8192, num_decoder_layers=32,
     vocab_size=32064, max_model_len=128*1024, hidden_act="silu",
-    sliding_window=256*1024
+    sliding_window=256*1024,
+    model_quality=QualityMetricsCollection([MMLU(accuracy=69.7, shots=5), BIG_Bench(accuracy=72.1, shots=3), Hellaswag(70.5, shots=5), GPQA(accuracy=29.7, shots=0), TriviaQA(57.8, shots=5), GSM8K(85.3, shots=8)]),
 )
 # https://huggingface.co/microsoft/Phi-3-small-128k-instruct/blob/main/config.json
 phi3small_config = ModelConfig(model='microsoft/Phi-3-small',
@@ -16,6 +17,7 @@ phi3small_config = ModelConfig(model='microsoft/Phi-3-small',
     num_key_value_heads=8, head_dim=128,
     intermediate_size=14336, num_decoder_layers=32,
     vocab_size=100352, max_model_len=128*1024, hidden_act="gegelu",
+    model_quality=QualityMetricsCollection([MMLU(accuracy=75.5, shots=5), BIG_Bench(accuracy=77.6, shots=3), Hellaswag(79.6, shots=5), TriviaQA(66.0, shots=5), GSM8K(87.3, shots=8)]),
 )
 
 # https://huggingface.co/microsoft/Phi-3-medium-4k-instruct/blob/main/config.json
@@ -24,7 +26,8 @@ phi3medium_config = ModelConfig(model='microsoft/Phi-3-medium',
     num_key_value_heads=10, head_dim=128,
     intermediate_size=17920, num_decoder_layers=40,
     vocab_size=32064, max_model_len=4*1024, hidden_act="silu",
-    sliding_window=2047
+    sliding_window=2047,
+    model_quality=QualityMetricsCollection([MMLU(accuracy=76.6, shots=5), BIG_Bench(accuracy=77.9, shots=3), Hellaswag(81.6, shots=5), TriviaQA(73.9, shots=5), GSM8K(87.5, shots=8)]),
 )
 
 # https://huggingface.co/microsoft/Phi-3.5-MoE-instruct/blob/main/config.json
@@ -34,7 +37,8 @@ phi3moe_config = ModelConfig(model='microsoft/Phi-3.5-MoE',
     intermediate_size=6400, num_decoder_layers=32,
     expert_top_k=2, num_experts=16,
     vocab_size=32064, max_model_len=128*1024, hidden_act="silu",
-    sliding_window=128*1024
+    sliding_window=128*1024,
+    model_quality=QualityMetricsCollection([MMLU(accuracy=78.9, shots=5), BIG_Bench(accuracy=79.1, shots=0), GPQA(accuracy=36.8, shots=0) , Hellaswag(83.8, shots=5), MATH(59.5, shots=0), GSM8K(88.7, shots=8)]),
 )
 
 microsoft_models = get_all_model_configs(__name__)

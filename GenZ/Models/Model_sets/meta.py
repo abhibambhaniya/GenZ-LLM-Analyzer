@@ -1,5 +1,6 @@
 from ..default_models import ModelConfig, get_all_model_configs
-from ..model_quality import QualityMetricsCollection, MMLU, MATH
+from ..model_quality import QualityMetricsCollection, MMLU, MATH, GSM8K,  IFEval,  GPQA, Hellaswag, TLDR, TriviaQA, BIG_Bench
+
 #### OPT Models ####
 
 # https://huggingface.co/openai-community/gpt2/blob/main/config.json
@@ -103,7 +104,7 @@ llama3_8b_config = ModelConfig(model='meta-llama/Llama-3.1-8B',
     num_key_value_heads=8, num_ffi = 2,
     intermediate_size=14336, num_decoder_layers=32,
     vocab_size=128256, max_model_len=128*1024, hidden_act="silu",
-
+    model_quality=QualityMetricsCollection([MMLU(accuracy=69.4, shots=5), MATH(accuracy=51.9, shots=0), GSM8K(accuracy=84.5, shots=8), IFEval(80.4), GPQA(30.4, shots=0)]),
 )
 
 # https://huggingface.co/meta-llama/Llama-3.1-70B-Instruct/blob/main/config.json
@@ -112,6 +113,7 @@ llama3_70b_config = ModelConfig(model='meta-llama/Llama-3.1-70B',
     num_key_value_heads=8, num_ffi = 2,
     intermediate_size=28672, num_decoder_layers=80,
     vocab_size=128256, max_model_len=128*1024, hidden_act="silu",
+    model_quality=QualityMetricsCollection([MMLU(accuracy=83.6, shots=5), MATH(accuracy=68.0, shots=0), GSM8K(accuracy=95.1, shots=8), IFEval(87.5), GPQA(46.7, shots=0)]),
 )
 
 # https://huggingface.co/meta-llama/Meta-Llama-3.1-405B
@@ -120,7 +122,7 @@ llama3_405b_config = ModelConfig(model='meta-llama/Llama-3.1-405B',
     num_key_value_heads=8, num_ffi = 2,
     intermediate_size=3.25*16384, num_decoder_layers=126,
     vocab_size=128256, max_model_len=128*1024, hidden_act="silu",
-
+    model_quality=QualityMetricsCollection([MMLU(accuracy=87.3, shots=5), MATH(accuracy=73.8, shots=0), GSM8K(accuracy=96.8, shots=8), IFEval(88.6), GPQA(50.7, shots=0)]),
 )
 
 # https://huggingface.co/meta-llama/Llama-3.2-1B/blob/main/config.json
@@ -129,7 +131,7 @@ llama3_2_1b_config = ModelConfig(model='meta-llama/Llama-3.2-1B',
     num_key_value_heads=8, num_ffi = 2,
     intermediate_size=4*2048, num_decoder_layers=16,
     vocab_size=128256, max_model_len=128*1024, hidden_act="silu",
-    model_quality=QualityMetricsCollection([MMLU(accuracy=49.3), MATH(accuracy=30.6)]),
+    model_quality=QualityMetricsCollection([MMLU(accuracy=49.3, shots=5), MATH(accuracy=30.6, shots=0), GSM8K(accuracy=44.4, shots=8), IFEval(59.5, shots=0), Hellaswag(41.2, shots=0), GPQA(27.2, shots=0), TLDR(16.8, shots=1)]),
 )
 
 # https://huggingface.co/meta-llama/Llama-3.2-3B/blob/main/config.json
@@ -138,7 +140,7 @@ llama3_2_3b_config = ModelConfig(model='meta-llama/Llama-3.2-3B',
     num_key_value_heads=8, num_ffi = 2,
     intermediate_size=4*2048, num_decoder_layers=28,
     vocab_size=128256, max_model_len=128*1024, hidden_act="silu",
-    model_quality=QualityMetricsCollection([MMLU(accuracy=63.4), MATH(accuracy=48.0)]),
+    model_quality=QualityMetricsCollection([MMLU(accuracy=63.4, shots=5), MATH(accuracy=48.0, shots=0), GSM8K(accuracy=77.7, shots=8), IFEval(77.4, shots=0), Hellaswag(69.8, shots=0), GPQA(32.8, shots=0), TLDR(19.0, shots=1)]),
 )
 
 meta_models = get_all_model_configs(__name__)

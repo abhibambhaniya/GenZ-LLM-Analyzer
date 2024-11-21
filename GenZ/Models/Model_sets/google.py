@@ -1,4 +1,5 @@
 from ..default_models import ModelConfig, get_all_model_configs
+from ..model_quality import QualityMetricsCollection, MMLU, MATH, GSM8K,  IFEval,  GPQA, Hellaswag, TLDR, TriviaQA, BIG_Bench
 ##### Gemma Models #####
 # https://huggingface.co/google/gemma-2b-it/blob/main/config.json
 gemma_2b_config = ModelConfig(model='google/gemma-2B',
@@ -6,6 +7,7 @@ gemma_2b_config = ModelConfig(model='google/gemma-2B',
     num_key_value_heads=1, head_dim=256,
     intermediate_size=16384, num_decoder_layers=18,
     vocab_size=256000, max_model_len=8*1024, hidden_act="gelu",
+    model_quality=QualityMetricsCollection([MMLU(accuracy=42.3, shots=5), Hellaswag(accuracy=71.4, shots=0), MATH(accuracy=11.8, shots=4), GSM8K(accuracy=17.7), TriviaQA(accuracy=53.2, shots=5), BIG_Bench(accuracy=35.2)]),
 )
 
 # https://huggingface.co/google/gemma-7b-it/blob/main/config.json
@@ -13,6 +15,7 @@ gemma_7b_config = ModelConfig(model='google/gemma-7B',
     hidden_size=3072, num_attention_heads=16, num_ffi = 2,
     intermediate_size=24576, num_decoder_layers=28, head_dim=256,
     vocab_size=256000, max_model_len=8*1024, hidden_act="gelu",
+    model_quality=QualityMetricsCollection([MMLU(accuracy=64.3, shots=5), Hellaswag(accuracy=81.2, shots=0), MATH(accuracy=24.3, shots=4), GSM8K(accuracy=46.4), TriviaQA(accuracy=63.4, shots=5), BIG_Bench(accuracy=55.1)]),
 )
 
 # https://huggingface.co/google/gemma-2-2b/blob/main/config.json
@@ -22,6 +25,7 @@ gemma2_2b_config = ModelConfig(model='google/gemma-2-2B',
     intermediate_size=9216, num_decoder_layers=26,
     vocab_size=256000, max_model_len=8*1024, hidden_act="gelu_pytorch_tanh",
     sliding_window=4096,
+    model_quality=QualityMetricsCollection([MMLU(accuracy=51.3, shots=5), Hellaswag(accuracy=73.0, shots=10), MATH(accuracy=15.0, shots=4), GSM8K(accuracy=23.9, shots=5), TriviaQA(accuracy=59.4, shots=5), BIG_Bench(accuracy=41.9, shots=3)]),
 )
 
 # https://huggingface.co/google/gemma-2-9b/blob/main/config.json
@@ -31,6 +35,7 @@ gemma2_9b_config = ModelConfig(model='google/gemma-2-9B',
     intermediate_size=14336, num_decoder_layers=42,
     vocab_size=256000, max_model_len=8*1024, hidden_act="gelu_pytorch_tanh",
     sliding_window=4096,
+    model_quality=QualityMetricsCollection([MMLU(accuracy=71.3, shots=5), Hellaswag(accuracy=81.9, shots=10), MATH(accuracy=36.6, shots=4), GSM8K(accuracy=68.6, shots=5), TriviaQA(accuracy=76.6, shots=5), BIG_Bench(accuracy=68.2, shots=3)]),
 )
 
 # https://huggingface.co/google/gemma-2-27b-it/blob/main/config.json
@@ -40,6 +45,7 @@ gemma2_27b_config = ModelConfig(model='google/gemma-2-27B',
     intermediate_size=36864, num_decoder_layers=46,
     vocab_size=256000, max_model_len=8*1024, hidden_act="gelu_pytorch_tanh",
     sliding_window=4096,
+    model_quality=QualityMetricsCollection([MMLU(accuracy=75.2, shots=5), Hellaswag(accuracy=86.4, shots=10), MATH(accuracy=42.3, shots=4), GSM8K(accuracy=74.0, shots=5), TriviaQA(accuracy=83.7, shots=5), BIG_Bench(accuracy=74.9, shots=3)]),
 )
 
 
