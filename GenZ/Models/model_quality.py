@@ -55,6 +55,7 @@ class TLDR(QualityMetric):
         self.shots = shots
         self.metric_type = 'Accuracy'
         super().__init__()
+
 class BIG_Bench(QualityMetric):
     '''
     BIG_Bench Accuracy
