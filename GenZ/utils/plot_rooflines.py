@@ -66,7 +66,7 @@ def display_df(df):
     df = df.loc[:,first_cols+last_cols]
 
     ## Applying colors and gradients to colmns
-    df = df.style.background_gradient(cmap='Blues',axis=0,subset=["Cycles","Total Data (MB)"])\
+    df = df.style.background_gradient(cmap='Blues',axis=0,subset=["Cycles","Total Data (MB)", 'Latency (msec)'])\
         .background_gradient(cmap='Spectral_r',axis=1,subset=['Input_a (MB)','Input_w (MB)','Output (MB)'])\
         .background_gradient(cmap='Oranges',axis=0,subset=["Op Intensity"])\
         .map(color_bound_type, subset=['Bound'])\
