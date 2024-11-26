@@ -1,6 +1,6 @@
 from GenZ.Models import ModelConfig, ResidencyInfo, OpType, parse_einsum_expression, CollectiveType
 from GenZ.parallelism import ParallelismConfig
-
+import numpy as np
 def mamda_ssn_slow(model_config:ModelConfig, parallelism_config:ParallelismConfig, input_sequence_length:int):
     tp = parallelism_config.tensor_parallel * parallelism_config.expert_parallel
     sp = parallelism_config.sequence_parallel
@@ -36,7 +36,7 @@ def mamda_ssn_slow(model_config:ModelConfig, parallelism_config:ParallelismConfi
     out = y + u * rearrange(D, "d -> d 1")
     out = out * F.silu(z)
     """
-
+    logL = round(np.log10(L))
     Layers = []
     ## A and intermediate tensors on chip
     deltaA = [["deltaA",'bdl,dn->bdln',parse_einsum_expression('bdl,dn->bdln', ('b',F,L), (F,S), ('b',F,L,S)), 1, 1, 1, ResidencyInfo.BC_onchip, OpType.EINSUM]]
@@ -46,8 +46,8 @@ def mamda_ssn_slow(model_config:ModelConfig, parallelism_config:ParallelismConfi
     deltaB_u = [["deltaBu",'bdls,bdl->bdls',parse_einsum_expression('bdls,bdl->bdls', ('b',F,L,S), ('b',F,L), ('b',F,L,S)), 1, 1, 1, ResidencyInfo.All_offchip, OpType.EINSUM]]
     Layers += deltaA + deltaB + deltaB_u
     # for _ in range(L):
-    Layers += [["x calc",'lbfs,lbfs->lbfs',parse_einsum_expression('lbfs,lbfs->lbfs', (L,'b',F,S), (L,'b',F,S), (L,'b',F,S)), 1, 1, 1, ResidencyInfo.All_onchip, OpType.EINSUM]]
-    Layers += [["y calc",'lbfs,lbs->lbf',parse_einsum_expression('lbfs,lbs->lbf', (L,'b',F,S), (L,'b',S), (L,'b',F)), 1, 1, 1, ResidencyInfo.All_onchip, OpType.EINSUM]]
+    Layers += [["x calc",'lbfs,lbfs->lbfs',parse_einsum_expression('xbfs,lbfs->xbfs', (logL,'b',F,S), (L,'b',F,S), (logL,'b',F,S)), 1, 1, 1, ResidencyInfo.All_onchip, OpType.EINSUM]]
+    Layers += [["y calc",'lbfs,lbs->lbf',parse_einsum_expression('xbfs,lbs->xbf', (logL,'b',F,S), (L,'b',S), (logL,'b',F)), 1, 1, 1, ResidencyInfo.All_onchip, OpType.EINSUM]]
     Layers += [["D addition",'blf,blf->blf',parse_einsum_expression('blf,blf->blf', ('b',L,F), ('b',L,F), ('b',L,F)), 1, 1, 1, ResidencyInfo.All_onchip, OpType.EINSUM]] 
     Layers += [["out mult z",'blf,blf->blf',parse_einsum_expression('blf,blf->blf', ('b',L,F), ('b',L,F), ('b',L,F)), 1, 1, 1, ResidencyInfo.All_onchip, OpType.EINSUM]] 
 

@@ -94,6 +94,7 @@ def get_inference_system(system_name='A100_40GB_GPU', bits='bf16', ceff=1, meff=
             C2C_BW = system_name.get('ICN',150)
             C2C_LL = system_name.get('ICN_LL',1)
     elif isinstance(system_name, System):
+        system_name.bits = bits
         system_name.compute_efficiency = ceff
         system_name.memory_efficiency = meff
         system_name.collective_strategy = collective_strategy
