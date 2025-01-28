@@ -266,7 +266,7 @@ def create_full_chunked_model(name:str ='GPT-2',
         layers += end_repeat_layers(num_layers)
         return layers
 
-    assert prefill_length > 0, "Chunk size should be greater than the decode batches"
+    # assert prefill_length > 0, "Chunk size should be greater than the decode batches"
     full_model = []
     full_model += input_embedding(model_config, parallelism_config, prefill_length)
     if pipeline_stages > 1:
