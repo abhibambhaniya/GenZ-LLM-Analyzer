@@ -74,13 +74,13 @@ class ModelConfig():
         self.max_model_len = max_model_len      ## Maximum length of the model
         self.num_decoder_layers = num_decoder_layers
         self.num_encoder_layers = num_encoder_layers
-        
+
         self.hidden_size = hidden_size
         self.intermediate_size = intermediate_size
         self.num_ffi = num_ffi
         self.hidden_act = hidden_act
 
-        
+
         # Attention Parameters
         self.num_attention_heads = num_attention_heads
         self.sliding_window = sliding_window
@@ -91,7 +91,7 @@ class ModelConfig():
             head_dim = self.hidden_size // self.num_attention_heads
         self.num_key_value_heads = num_key_value_heads
         self.head_dim = head_dim
-        
+
         # MoE Parameters
         self.is_moe = num_experts > 1
         self.moe_layer_freq = moe_layer_freq    ## If n, than every nth value is moe layer.
@@ -106,7 +106,7 @@ class ModelConfig():
         self.mamba_conv_bias = mamba_conv_bias
         self.mamba_proj_bias = mamba_proj_bias
         self.is_mamba = (mamba_d_state is not None)
-        
+
 
         # Multi-Type Model Parameters
         self.expert_layer_period = expert_layer_period
@@ -119,7 +119,7 @@ class ModelConfig():
         # print(self.is_mamba, self.is_moe)
         self.layer_type = []
         if self.is_mamba and self.is_moe:
-            self.unique_layers = lcm(self.mamba_layer_period, self.expert_layer_period, self.attn_layer_period) 
+            self.unique_layers = lcm(self.mamba_layer_period, self.expert_layer_period, self.attn_layer_period)
         elif self.is_mamba:
             self.unique_layers = self.mamba_layer_period
         elif self.is_moe:
@@ -136,14 +136,14 @@ class ModelConfig():
                 attention_type = "MHA-global"
             else:
                 attention_type = "MHA-global"
-        
+
             if self.is_moe and self.expert_layer_period and (i % self.expert_layer_period == self.expert_layer_offset):
                 layer_type = "MoE"
             else:
                 layer_type = "Dense"
-            
+
             self.layer_type.append([attention_type, layer_type])
-            
+
         # Quality of Model
         self.model_quality = model_quality
         super().__init__()
@@ -161,7 +161,10 @@ class ModelConfig():
             self.num_experts if i % self.expert_layer_period == self.expert_layer_offset else 1
             for i in range(self.num_hidden_layers)
         ]
-        
+
+    def get_kv_size(self):
+        return 2*self.num_decoder_layers*self.head_dim*self.num_key_value_heads
+
     def __str__(self):
         return str(vars(self))
 
