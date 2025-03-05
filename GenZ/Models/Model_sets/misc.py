@@ -136,9 +136,21 @@ deep_seek_moe_16b_config = ModelConfig(model='deepseek-ai/deepseek-moe-16b-base'
     first_k_dense_replace = 1,
     vocab_size=102400, max_model_len=4*1024,  hidden_act="silu",
 )
+
+DeepseekV3_moe_671b_config = ModelConfig(model='deepseek-ai/DeepSeek-V3-Base',
+    hidden_size=7168, num_attention_heads=128,
+    num_key_value_heads=128, num_ffi = 2,
+    intermediate_size=18432, num_decoder_layers=61,
+    expert_top_k=8, num_experts=256,
+    moe_intermediate_size=2048,
+    n_shared_experts=1, shared_expert_intermediate_size=18432,
+    first_k_dense_replace = 3,
+    vocab_size=129280, max_model_len=160*1024,  hidden_act="silu",
+)
 ## TODO: account for shared expert, shared account is regular MLP which is always added.
 ## This has a special case where the first layer is dense and the rest are MoE with shared experts.
 ## MLP in this case is n_shared_experts*shared_expert_intermediate_size + Activated*moe_intermediate_size
+
 
 misc_models = get_all_model_configs(__name__)
 
