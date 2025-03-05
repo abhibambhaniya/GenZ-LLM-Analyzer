@@ -13,6 +13,7 @@ from GenZ.Models.ffn import ffn_prefill, ffn_decode
 from GenZ.Models.mamba import mamba_prefill, mamba_decode
 from GenZ.Models.embedding import input_embedding, output_embedding
 from difflib import get_close_matches
+from uuid import uuid4
 
 def get_configs(name) -> ModelConfig:
     
@@ -32,14 +33,14 @@ def get_configs(name) -> ModelConfig:
                 for match in close_matches:
                     print(f" - {match}")
             raise ValueError("ERROR, model name parsed incorrect, please check!!! Model Name:",name)
-        
+
     else:
         raise ValueError("ERROR, model name parsed incorrect, please check!!! Model Name:",name)
 
 def save_layers(layers:list, data_path:str, name:str):
     model_path = os.path.join(data_path,"model")
     df = pd.DataFrame(layers, columns=['Name', 'M', 'N', 'D', 'H', 'Z', 'Z', 'T'])
-    file_name = name.replace("/", "_") + datetime.now().strftime("%m_%d_%Y_%H_%M_%S") +'.csv'
+    file_name = name.replace("/", "_") + datetime.now().strftime("%m_%d_%Y_%H_%M_%S") + str(uuid4()) +'.csv'
     if not os.path.exists(model_path):
         os.makedirs(model_path)
     df.to_csv(os.path.join(model_path, file_name),  header=True, index=None)
@@ -166,23 +167,23 @@ def create_full_decode_model(
     name: str|ModelConfig ='GPT-2',
     input_sequence_length: int = 1024,
     output_gen_tokens: int = 0,
-    data_path: str=DATA_PATH, 
+    data_path: str=DATA_PATH,
     **args) -> str:
     """
     The function `create_full_decode_model` constructs a decode model with specified configurations and
     parallelism settings, saving the layers to a specified data path.
-    
+
     name: The `name` parameter in the `create_full_decode_model` function is used to specify the
     model configuration to be used. It can either be a string representing the name of the model
     (default is 'GPT-2') or an instance of `ModelConfig` class, defaults to GPT-2
-    
+
     input_sequence_length: The `input_sequence_length` parameter specifies the length of the
     input sequence for the model. In this function, it is set to a default value of 1024. This parameter
     determines how many tokens or elements can be processed in a single input sequence, defaults to 1024
 
     output_gen_tokens: The `output_gen_tokens` parameter specifies the number of tokens to generated since the prefill.
-                        This is to keep a track of multiple beams. Defaults to 1    
-        
+                        This is to keep a track of multiple beams. Defaults to 1
+
     data_path: The `data_path` parameter in the `create_full_decode_model` function is a string
     that represents the path where the data will be saved or loaded from. It is a default parameter with
     a value of `DATA_PATH`, which is likely a constant or variable defined elsewhere in your codebase
@@ -191,8 +192,8 @@ def create_full_decode_model(
     expert_parallel: The `expert_parallel` to define the degree of expert parallelism, defaults to 1
     sequence_parallel: The `sequence_parallel` to define the degree of sequence parallelism, defaults to 1
     data_parallel: The `data_parallel` to define the degree of data parallelism, defaults to 1
-    pipeline_parallel: The `pipeline_parallel` to define the degree of pipeline parallelism, defaults to 1 
-    
+    pipeline_parallel: The `pipeline_parallel` to define the degree of pipeline parallelism, defaults to 1
+
     return: The function `create_full_decode_model` returns a string, which is the result of calling
     the `save_layers` function with the `full_model`, `data_path`, and a modified `name` as arguments.
     """
