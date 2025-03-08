@@ -13,6 +13,24 @@ def mha_flash_attention_prefill(model_config:ModelConfig, parallelism_config:Par
     per_node_H = max(ceil(H / tp), 1)
     per_node_Hkv = max(ceil(Hkv / tp), 1)
 
+# TODO: implement Latent attention: https://www.youtube.com/watch?v=0VLAoVGf_74
+# https://arxiv.org/pdf/2405.04434
+# Attention Mechanism KV Cache per Token (# Element) Capability
+# Multi-Head Attention (MHA)    2𝑛ℎ𝑑ℎ𝑙     Strong
+# Grouped-Query Attention (GQA) 2𝑛𝑔𝑑ℎ𝑙  Moderate
+# Multi-Query Attention (MQA)   2𝑑ℎ𝑙      Weak
+# MLA (Ours)                    (𝑑𝑐 +𝑑𝑅ℎ)𝑙 ≈9/2 𝑑ℎ𝑙 Stronger
+
+# Table 1 |Comparison of the KV cache per token among different attention mechanisms.
+# 𝑛ℎ denotes the number of attention heads
+# 𝑑ℎ denotes the dimension per attention head,
+# 𝑙 denotes the number of layers
+# 𝑛𝑔 denotes the number of groups in GQA, and
+# 𝑑𝑐 and 𝑑𝑅ℎ denote the KV compression dimension and the per-head dimension of the decoupled queries and key in MLA, respectively.
+# The amount of KV cache is measured by the number of elements, regardless of the
+# storage precision. For DeepSeek-V2, 𝑑𝑐 is set to 4𝑑ℎ and 𝑑𝑅ℎ is set to 𝑑ℎ/2 .
+# So, its KV cache is equal to GQA with only 2.25 groups, but its performance is stronger than MHA.
+
     ## [Batch/dp, Seq/sp, Dmodel] * [2, Dmodel, Dq, Hkv/tp] + [Dmodel, Dq, Head/tp]= [Batch/dp, Seq/sp, 3, Dq, Head/tp]
     QKV =           [["QKV", (per_node_H*Dq + 2*per_node_Hkv*Dq), input_sequence_length//sp, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
 
