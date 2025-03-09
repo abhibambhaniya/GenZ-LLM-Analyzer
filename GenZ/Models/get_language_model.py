@@ -9,14 +9,13 @@ from GenZ.Models.default_models import ModelConfig, MODEL_DICT
 
 from GenZ.Models.utils import OpType, ResidencyInfo, CollectiveType, parse_einsum_expression
 from GenZ.Models.attention import mha_flash_attention_prefill, mha_flash_attention_decode, mha_flash_attention_chunked
-from GenZ.Models.ffn import ffn_prefill, ffn_decode
+from GenZ.Models.ffn import ffn_prefill, ffn_decode, deepseek_ffn_prefill
 from GenZ.Models.mamba import mamba_prefill, mamba_decode
 from GenZ.Models.embedding import input_embedding, output_embedding
 from difflib import get_close_matches
 from uuid import uuid4
 
 def get_configs(name) -> ModelConfig:
-    
     if isinstance(name, ModelConfig):
         return name
     elif isinstance(name, str):
@@ -36,6 +35,15 @@ def get_configs(name) -> ModelConfig:
 
     else:
         raise ValueError("ERROR, model name parsed incorrect, please check!!! Model Name:",name)
+
+def get_ffn_implementation(model_config:ModelConfig):
+    if model_config.ffn_implementation == "default":
+        return ffn_prefill
+    elif model_config.ffn_implementation == "deepseek":
+        return deepseek_ffn_prefill
+    else:
+        raise ValueError("FFN implementation not supported")
+
 
 def save_layers(layers:list, data_path:str, name:str):
     model_path = os.path.join(data_path,"model")
@@ -263,7 +271,7 @@ def create_full_chunked_model(name:str ='GPT-2',
                                                 chunk_size=chunk_size,
                                                 prefill_kv_sizes=prefill_kv_sizes,
                                                 decode_kv_sizes=decode_kv_sizes)
-        layers += ffn_prefill(model_config, parallelism_config, chunk_size)
+        layers += get_ffn_implementation(model_config)(model_config, parallelism_config, chunk_size)
         layers += end_repeat_layers(num_layers)
         return layers
 

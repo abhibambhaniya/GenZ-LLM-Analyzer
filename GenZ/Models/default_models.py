@@ -5,7 +5,6 @@ from typing import Optional
 import inspect
 from .model_quality import QualityMetricsCollection
 
-
 class ModelConfig():
     r"""
     This is the configuration class to store the configuration of a [`Model`]. It is used to instantiate an LLM
@@ -48,10 +47,15 @@ class ModelConfig():
         num_key_value_heads=None,
         hidden_act="silu",
         sliding_window=None,
+        ffn_implementation="default",
         # MoE specific parameters
         moe_layer_freq = None,
         num_experts = 1,
         expert_top_k = 1,
+        moe_intermediate_size = None,
+        n_shared_experts = 0,
+        shared_expert_intermediate_size = None,
+        first_k_dense_replace = None,
         # Mamba specific parameters
         mamba_d_state=None,
         mamba_d_conv=None,
@@ -97,6 +101,10 @@ class ModelConfig():
         self.moe_layer_freq = moe_layer_freq    ## If n, than every nth value is moe layer.
         self.num_experts = num_experts
         self.expert_top_k = expert_top_k
+        self.moe_intermediate_size = moe_intermediate_size if moe_intermediate_size is not None else intermediate_size
+        self.n_shared_experts = n_shared_experts
+        self.shared_expert_intermediate_size = shared_expert_intermediate_size if shared_expert_intermediate_size is not None else intermediate_size
+        self.first_k_dense_replace = first_k_dense_replace
 
         # Mamba Parameters
         self.mamba_d_state = mamba_d_state
@@ -146,6 +154,8 @@ class ModelConfig():
 
         # Quality of Model
         self.model_quality = model_quality
+        self.ffn_implementation = ffn_implementation
+
         super().__init__()
 
     @property

@@ -128,23 +128,23 @@ zephyr_7b_config = ModelConfig(model='HuggingFaceH4/zephyr-7b-beta',
 # https://huggingface.co/deepseek-ai/deepseek-moe-16b-base/blob/main/config.json
 deep_seek_moe_16b_config = ModelConfig(model='deepseek-ai/deepseek-moe-16b-base',
     hidden_size=2048, num_attention_heads=16,
-    num_key_value_heads=2.5, num_ffi = 2,
+    num_key_value_heads=2, num_ffi = 2,
     intermediate_size=10944, num_decoder_layers=28,
     expert_top_k=6, num_experts=64,
     moe_intermediate_size=1408,
     n_shared_experts=2, shared_expert_intermediate_size=1408,
-    first_k_dense_replace = 1,
+    first_k_dense_replace = 1,     ffn_implementation='deepseek',
     vocab_size=102400, max_model_len=4*1024,  hidden_act="silu",
 )
 
 DeepseekV3_moe_671b_config = ModelConfig(model='deepseek-ai/DeepSeek-V3-Base',
     hidden_size=7168, num_attention_heads=128,
-    num_key_value_heads=2.5, num_ffi = 2,
+    num_key_value_heads=2, num_ffi = 2,
     intermediate_size=18432, num_decoder_layers=61,
     expert_top_k=8, num_experts=256,
     moe_intermediate_size=2048,
     n_shared_experts=1, shared_expert_intermediate_size=18432,
-    first_k_dense_replace = 3,
+    first_k_dense_replace = 3,     ffn_implementation='deepseek',
     vocab_size=129280, max_model_len=160*1024,  hidden_act="silu",
 )
 ## TODO: account for shared expert, shared account is regular MLP which is always added.
