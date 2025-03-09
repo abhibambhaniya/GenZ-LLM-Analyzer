@@ -41,6 +41,28 @@ phi3moe_config = ModelConfig(model='microsoft/Phi-3.5-MoE',
     model_quality=QualityMetricsCollection([MMLU(accuracy=78.9, shots=5), BIG_Bench(accuracy=79.1, shots=0), GPQA(accuracy=36.8, shots=0) , Hellaswag(83.8, shots=5), MATH(59.5, shots=0), GSM8K(88.7, shots=8)]),
 )
 
+## Text embedding models
+# https://huggingface.co/intfloat/multilingual-e5-small/blob/main/config.json
+e5_small_config = ModelConfig(model='intfloat/multilingual-e5-small-instruct',
+    hidden_size=384, num_attention_heads=12, num_ffi = 1,
+    intermediate_size=1536, num_decoder_layers=12,
+    vocab_size=250037, max_model_len=512, hidden_act="gelu",
+)
+
+# https://huggingface.co/intfloat/multilingual-e5-base/blob/main/config.json
+e5_base_config = ModelConfig(model='intfloat/multilingual-e5-base-instruct',
+    hidden_size=768, num_attention_heads=12, num_ffi = 1,
+    intermediate_size=3072, num_decoder_layers=12,
+    vocab_size=250002, max_model_len=514, hidden_act="gelu",
+)
+
+# https://huggingface.co/intfloat/multilingual-e5-large-instruct/blob/main/config.json
+e5_large_config = ModelConfig(model='intfloat/multilingual-e5-large-instruct',
+    hidden_size=1024, num_attention_heads=16, num_ffi = 1,
+    intermediate_size=4096, num_decoder_layers=24,
+    vocab_size=250002, max_model_len=514, hidden_act="gelu",
+)
+
 microsoft_models = get_all_model_configs(__name__)
 microsoft_models.update({
     'microsoft/phi3medium': phi3medium_config,
@@ -50,4 +72,7 @@ microsoft_models.update({
     'phi3medium': phi3medium_config,
     'phi3mini': phi3mini_config,
     'phi3small': phi3small_config,
+    'e5_small': e5_small_config,
+    'e5_base': e5_base_config,
+    'e5_large': e5_large_config,
 })

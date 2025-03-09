@@ -70,6 +70,15 @@ mistral_large_config = ModelConfig(model='mistralai/Mistral-Large',
 
 )
 
+
+# ##### Embedding Models ########
+# https://huggingface.co/intfloat/e5-mistral-7b-instruct/blob/main/config.json
+e5_mistral_7b_config = ModelConfig(model='intfloat/e5-mistral-7b-instruct',
+    hidden_size=4096, num_attention_heads=32,
+    num_key_value_heads=8, num_ffi = 2,
+    intermediate_size=14336, num_decoder_layers=32,
+    vocab_size=32000, max_model_len=32*1024, hidden_act="silu",
+)
 mistral_models = get_all_model_configs(__name__)
 mistral_models.update(
     {
@@ -78,4 +87,5 @@ mistral_models.update(
     'mistralai/mistral-7b': mistral_7b_config,
     'mistralai/mixtral-8x7b': mixtral_8x7b_config,
     'mixtral_8x7b': mixtral_8x7b_config,
+    'e5_mistral_7b': mistral_7b_config,
     })

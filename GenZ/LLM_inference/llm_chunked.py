@@ -76,7 +76,7 @@ def chunked_moddeling(model = 'BERT',
     ### Token generation time
     ##################################################################################################
     model_chunked = create_full_chunked_model(name=model,
-                                            prefill_kv_sizes= prefill_kv_sizes, 
+                                            prefill_kv_sizes= prefill_kv_sizes,
                                             decode_kv_sizes = decode_kv_sizes,
                                             tensor_parallel = tensor_parallel, pipeline_parallel = pipeline_parallel,
                                             expert_parallel=expert_parallel)
@@ -94,7 +94,7 @@ def chunked_moddeling(model = 'BERT',
     ##################################################################################################
 
     ## 1000x because the latency is in milli seconds. thrpt is in Token/s
-    
+
     thrpt = 1000 * (sum([i[1] for i in prefill_kv_sizes]) + len(decode_kv_sizes)) / chunked_latency
 
     linear_time = summary_table[f'Linear Latency ({unit.unit_time})'].values[0]                ## In milliseconds
