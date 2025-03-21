@@ -165,10 +165,10 @@ st.markdown("""
 ## Upcoming updates
 Following updates are planned to come soon and stay tuned! Any contributions or feedback are highly welcome!
 
-- [ ] Add Expert parallelism and Sequence parallelism
+- [x] Add Expert parallelism and Sequence parallelism
 - [ ] Support LoRA
-- [ ] Mamba model layers
-- [ ] Add different kind of quantization for weights/KV/activations
+- [x] Mamba model layers
+- [ ] Add different kinds of quantization for weights/KV/activations
 
 ## Citation
 """

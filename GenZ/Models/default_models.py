@@ -152,9 +152,11 @@ class ModelConfig():
 
             self.layer_type.append([attention_type, layer_type])
 
+        self.ffn_implementation = ffn_implementation
+
+
         # Quality of Model
         self.model_quality = model_quality
-        self.ffn_implementation = ffn_implementation
 
         super().__init__()
 

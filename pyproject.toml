@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "genz_llm"
-version = "0.0.14.1"
+version = "0.0.16"
 authors = [
     { name="Abhimanyu Bambhaniya", email="abambhaniya3@gatech.edu" },
 ]
@@ -41,5 +41,16 @@ Issues = "https://github.com/abhibambhaniya/GenZ-LLM-Analyzer/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["GenZ", "Systems*"]
-exclude = ["*.__pycache__", "*.pyc"]
+include = [
+    "GenZ",
+    "GenZ.LLM_inference",
+    "GenZ.Models*",
+    "GenZ.Astra_sim",
+    "GenZ.utils",
+    "Systems*"]
+exclude = [
+    ".gitattributes",
+    "*.__pycache__",
+    "*.pyc",
+]
+

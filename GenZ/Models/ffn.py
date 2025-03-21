@@ -174,7 +174,7 @@ def deepseek_ffn_prefill(model_config:ModelConfig, parallelism_config:Parallelis
         ## TODO: Define a function to calculate the number of activated experts
         A = min( K * input_sequence_length, E)
         experts_activated_per_chip = max(1,ceil(A/ep))
-        num_tokens_per_expert = (input_sequence_length//sp) * K // A
+        num_tokens_per_expert = (input_sequence_length//sp) * K // A if A > 0 else 0
         if ep > 1:
             # Total Size=Batch Size×Tokens per Batch×Hidden Dimension×Number of Experts per Token
             dispatch_all2all = [["Dispatch A2A",input_sequence_length//sp, K*D, 1, 1, ep, CollectiveType.All2All, OpType.Sync]]

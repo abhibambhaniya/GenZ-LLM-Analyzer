@@ -1,6 +1,7 @@
 from enum import IntEnum
 
 class OpType(IntEnum):
+    ## MAINTIAIN PARITY IN operator.py and operator_base.py
     FC = 0
     CONV2D = 1
     DWCONV = 2
@@ -17,6 +18,7 @@ class OpType(IntEnum):
     Norm = 15
     Avg = 16
     Special_Func = 17
+
 
 class ResidencyInfo(IntEnum):
     All_offchip = 0

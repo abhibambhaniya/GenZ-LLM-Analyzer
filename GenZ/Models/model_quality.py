@@ -1,5 +1,6 @@
 from typing import Optional
 from typing import List
+import csv
 
 
 class QualityMetric():
@@ -11,7 +12,7 @@ class QualityMetric():
 
     # def to_dict(self):
         # return vars(self)
-        
+
 class MMLU(QualityMetric):
     '''
     5-Shot MMLU Accuracy
@@ -110,7 +111,7 @@ class MATH(QualityMetric):
         self.shots = shots
         self.metric_type = 'Accuracy'
         super().__init__()
-        
+
 class QualityMetricsCollection:
     def __init__(self, metrics: Optional[List[QualityMetric]] = None):
         self.metrics = metrics if metrics is not None else []
@@ -123,3 +124,31 @@ class QualityMetricsCollection:
 
     def __repr__(self):
         return '\n'.join(repr(metric) for metric in self.metrics)
+
+def get_model_quality_collection(file, model_name):
+    collection = QualityMetricsCollection()
+    with open(file, mode='r') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            benchmark_name = row['Benchmark']
+            accuracy = float(row[model_name])
+            shots = int(row['Shots']) if 'Shots' in row and row['Shots'] else None
+            if benchmark_name == 'MMLU':
+                collection.add_metric(MMLU(accuracy=accuracy, shots=shots))
+            elif benchmark_name == 'GSM8K':
+                collection.add_metric(GSM8K(accuracy=accuracy, shots=shots))
+            elif benchmark_name == 'IFEval':
+                collection.add_metric(IFEval(accuracy=accuracy, shots=shots))
+            elif benchmark_name == 'TLDR':
+                collection.add_metric(TLDR(accuracy=accuracy, shots=shots))
+            elif benchmark_name == 'BIG_Bench':
+                collection.add_metric(BIG_Bench(accuracy=accuracy, shots=shots))
+            elif benchmark_name == 'GPQA':
+                collection.add_metric(GPQA(accuracy=accuracy, shots=shots))
+            elif benchmark_name == 'Hellaswag':
+                collection.add_metric(Hellaswag(accuracy=accuracy, shots=shots))
+            elif benchmark_name == 'TriviaQA':
+                collection.add_metric(TriviaQA(accuracy=accuracy, shots=shots))
+            elif benchmark_name == 'MATH':
+                collection.add_metric(MATH(accuracy=accuracy, shots=shots))
+    return collection
