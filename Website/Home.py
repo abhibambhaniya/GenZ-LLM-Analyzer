@@ -31,7 +31,7 @@ st.sidebar.info("If this app helps you, consider giving it a star! [⭐️](http
 
 st.write("# Welcome to GenZ-LLM Analyzer! 👋")
 
-st.image(genz_overview, caption='GenZ Framework Overview', use_column_width=True)
+st.image(genz_overview, caption='GenZ Framework Overview', use_container_width=True)
 
 st.write(
     """
@@ -129,7 +129,7 @@ Since LLMs in the decode phase are memory-bound, batching multiple queries can h
 Ex: Running a LLaMA2-7B model at int8 precision on NVIDIA's A100 (80GB) GPU, with 2k input tokens, as we increase the batch from 1 to 44, we see a 10.9x improvement in the decode throughput while first token latency only increases by 1.83x. 
     """)
   st.markdown("### Parallelization")
-  st.image(llm_parallization, caption='Various parallelization strategies. Each grey box represents an accelerator NPUs and the colored blocks represent the layers. We illustrate how the LLM runs on different NPUs for each strategy. (a) In full TP weights of all layers are equally distributed among all NPUs. (b) With hybrid TP and PP, the layers are distributed among groups of accelerators. Within a group, the layer weights are distributed in tensor parallel fashion. (c) Full PP splits all layers across the NPUs. In all cases, once the model has been partitioned via TP/PP, DP is employed across the remaining NPUs in the platform.', use_column_width=True)
+  st.image(llm_parallization, caption='Various parallelization strategies. Each grey box represents an accelerator NPUs and the colored blocks represent the layers. We illustrate how the LLM runs on different NPUs for each strategy. (a) In full TP weights of all layers are equally distributed among all NPUs. (b) With hybrid TP and PP, the layers are distributed among groups of accelerators. Within a group, the layer weights are distributed in tensor parallel fashion. (c) Full PP splits all layers across the NPUs. In all cases, once the model has been partitioned via TP/PP, DP is employed across the remaining NPUs in the platform.', use_container_width=True)
  
   st.markdown("""
 Meeting SLO demands another reason to scale up the number of accelerators in the platform. However, there is a lack of clarity about the impact of the parallelism strategy. An optimal parallelization strategy may vary depending on the model and workload configuration. We also observe drastic contrast in how different parallelization strategies work during the prefill and decode stage. 
