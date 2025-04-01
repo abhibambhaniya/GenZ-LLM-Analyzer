@@ -245,6 +245,11 @@ class Operator(object):
 
         input_a_size, input_w_size, output_size = self.get_sz_list()
 
+        if exec_time != 0:
+            compute_util, memory_util, comm_util = compute_time/exec_time, memory_time/exec_time, comm_time/exec_time
+        else:
+            compute_util, memory_util, comm_util = 0, 0, 0
+
         ret = {
             'Layer Name': self.name,
             'Op Type': self.get_op_type(self.dim),
@@ -267,6 +272,9 @@ class Operator(object):
             f'Compute cycle': compute_time*system.frequency,
             f'Memory cycle': memory_time*system.frequency,
             f'Communication cycle': comm_time*system.frequency,
+            f'Compute Utilization': compute_util,
+            f'Memory Utilization': memory_util,
+            f'Communication Utilization': comm_util,
         }
 
         return ret

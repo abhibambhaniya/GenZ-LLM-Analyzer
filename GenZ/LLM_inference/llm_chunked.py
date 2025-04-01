@@ -55,9 +55,9 @@ def chunked_moddeling(model = 'BERT',
     #################################################################################
     is_offloaded = False
     per_chip_memory = system.get_off_chip_mem_size()   ## MB
-    if  per_chip_memory * pipeline_parallel < total_memory_req:
+    if  per_chip_memory < total_memory_req/pipeline_parallel:
         if model_offload:
-            system = get_offload_system(system=system, total_memory_req = total_memory_req , debug=debug)
+            system = get_offload_system(system=system, total_memory_req = total_memory_req/pipeline_parallel , debug=debug)
             warnings.warn(f"Some Parameter offloaded, effective Memory BW:{unit.raw_to_unit(system.offchip_mem_bw, type='BW')} ")
             is_offloaded = True
         elif model_profilling:

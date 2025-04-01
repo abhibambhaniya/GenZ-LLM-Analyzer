@@ -63,9 +63,9 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     #################################################################################
     is_offloaded = False
     per_chip_memory = system.get_off_chip_mem_size()   ## MB
-    if  per_chip_memory * pipeline_parallel < total_memory_req:
+    if  per_chip_memory < total_memory_req/pipeline_parallel:
         if model_offload:
-            system = get_offload_system(system=system, total_memory_req = total_memory_req , debug=debug)
+            system = get_offload_system(system=system, total_memory_req = total_memory_req/pipeline_parallel , debug=debug)
             warnings.warn(f"Some Parameter offloaded, effective Memory BW:{unit.raw_to_unit(system.offchip_mem_bw, type='BW')} ")
             is_offloaded = True
         elif model_profilling:
@@ -103,14 +103,14 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     ##################################################################################################
 
     ## 1000x because the latency is in milli seconds. thrpt is in Token/s
-    if pipeline_parallel > 1:
-        micro_batch_latency = decode_latency
-        ## If the N micro batches, then the total latency is (N-1)*stage latency + initial_latency
-        ## We make the assumption that the pipeline is balanced and the latency is same for all stages
-        total_latency = ((num_micro_batches-1) * (decode_latency / pipeline_parallel)) + micro_batch_latency
-        thrpt = 1000 * batch_size / total_latency
-    else:
-        thrpt = 1000 * batch_size / decode_latency
+    # if pipeline_parallel > 1:
+    #     micro_batch_latency = decode_latency
+    #     ## If the N micro batches, then the total latency is (N-1)*stage latency + initial_latency
+    #     ## We make the assumption that the pipeline is balanced and the latency is same for all stages
+    #     total_latency = ((num_micro_batches-1) * (decode_latency / pipeline_parallel)) + micro_batch_latency
+    #     thrpt = 1000 * batch_size / total_latency
+    # else:
+    thrpt = 1000 * batch_size / decode_latency
 
 
     linear_time = summary_table[f'Linear Latency ({unit.unit_time})'].values[0]                ## In milliseconds
