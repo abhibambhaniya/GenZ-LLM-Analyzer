@@ -66,7 +66,7 @@ class Operator(object):
         return sum(self.get_sz_list())
 
     def get_effective_num_data(self, system):
-        return sum(self.get_sz_list())
+        return sum(self.get_operators_size(system))
 
 
     def get_ideal_memory_time(self, system):
@@ -80,7 +80,11 @@ class Operator(object):
 
 
     def get_compute_time(self, system):
-        return self.get_effective_num_ops(system) * system.get_bit_multiplier(type='C')/system.op_per_sec
+        if system.compute_engine == 'GenZ':
+            return self.get_effective_num_ops(system) * system.get_bit_multiplier(type='C')/system.op_per_sec
+        elif system.compute_engine == 'Scale-sim':
+            from .Scale_Sim.get_scale_sim_time import get_scale_sim_time
+            return get_scale_sim_time(op=self, system=system)
 
 
     def get_effective_num_ops(self, system=None):
@@ -94,8 +98,26 @@ class Operator(object):
     def get_loc_list(self):
         return [self.input_a_loc, self.input_w_loc, self.output_loc]
 
-    def get_memory_time(self, system):
+    def get_operators_size(self, system):
         sz_list = self.get_sz_list()
+        operators_sizes = []
+        for i, tensor_sz in enumerate(sz_list):
+            if self.get_op_type(self.dim) in ['Logit', 'Attend']:
+                if i == 1 and self.get_op_type(self.dim) == 'Logit':
+                    ## K values
+                    operators_sizes.append(tensor_sz * system.get_bit_multiplier(type='M', data='k', operators=self.input_w))
+                elif i == 1 and self.get_op_type(self.dim) == 'Attend':
+                    ## V values
+                    operators_sizes.append(tensor_sz * system.get_bit_multiplier(type='M', data='v', operators=self.input_w))
+                else:
+                    operators_sizes.append(tensor_sz * system.get_bit_multiplier(type='M', data='a'))
+            else:
+                operators_sizes.append(tensor_sz * system.get_bit_multiplier(type='M', data='w'))
+
+        return operators_sizes
+
+    def get_memory_time(self, system):
+        sz_list = self.get_operators_size(system)
         loc_list = self.get_loc_list()
         memory_time = 0
         ## Assume infinite memory
@@ -106,7 +128,7 @@ class Operator(object):
                 bw = system.onchip_mem_bw
             else:
                 raise ValueError(f'Wrong bw allocation: {loc}.')
-            memory_time += tensor_sz * system.get_bit_multiplier(type='M', data='w' if self.get_op_type(self.dim) == 'GEMM' else 'a')/bw
+            memory_time += tensor_sz / bw
         return memory_time
 
     def get_communication_time(self, system):
@@ -157,12 +179,12 @@ class Operator(object):
                         parallelism = "TP"
                     else:
                         raise ValueError(f'Unknown parallelism for collective type: {self.collective_type}.')
-                    
+
                     network_config = get_network_config(network_config = system.network_config, 
                                                         parallelism_heirarchy = parallelism_heirarchy,
                                                         parallelism = parallelism)
                     if parallelism == "PP":
-                            BW = network_config['bandwidth'][0] 
+                            BW = network_config['bandwidth'][0]
                             lat = network_config['latency'][0]
                             # TODO : There is a bug with astrasim when num_nodes = 2
                             # Using GenZ for now.
@@ -183,7 +205,7 @@ class Operator(object):
                                 return (first_dim_time + second_dim_time)/(network_config['npus_count'][0] * network_config['npus_count'][1] -1)
                             else:
                                 return pipe_time
-                    else: 
+                    else:
                         return max(get_astrasim_collective_time(collective_type=collective_convertion[self.collective_type],
                                                         collective_size=data_size, network_config=network_config).values())/1e9
 
@@ -199,19 +221,19 @@ class Operator(object):
 
     def get_model_characterstics(self, system, unit = Unit()):
         num_ops =  self.get_num_ops()
-        num_data = self.get_num_data() * system.get_bit_multiplier(type='M')
+        num_data = self.get_effective_num_data(system)
         op_intensity = num_ops/num_data  if num_data else 0
-        input_a_size, input_w_size, output_size = self.get_sz_list()
+        input_a_size, input_w_size, output_size = self.get_operators_size(system)
         ret = {
             'Layer Name': self.name,
             'Op Type': self.get_op_type(self.dim),
             'Dimension': self.get_dimensions(),
             'Op Intensity': op_intensity,
             f'Num ops ({unit.unit_flop})': unit.raw_to_unit(num_ops, type='O'),
-            f'Input_a ({unit.unit_mem})': unit.raw_to_unit(input_a_size, type='M')* system.get_bit_multiplier(type='M'),
-            f'Input_w ({unit.unit_mem})': unit.raw_to_unit(input_w_size, type='M')* system.get_bit_multiplier(type='M'),
-            f'Output ({unit.unit_mem})': unit.raw_to_unit(output_size, type='M')* system.get_bit_multiplier(type='M'),
-            f'Total Data ({unit.unit_mem})': unit.raw_to_unit(sum(self.get_sz_list()), type='M')* system.get_bit_multiplier(type='M'),
+            f'Input_a ({unit.unit_mem})': unit.raw_to_unit(input_a_size, type='M'),
+            f'Input_w ({unit.unit_mem})': unit.raw_to_unit(input_w_size, type='M'),
+            f'Output ({unit.unit_mem})': unit.raw_to_unit(output_size, type='M'),
+            f'Total Data ({unit.unit_mem})': unit.raw_to_unit(self.get_effective_num_data(system), type='M'),
         }
 
         return ret
@@ -220,7 +242,7 @@ class Operator(object):
         ideal_complete_offchip_time, ideal_complete_onchip_time = self.get_ideal_memory_time(system=system)
         # x2 for ops -> MAC has 1 multiplication and 1 Addition hence 2.
         num_ops = self.get_effective_num_ops(system) * 2
-        num_data = self.get_effective_num_data(system) * system.get_bit_multiplier(type='M')
+        num_data = self.get_effective_num_data(system)
         op_intensity = num_ops/num_data if num_data else 0
 
         compute_time = self.get_compute_time(system=system)
@@ -243,7 +265,7 @@ class Operator(object):
         else:
             boundedness = 'Compute' if com_to_mem_ratio > 1 else 'Memory'
 
-        input_a_size, input_w_size, output_size = self.get_sz_list()
+        input_a_size, input_w_size, output_size = self.get_operators_size(system)
 
         if exec_time != 0:
             compute_util, memory_util, comm_util = compute_time/exec_time, memory_time/exec_time, comm_time/exec_time
@@ -261,10 +283,10 @@ class Operator(object):
             f'Cycles': exec_time*system.frequency,
             f'C Effcy': compute_efficiency,
             f'Num ops ({unit.unit_flop})': unit.raw_to_unit(num_ops, type='O'),
-            f'Input_a ({unit.unit_mem})': unit.raw_to_unit(input_a_size, type='M')* system.get_bit_multiplier(type='M'),
-            f'Input_w ({unit.unit_mem})': unit.raw_to_unit(input_w_size, type='M')* system.get_bit_multiplier(type='M'),
-            f'Output ({unit.unit_mem})': unit.raw_to_unit(output_size, type='M')* system.get_bit_multiplier(type='M'),
-            f'Total Data ({unit.unit_mem})': unit.raw_to_unit(sum(self.get_sz_list()), type='M')* system.get_bit_multiplier(type='M'),
+            f'Input_a ({unit.unit_mem})': unit.raw_to_unit(input_a_size, type='M'),
+            f'Input_w ({unit.unit_mem})': unit.raw_to_unit(input_w_size, type='M'),
+            f'Output ({unit.unit_mem})': unit.raw_to_unit(output_size, type='M'),
+            f'Total Data ({unit.unit_mem})': unit.raw_to_unit(self.get_effective_num_data(system), type='M'),
             f'Throughput ({unit.unit_compute})': unit.raw_to_unit(thrpt, type='C'),
             f'Compute time ({unit.unit_time})': unit.raw_to_unit(compute_time, type='T'),
             f'Memory time ({unit.unit_time})': unit.raw_to_unit(memory_time, type='T'),

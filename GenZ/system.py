@@ -13,10 +13,12 @@ class System(object):
                 frequency=940, bits='bf16',
                 compute_efficiency=1, memory_efficiency=1, comm_efficiency=1,
                 interchip_link_bw = 25, num_nodes = 1, interchip_link_latency=1.9,
+                compute_engine='GenZ',    # GenZ or Scale-sim
                 collective_strategy='GenZ',    # GenZ or ASTRA-SIM
                 topology='FullyConnected',
                 parallelism_heirarchy = "TP{1}_EP{1}_PP{1}",
-                network_config = None
+                network_config = None,
+                gear_params = None,
                 ):
 
         if unit is None:
@@ -40,7 +42,10 @@ class System(object):
         self.memory_efficiency = memory_efficiency
         self.comm_efficiency = comm_efficiency
         self.mxu_shape = mxu_shape
-        
+
+        self.compute_engine = compute_engine
+        assert self.compute_engine in ['GenZ', 'Scale-sim'], "Invalid compute_engine. Must be one of: GenZ, Scale-sim"
+
         self.collective_strategy = collective_strategy
         assert self.collective_strategy in ['GenZ', 'ASTRA-SIM'], "Invalid collective_strategy. Must be one of: GenZ, ASTRA-SIM"
         self.num_nodes = num_nodes
@@ -48,6 +53,13 @@ class System(object):
         self.bits = bits
         self.parallelism_heirarchy = parallelism_heirarchy   ## TP{1}_EP{1}_PP{1}
         self.network_config = network_config
+        if gear_params:
+            self.gear_r = gear_params['r']
+            self.gear_s = gear_params['s']
+            self.gear_b = gear_params['b']
+            self.quantization_type = 'gear'
+        else:
+            self.quantization_type = None
 
     def __str__(self):
         unit = Unit()
@@ -62,13 +74,13 @@ class System(object):
         b = f" Off-chip mem size:{unit.raw_to_unit(self.off_chip_mem_size, type='M')/1024} GB "
         c = f" Off-chip mem BW:{unit.raw_to_unit(self.offchip_mem_bw, type='BW')} GB/s, External-mem BW:{unit.raw_to_unit(self.external_mem_bw, type='BW')} GB/s"
         return a+b+c
-    
+
     @classmethod
     def from_dict(cls, config_dict):
         init_params = cls.__init__.__code__.co_varnames[1:cls.__init__.__code__.co_argcount]
         filtered_params = {k: v for k, v in config_dict.items() if k in init_params}
         return cls(**filtered_params)
-        
+
     @classmethod
     def from_json(cls, json_str):
         config_dict = json.loads(json_str)
@@ -103,13 +115,20 @@ class System(object):
         self.on_chip_mem_left_size = max(self.on_chip_mem_size, data_sz + self.on_chip_mem_left_size)
         return self.on_chip_mem_left_size
 
-    def get_bit_multiplier(self, type='C', data='a'):
-        if self.bits == 'special':
-            if data == 'w':
-                return 3/8
-            else:
-                return 2
+    def get_bit_multiplier(self, type='C', data='w', operators=None):
         if type == 'C':
             return self.compute_multiplier[self.bits]
         elif type == 'M':
+            if self.quantization_type == 'gear':
+                if data == 'k' or data == 'v':
+                    # print(
+                    #     f"Quantized KV bits: {self.mem_multiplier[self.gear_b]}",
+                    #     f"Sparsity bits:{(self.gear_s/100) * self.mem_multiplier[self.bits]}",
+                    #     f"Operators: ", operators,
+                    #     f"Low Rank Bits: {((np.prod(operators[:-2])/np.prod(operators)) * (operators[-2]*self.gear_r + operators[-1]*self.gear_r) * self.mem_multiplier[self.bits])}")
+
+                    return (    self.mem_multiplier[self.gear_b]
+                                + (self.gear_s/100) * self.mem_multiplier[self.bits]
+                                + ((np.prod(operators[:-2])/np.prod(operators)) * (operators[-2]*self.gear_r + operators[-1]*self.gear_r) * self.mem_multiplier[self.bits])
+                    )
             return self.mem_multiplier[self.bits]
