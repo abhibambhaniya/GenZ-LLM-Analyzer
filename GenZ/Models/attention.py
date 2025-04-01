@@ -121,8 +121,25 @@ def mha_flash_attention_chunked(model_config:ModelConfig, parallelism_config:Par
 
     ## Decode LA layers
     for kv_size in decode_kv_sizes:
-        layers +=     [["Logit Dec",per_node_H, 1, kv_size, Dq, per_node_Hkv, ResidencyInfo.AC_onchip, OpType.Logit]]
-        layers +=    [["Attend Dec",per_node_H, 1, kv_size, Dq, per_node_Hkv, ResidencyInfo.AC_onchip, OpType.Attend]]
+        if isinstance(kv_size, tuple) and len(kv_size) == 4:
+            prefill_num_beams = kv_size[0]
+            decode_num_beams = kv_size[1]
+            prefill_context = kv_size[2]//sp
+            decode_context = kv_size[3]
+            # layers +=    [["Logit Dec",per_node_H, 1, kv_size[1], Dq, per_node_Hkv, ResidencyInfo.AC_onchip, OpType.Logit]]
+            # layers +=    [["Attend Dec",per_node_H, 1, kv_size[1], Dq, per_node_Hkv, ResidencyInfo.AC_onchip, OpType.Attend]]
+            layers +=     [["Logit Pre",(prefill_num_beams*per_node_H), 1, prefill_context, Dq, per_node_Hkv, ResidencyInfo.AC_onchip, OpType.Logit]]
+            layers +=    [["Attend Pre",(prefill_num_beams*per_node_H), 1, prefill_context, Dq, per_node_Hkv, ResidencyInfo.AC_onchip, OpType.Attend]]
+            layers +=     [["Logit Suf",(decode_num_beams*per_node_H), 1, decode_context, Dq, per_node_Hkv, ResidencyInfo.AC_onchip, OpType.Logit]]
+            layers +=    [["Attend Suf",(decode_num_beams*per_node_H), 1, decode_context, Dq, per_node_Hkv, ResidencyInfo.AC_onchip, OpType.Attend]]
+        elif isinstance(kv_size, tuple) and len(kv_size) == 2:
+            num_batches = kv_size[0]
+            past_context = kv_size[1]
+            layers +=     [["Logit Dec",num_batches*per_node_H, 1, past_context, Dq, num_batches*per_node_Hkv, ResidencyInfo.AC_onchip, OpType.Logit]]
+            layers +=    [["Attend Dec",num_batches*per_node_H, 1, past_context, Dq, num_batches*per_node_Hkv, ResidencyInfo.AC_onchip, OpType.Attend]]
+        else:
+            layers +=     [["Logit Dec",per_node_H, 1, kv_size, Dq, per_node_Hkv, ResidencyInfo.AC_onchip, OpType.Logit]]
+            layers +=    [["Attend Dec",per_node_H, 1, kv_size, Dq, per_node_Hkv, ResidencyInfo.AC_onchip, OpType.Attend]]
 
 
     layers +=        [["Out Proj",D, chunk_size, (per_node_H) * Dq, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]

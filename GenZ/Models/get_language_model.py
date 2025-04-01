@@ -262,7 +262,17 @@ def create_full_chunked_model(name:str ='GPT-2',
 
     ## Calculate the chunk size
     prefill_length = sum([i[1] for i in prefill_kv_sizes])
-    chunk_size = len(decode_kv_sizes) + prefill_length
+    decode_length = 0
+    for kv_size in decode_kv_sizes:
+        if isinstance(kv_size, tuple) and len(kv_size) == 4:
+            decode_num_beams = kv_size[1]
+            decode_length += decode_num_beams
+        elif isinstance(kv_size, tuple) and len(kv_size) == 2:
+            num_beams = kv_size[0]
+            decode_length += num_beams
+        else:
+            decode_length += 1
+    chunk_size = prefill_length + decode_length
 
     def add_layers(layers, num_layers):
         layers += repeat_layers(num_layers)

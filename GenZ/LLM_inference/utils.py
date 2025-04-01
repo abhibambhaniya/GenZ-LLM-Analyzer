@@ -102,7 +102,7 @@ def get_inference_system(system_name='A100_40GB_GPU', bits='bf16', ceff=1, meff=
         system_name.network_config = network_config 
         return system_name
     else:
-        raise TypeError('System should be weight str or dict with Flops,Memory, ICN values')
+        raise TypeError(f'System should be weight str or dict with Flops,Memory, ICN values: System_name: {system_name}')
 
     return System(unit,frequency=1000 , flops=NUM_FLOPS, off_chip_mem_size=(per_chip_memory*1024), compute_efficiency=ceff, memory_efficiency=meff,
                     offchip_mem_bw=OFFCHIP_MEM_BW, bits=bits, external_mem_bw=OFFLOAD_BW, interchip_link_bw=C2C_BW, interchip_link_latency=C2C_LL, 
