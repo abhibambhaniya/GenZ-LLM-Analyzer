@@ -193,13 +193,14 @@ def deepseek_ffn_prefill(model_config:ModelConfig, parallelism_config:Parallelis
         if ep > 1:
             collect_all2all = [["Collect A2A",input_sequence_length//sp, K*D, 1, 1, ep, CollectiveType.All2All, OpType.Sync]]
             layers += collect_all2all
-    elif n_shared_experts:
-        Df = model_config.shared_expert_intermediate_size
-        Df = max(ceil(Df/tp),1)
 
-        ffup =   [["up+gate",Df*fi*n_shared_experts, input_sequence_length//sp, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
-        ffdown = [["down",D, input_sequence_length//sp, Df*n_shared_experts, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
-        layers += ffup + ffdown
+        if n_shared_experts > 0:
+            Df = model_config.shared_expert_intermediate_size
+            Df = max(ceil(Df/tp),1)
+
+            ffup =   [["up+gate",Df*fi*n_shared_experts, input_sequence_length//sp, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+            ffdown = [["down",D, input_sequence_length//sp, Df*n_shared_experts, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+            layers += ffup + ffdown
 
     else:
         Df = model_config.intermediate_size

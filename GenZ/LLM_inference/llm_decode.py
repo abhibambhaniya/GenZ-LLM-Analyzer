@@ -83,12 +83,12 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     ##################################################################################################
     ### Token generation time
     ##################################################################################################
-    model_decode = create_full_decode_model(name=model,
-                                            input_sequence_length=input_tokens,
-                                            output_gen_tokens = output_tokens ,
-                                            tensor_parallel=tensor_parallel,
-                                            pipeline_parallel=pipeline_parallel,
-                                            expert_parallel=expert_parallel)
+    # model_decode = create_full_decode_model(name=model,
+    #                                         input_sequence_length=input_tokens,
+    #                                         output_gen_tokens = output_tokens ,
+    #                                         tensor_parallel=tensor_parallel,
+    #                                         pipeline_parallel=pipeline_parallel,
+    #                                         expert_parallel=expert_parallel)
 
     model_df = get_model_df(model_decode, system, unit, ub*Bb,  intermediate_on_chip=True , beam_merge= (Bb > 1), beam_size= Bb)
     summary_table = get_summary_table(model_df, unit)

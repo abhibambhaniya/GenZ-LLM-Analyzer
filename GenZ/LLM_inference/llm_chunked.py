@@ -35,7 +35,7 @@ def chunked_moddeling(model = 'BERT',
     ##################################################################################################
     # if is_moe:
     model_chunked = create_full_chunked_model(name=model,
-                                            prefill_kv_sizes= prefill_kv_sizes, 
+                                            prefill_kv_sizes= prefill_kv_sizes,
                                             decode_kv_sizes = decode_kv_sizes,
                                             tensor_parallel = tensor_parallel, pipeline_parallel = pipeline_parallel,
                                             expert_parallel=expert_parallel)
@@ -75,11 +75,11 @@ def chunked_moddeling(model = 'BERT',
     ##################################################################################################
     ### Token generation time
     ##################################################################################################
-    model_chunked = create_full_chunked_model(name=model,
-                                            prefill_kv_sizes= prefill_kv_sizes,
-                                            decode_kv_sizes = decode_kv_sizes,
-                                            tensor_parallel = tensor_parallel, pipeline_parallel = pipeline_parallel,
-                                            expert_parallel=expert_parallel)
+    # model_chunked = create_full_chunked_model(name=model,
+    #                                         prefill_kv_sizes= prefill_kv_sizes,
+    #                                         decode_kv_sizes = decode_kv_sizes,
+    #                                         tensor_parallel = tensor_parallel, pipeline_parallel = pipeline_parallel,
+    #                                         expert_parallel=expert_parallel)
 
     model_df = get_model_df(model_chunked, system, unit, 1,  intermediate_on_chip=True )
     summary_table = get_summary_table(model_df, unit)
