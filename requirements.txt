@@ -13,3 +13,4 @@ pillow
 ipywidgets
 Jinja2
 genz-llm
+pydantic

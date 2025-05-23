@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "genz_llm"
-version = "0.0.16"
+version = "0.0.17"
 authors = [
     { name="Abhimanyu Bambhaniya", email="abambhaniya3@gatech.edu" },
 ]
@@ -33,6 +33,7 @@ dependencies = [
     "seaborn",
     "plotnine",
     "Jinja2",
+    "pydantic",
 ]
 
 [project.urls]
