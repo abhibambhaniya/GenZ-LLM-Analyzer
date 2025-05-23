@@ -136,7 +136,8 @@ def get_runtime_breakdown(df:pd.DataFrame) -> RuntimeBreakdown:
                             'Logit Dec', 'Attend Dec',
                             'Gate', 'up+gate', 'down',
                             'Message Pass', 'MHA AR', 'Gate AR',
-                            'Dispatch A2A', 'Collect A2A', 'FFN AR']
+                            'Dispatch A2A', 'Collect A2A',
+                            'Seq A2A', 'Seq RS', 'FFN AR']
 
     for i in range(len(df)):
         layer_name = df.loc[i, 'Layer Name']
@@ -168,6 +169,14 @@ def get_runtime_breakdown(df:pd.DataFrame) -> RuntimeBreakdown:
             runtime_breakdown.Collective += layer_latency
             runtime_breakdown.A2A_time += layer_latency
             runtime_breakdown.FFN += layer_latency
+        elif layer_name == 'Seq A2A':
+            runtime_breakdown.Collective += layer_latency
+            runtime_breakdown.A2A_time += layer_latency
+            runtime_breakdown.MHA += layer_latency
+        elif layer_name == 'Seq RS':
+            runtime_breakdown.Collective += layer_latency
+            runtime_breakdown.RS_time += layer_latency
+            runtime_breakdown.MHA += layer_latency
         elif layer_name in ['Emb_AR', 'classifier_AG']:
             runtime_breakdown.AR_time += layer_latency
             runtime_breakdown.Embedding += layer_latency

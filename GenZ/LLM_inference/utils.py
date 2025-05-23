@@ -25,6 +25,7 @@ class RuntimeBreakdown():
         self.Softmax: float = 0
         self.AR_time: float = 0
         self.A2A_time: float = 0
+        self.RS_time: float = 0
         self.Send_Recv_time: float = 0
         self.Mamba_time: float = 0
 
