@@ -112,7 +112,22 @@ class System(object):
         return self.on_chip_mem_left_size
 
     def release_onchip_mem(self, data_sz):
-        self.on_chip_mem_left_size = max(self.on_chip_mem_size, data_sz + self.on_chip_mem_left_size)
+        """Release `data_sz` memory back to on-chip pool.
+
+        When releasing memory we should not exceed the total on-chip memory
+        capacity of the system. The previous implementation used ``max`` which
+        would incorrectly set ``on_chip_mem_left_size`` to the total capacity as
+        soon as any amount was released.  This meant releasing a small block of
+        memory could reset the available memory to the full capacity even if
+        only part of it was freed.
+
+        Using ``min`` ensures we add the released amount without surpassing the
+        original capacity.
+        """
+
+        self.on_chip_mem_left_size = min(
+            self.on_chip_mem_size, self.on_chip_mem_left_size + data_sz
+        )
         return self.on_chip_mem_left_size
 
     def get_bit_multiplier(self, type='C', data='w', operators=None):
