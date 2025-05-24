@@ -34,6 +34,11 @@ def mha_flash_attention_prefill(model_config:ModelConfig, parallelism_config:Par
     ## [Batch/dp, Seq/sp, Dmodel] * [2, Dmodel, Dq, Hkv/tp] + [Dmodel, Dq, Head/tp]= [Batch/dp, Seq/sp, 3, Dq, Head/tp]
     QKV =           [["QKV", (per_node_H*Dq + 2*per_node_Hkv*Dq), input_sequence_length//sp, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
 
+    if sp > 1:
+        seq_all2all = [["Seq A2A", input_sequence_length//sp, D, 1, 1, sp, CollectiveType.All2All, OpType.Sync]]
+    else:
+        seq_all2all = []
+
     ## [Batch/dp, Seq, Dq, Head/tp] * [Batch/dp, Seq/sp, Dq, Head/tp] = [Batch/dp, Seq, Seq/sp, Head/tp]
     logit =         [["Logit",per_node_H, input_sequence_length, input_sequence_length//sp, Dq, per_node_Hkv, ResidencyInfo.C_onchip, OpType.Logit]]
 
@@ -43,11 +48,16 @@ def mha_flash_attention_prefill(model_config:ModelConfig, parallelism_config:Par
     ## [Batch/dp, Seq, Dq, Head/tp] * [Dq, Head/tp,  Dmodel] = [Batch/dp, Seq, Dmodel]
     output =        [["Out Proj", D, input_sequence_length//sp, (per_node_H) * Dq, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
 
+    if sp > 1:
+        seq_rs = [["Seq RS", input_sequence_length//sp, D, 1, 1, sp, CollectiveType.ReduceScatter, OpType.Sync]]
+    else:
+        seq_rs = []
+
     if tp > 1:
         sync =          [["MHA AR", input_sequence_length//sp, D, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
     else:
         sync = []
-    return QKV + logit + attend + output + sync
+    return QKV + seq_all2all + logit + attend + output + seq_rs + sync
 
 def mha_flash_attention_decode(model_config:ModelConfig, parallelism_config:ParallelismConfig, input_sequence_length:int, output_gen_tokens:int):
     H = model_config.num_attention_heads
@@ -63,17 +73,28 @@ def mha_flash_attention_decode(model_config:ModelConfig, parallelism_config:Para
     per_node_Hkv = max(ceil(Hkv / tp), 1)
 
     query =         [["QKV", (per_node_H*Dq + 2*per_node_Hkv*Dq), 1, D, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
+
+    if sp > 1:
+        seq_all2all = [["Seq A2A", 1, D, 1, 1, sp, CollectiveType.All2All, OpType.Sync]]
+    else:
+        seq_all2all = []
+
     logit_pre =     [["Logit Pre",per_node_H, 1, input_sequence_length//sp, Dq, per_node_Hkv, ResidencyInfo.AC_onchip, OpType.Logit_BM_PREFILL]]
     attend_pre =    [["Attend Pre",per_node_H, 1, input_sequence_length//sp, Dq, per_node_Hkv, ResidencyInfo.AC_onchip, OpType.Attend_BM_PREFILL]]
     logit_suf =     [["Logit Suf",per_node_H, 1, output_gen_tokens, Dq, per_node_Hkv, ResidencyInfo.AC_onchip, OpType.Logit]]
     attend_suf =    [["Attend Suf",per_node_H, 1, output_gen_tokens, Dq, per_node_Hkv, ResidencyInfo.AC_onchip, OpType.Attend]]
     output =        [["Out Proj",D, 1, (per_node_H) * Dq, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
+
+    if sp > 1:
+        seq_rs = [["Seq RS", 1, D, 1, 1, sp, CollectiveType.ReduceScatter, OpType.Sync]]
+    else:
+        seq_rs = []
     if tp > 1:
         sync =          [["MHA AR",1, D, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
     else:
         sync = []
 
-    return query + logit_pre + logit_suf + attend_pre + attend_suf + output + sync
+    return query + seq_all2all + logit_pre + logit_suf + attend_pre + attend_suf + output + seq_rs + sync
 
 
 
@@ -114,6 +135,10 @@ def mha_flash_attention_chunked(model_config:ModelConfig, parallelism_config:Par
     query =      [["QKV", (per_node_H*Dq + 2*per_node_Hkv*Dq), chunk_size, D, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
     layers += query
 
+    if sp > 1:
+        seq_all2all = [["Seq A2A", chunk_size, D, 1, 1, sp, CollectiveType.All2All, OpType.Sync]]
+        layers += seq_all2all
+
     ## Prefill LA layers
     for kv_size in prefill_kv_sizes:
         layers +=    [["Logit Pre",per_node_H, kv_size[1], kv_size[0]+kv_size[1], Dq, per_node_Hkv, ResidencyInfo.C_onchip, OpType.Logit]]
@@ -143,6 +168,8 @@ def mha_flash_attention_chunked(model_config:ModelConfig, parallelism_config:Par
 
 
     layers +=        [["Out Proj",D, chunk_size, (per_node_H) * Dq, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
+    if sp > 1:
+        layers += [["Seq RS", chunk_size, D, 1, 1, sp, CollectiveType.ReduceScatter, OpType.Sync]]
     if tp > 1:
         layers +=          [["MHA AR",chunk_size, D, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
     else:

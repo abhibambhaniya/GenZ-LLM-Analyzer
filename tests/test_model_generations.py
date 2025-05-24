@@ -100,3 +100,21 @@ def test_create_inference_moe_decode_layer():
         ])
 
     pd.testing.assert_frame_equal(mixtral_ref, df)
+
+
+def test_sequence_parallel_layer_addition():
+    file_name = create_inference_moe_prefill_layer(input_sequence_length=10, name='gpt-2', sequence_parallel=2)
+    df = pd.read_csv(os.path.join(MODEL_PATH, file_name), header=None)
+    layer_names = df[0].tolist()
+    assert 'Seq A2A' in layer_names
+    assert 'Seq RS' in layer_names
+    # Ensure ordering relative to attention projections
+    assert layer_names.index('Seq A2A') > layer_names.index('QKV')
+    assert layer_names.index('Seq RS') > layer_names.index('Out Proj')
+
+def test_sequence_parallel_layers_absent_when_disabled():
+    file_name = create_inference_moe_prefill_layer(input_sequence_length=10, name='gpt-2', sequence_parallel=1)
+    df = pd.read_csv(os.path.join(MODEL_PATH, file_name), header=None)
+    layer_names = df[0].tolist()
+    assert 'Seq A2A' not in layer_names
+    assert 'Seq RS' not in layer_names
