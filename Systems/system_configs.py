@@ -1,5 +1,5 @@
 from typing import Any, Dict
-from .bud_hardwares import BudHardwares
+
 
 DEFAULT_SYSTEM_CONFIGS: Dict[str, Dict[str, Any]] = {
     'A100_40GB_GPU' : {'Flops': 312, 'Memory_size': 40, 'Memory_BW': 1600, 'ICN': 150 , 'real_values':True},
@@ -22,4 +22,4 @@ DEFAULT_SYSTEM_CONFIGS: Dict[str, Dict[str, Any]] = {
     'Gaudi3' : {'Flops': 1835, 'Memory_size': 128, 'Memory_BW': 3675, 'ICN': 300 , 'real_values':True},
 }
 
-system_configs = BudHardwares(default_configs=DEFAULT_SYSTEM_CONFIGS)
+system_configs = DEFAULT_SYSTEM_CONFIGS
