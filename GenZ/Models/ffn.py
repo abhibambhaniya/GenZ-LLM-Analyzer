@@ -172,9 +172,34 @@ def deepseek_ffn_prefill(model_config:ModelConfig, parallelism_config:Parallelis
             layers += router_AR
 
         ## TODO: Define a function to calculate the number of activated experts
+        '''
+        Load Imbalance Factor = Highest Number of Token to Single Expert / Equal Distribution of tokens to expert
+        - A single expert can recieve at most input_sequence_length tokens and min 0 tokens
+        - Minimum number of experts activated is K.
+        - With equal distribution, each expert will get K*(input_sequence_length)/E
+        - For perfect distribution, load imbalance factor = 1
+        - For worst case, load imbalance factor = input_sequence_length / (K*input_sequence_length/E) = E/K
+
+        All2All traffic with load imbalance factor
+        - All2All traffic total data = input_sequence_length * K * D
+        - Perfect balance All2All traffic per chip = ((input_sequence_length * K * D /ep)
+        - Worst case All2All traffic in a single chip = ((input_sequence_length * min(K, E/ep) * D )
+
+        Expert FFN time
+        Best case:
+            # if K <= EP:
+                1 expert activated per EP.
+                Tokens per expert = input_sequence_length
+            # if K > EP:
+                more than 1 expert activated per EP.
+                Tokens per expert = input_sequence_length * ceil( K / EP)
+        Worst case:
+            
+        '''
         A = min( K * input_sequence_length, E)
         experts_activated_per_chip = max(1,ceil(A/ep))
         num_tokens_per_expert = (input_sequence_length//sp) * K // A if A > 0 else 0
+
         if ep > 1:
             # Total Size=Batch Size×Tokens per Batch×Hidden Dimension×Number of Experts per Token
             dispatch_all2all = [["Dispatch A2A",input_sequence_length//sp, K*D, 1, 1, ep, CollectiveType.All2All, OpType.Sync]]
@@ -198,8 +223,8 @@ def deepseek_ffn_prefill(model_config:ModelConfig, parallelism_config:Parallelis
             Df = model_config.shared_expert_intermediate_size
             Df = max(ceil(Df/tp),1)
 
-            ffup =   [["up+gate",Df*fi*n_shared_experts, input_sequence_length//sp, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
-            ffdown = [["down",D, input_sequence_length//sp, Df*n_shared_experts, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+            ffup =   [["shared up+gate",Df*fi*n_shared_experts, input_sequence_length//sp, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
+            ffdown = [["shared down",D, input_sequence_length//sp, Df*n_shared_experts, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM]]
             layers += ffup + ffdown
 
     else:

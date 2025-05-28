@@ -150,7 +150,7 @@ def get_runtime_breakdown(df:pd.DataFrame) -> RuntimeBreakdown:
                             'Attend Pre', 'Attend Suf', 'Logit Dec', 'Attend Dec']:
             runtime_breakdown.MHA += layer_latency
             runtime_breakdown.LA_layers += layer_latency
-        elif layer_name in ['Gate', 'up+gate', 'down']:
+        elif layer_name in ['Gate', 'up+gate', 'down', 'shared up+gate', 'shared down']:
             runtime_breakdown.FFN += layer_latency
             runtime_breakdown.FFN_layers += layer_latency
         elif layer_name in ['Message Pass']:
