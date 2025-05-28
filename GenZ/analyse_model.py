@@ -128,22 +128,24 @@ def get_runtime_breakdown(df:pd.DataFrame) -> RuntimeBreakdown:
     assert 'Layer Name' in df.columns, "Layer Name not found in the dataframe"
     assert f'Latency ({unit.unit_time})' in df.columns, "Latency (ms) not found in the dataframe"
 
-    possible_layer_names = ['embeddings', 'classifier', 'Emb_AR', 'classifier_AG', 
-                            'QKV', 'Out Proj',
+    lora_gemm_names = ["LORA_A_Q", "LORA_B_Q", "LORA_A_V", "LORA_B_V"]
+    possible_layer_names = ['embeddings', 'classifier', 'Emb_AR', 'classifier_AG',
+                            'QKV', 'Out Proj'] + lora_gemm_names + [ # Added LORA names here
                             'Logit', 'Attend',
                             'Logit Pre', 'Logit Suf',
                             'Attend Pre', 'Attend Suf',
                             'Logit Dec', 'Attend Dec',
                             'Gate', 'up+gate', 'down',
                             'Message Pass', 'MHA AR', 'Gate AR',
-                            'Dispatch A2A', 'Collect A2A', 'FFN AR']
+                            'Dispatch A2A', 'Collect A2A',
+                            'Seq A2A', 'Seq RS', 'FFN AR']
 
     for i in range(len(df)):
         layer_name = df.loc[i, 'Layer Name']
         layer_latency = df.loc[i, f'Latency ({unit.unit_time})']
         if layer_name in ['embeddings', 'classifier']:
             runtime_breakdown.Embedding += layer_latency
-        elif layer_name in ['QKV', 'Out Proj']:
+        elif layer_name in ['QKV', 'Out Proj'] or layer_name in lora_gemm_names: # Added LORA names here
             runtime_breakdown.MHA += layer_latency
             runtime_breakdown.QKVO_layers += layer_latency
         elif layer_name in ['Logit', 'Attend', 'Logit Pre', 'Logit Suf',
@@ -168,6 +170,14 @@ def get_runtime_breakdown(df:pd.DataFrame) -> RuntimeBreakdown:
             runtime_breakdown.Collective += layer_latency
             runtime_breakdown.A2A_time += layer_latency
             runtime_breakdown.FFN += layer_latency
+        elif layer_name == 'Seq A2A':
+            runtime_breakdown.Collective += layer_latency
+            runtime_breakdown.A2A_time += layer_latency
+            runtime_breakdown.MHA += layer_latency
+        elif layer_name == 'Seq RS':
+            runtime_breakdown.Collective += layer_latency
+            runtime_breakdown.RS_time += layer_latency
+            runtime_breakdown.MHA += layer_latency
         elif layer_name in ['Emb_AR', 'classifier_AG']:
             runtime_breakdown.AR_time += layer_latency
             runtime_breakdown.Embedding += layer_latency
