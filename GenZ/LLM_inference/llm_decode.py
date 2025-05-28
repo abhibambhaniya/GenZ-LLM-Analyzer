@@ -41,19 +41,57 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     ### Model Characterization Calculation
     ##################################################################################################
     # if is_moe:
-    model_decode = create_full_decode_model(name=model,
+    # Obtain ModelConfig to access LORA parameters
+    from GenZ.Models.get_language_model import get_configs
+    model_config_obj = get_configs(model)
+
+    model_decode_filename = create_full_decode_model(name=model_config_obj, # Pass the object
                                             input_sequence_length=input_tokens,
                                             output_gen_tokens = output_tokens ,
                                             tensor_parallel=tensor_parallel,
                                             pipeline_parallel=pipeline_parallel,
                                             expert_parallel=expert_parallel)
 
-    model_df = get_model_df(model_decode, system=system, batch_size= ub*Bb, intermediate_on_chip=True , beam_merge= (Bb > 1), beam_size= Bb, model_characterstics = True)
+    model_df = get_model_df(model_decode_filename, system=system, batch_size= ub*Bb, intermediate_on_chip=True , beam_merge= (Bb > 1), beam_size= Bb, model_characterstics = True)
     summary_table = get_summary_table(model_df, unit, model_characterstics = True)
 
     model_weights = summary_table[f'Total Weights ({unit.unit_mem})'].values[0]        ## In MB
     kv_cache = summary_table[f'KV Cache ({unit.unit_mem})'].values[0]                  ## In MB
     unused_weights = summary_table[f'Unused Weights ({unit.unit_mem})'].values[0]      ## In MB
+
+    # Calculate LORA weights if lora_rank > 0
+    lora_weights_mb = 0
+    if model_config_obj.lora_rank > 0:
+        bytes_per_parameter = 0
+        if bits == 'bf16' or bits == 'fp16':
+            bytes_per_parameter = 2
+        elif bits == 'fp32':
+            bytes_per_parameter = 4
+        elif bits == 'int8':
+            bytes_per_parameter = 1
+        else:
+            warnings.warn(f"Unsupported bits type {bits} for LORA weight calculation. Assuming 2 bytes (bf16/fp16).")
+            bytes_per_parameter = 2
+
+        # Q LORA matrices
+        q_lora_a_size = model_config_obj.hidden_size * model_config_obj.lora_rank * bytes_per_parameter
+        # Note: num_attention_heads is the total before TP sharding.
+        # The LORA B matrix output dimension should match the sharded Q projection output dimension.
+        # However, the problem description implies full dimensions for LORA B: (lora_rank, head_dim * num_heads)
+        # Let's assume head_dim * num_attention_heads is the intended full output dimension before sharding for Q
+        q_lora_b_size = model_config_obj.lora_rank * (model_config_obj.head_dim * model_config_obj.num_attention_heads) * bytes_per_parameter
+        
+        # V LORA matrices
+        v_lora_a_size = model_config_obj.hidden_size * model_config_obj.lora_rank * bytes_per_parameter
+        # Similarly for V, using num_key_value_heads
+        v_lora_b_size = model_config_obj.lora_rank * (model_config_obj.head_dim * model_config_obj.num_key_value_heads) * bytes_per_parameter
+        
+        total_lora_weights_one_layer_bytes = q_lora_a_size + q_lora_b_size + v_lora_a_size + v_lora_b_size
+        total_lora_weights_all_layers_bytes = model_config_obj.num_decoder_layers * total_lora_weights_one_layer_bytes
+        
+        lora_weights_mb = total_lora_weights_all_layers_bytes / (1024 * 1024) # Convert bytes to MB
+
+    model_weights += lora_weights_mb
 
     total_memory_req = model_weights + kv_cache
     num_nodes = pipeline_parallel * tensor_parallel * expert_parallel
@@ -90,7 +128,7 @@ def decode_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     #                                         pipeline_parallel=pipeline_parallel,
     #                                         expert_parallel=expert_parallel)
 
-    model_df = get_model_df(model_decode, system, unit, ub*Bb,  intermediate_on_chip=True , beam_merge= (Bb > 1), beam_size= Bb)
+    model_df = get_model_df(model_decode_filename, system, unit, ub*Bb,  intermediate_on_chip=True , beam_merge= (Bb > 1), beam_size= Bb) # Use model_decode_filename
     summary_table = get_summary_table(model_df, unit)
 
     if debug:

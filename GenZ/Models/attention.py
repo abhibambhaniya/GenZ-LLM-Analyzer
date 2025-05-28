@@ -57,7 +57,23 @@ def mha_flash_attention_prefill(model_config:ModelConfig, parallelism_config:Par
         sync =          [["MHA AR", input_sequence_length//sp, D, 1, 1, tp, CollectiveType.AllReduce, OpType.Sync]]
     else:
         sync = []
-    return QKV + seq_all2all + logit + attend + output + seq_rs + sync
+
+    lora_ops = []
+    if model_config.lora_rank > 0:
+        S = input_sequence_length // sp
+        # LORA for Q
+        # GEMM: [op_name, M_output_features, N_sequence_length, K_input_features, Batch, group_factor, ResidencyInfo, OpType.GEMM]
+        # LORA_A_Q: Output(S, r), Input(S, D), Weight(D, r)
+        lora_ops.append(["LORA_A_Q", model_config.lora_rank, S, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM])
+        # LORA_B_Q: Output(S, per_node_H*Dq), Input(S, r), Weight(r, per_node_H*Dq)
+        lora_ops.append(["LORA_B_Q", per_node_H*Dq, S, model_config.lora_rank, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM])
+        # LORA for V
+        # LORA_A_V: Output(S, r), Input(S, D), Weight(D, r)
+        lora_ops.append(["LORA_A_V", model_config.lora_rank, S, D, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM])
+        # LORA_B_V: Output(S, per_node_Hkv*Dq), Input(S, r), Weight(r, per_node_Hkv*Dq)
+        lora_ops.append(["LORA_B_V", per_node_Hkv*Dq, S, model_config.lora_rank, 1, 1, ResidencyInfo.All_offchip, OpType.GEMM])
+
+    return QKV + lora_ops + seq_all2all + logit + attend + output + seq_rs + sync
 
 def mha_flash_attention_decode(model_config:ModelConfig, parallelism_config:ParallelismConfig, input_sequence_length:int, output_gen_tokens:int):
     H = model_config.num_attention_heads
@@ -94,7 +110,22 @@ def mha_flash_attention_decode(model_config:ModelConfig, parallelism_config:Para
     else:
         sync = []
 
-    return query + seq_all2all + logit_pre + logit_suf + attend_pre + attend_suf + output + seq_rs + sync
+    lora_ops = []
+    if model_config.lora_rank > 0:
+        S = 1 # Sequence length for decode is 1
+        # LORA for Q
+        # GEMM: [op_name, M_output_features, N_sequence_length, K_input_features, Batch, group_factor, ResidencyInfo, OpType.GEMM]
+        # LORA_A_Q: Output(S, r), Input(S, D), Weight(D, r)
+        lora_ops.append(["LORA_A_Q", model_config.lora_rank, S, D, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM])
+        # LORA_B_Q: Output(S, per_node_H*Dq), Input(S, r), Weight(r, per_node_H*Dq)
+        lora_ops.append(["LORA_B_Q", per_node_H*Dq, S, model_config.lora_rank, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM])
+        # LORA for V
+        # LORA_A_V: Output(S, r), Input(S, D), Weight(D, r)
+        lora_ops.append(["LORA_A_V", model_config.lora_rank, S, D, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM])
+        # LORA_B_V: Output(S, per_node_Hkv*Dq), Input(S, r), Weight(r, per_node_Hkv*Dq)
+        lora_ops.append(["LORA_B_V", per_node_Hkv*Dq, S, model_config.lora_rank, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM])
+
+    return query + lora_ops + seq_all2all + logit_pre + logit_suf + attend_pre + attend_suf + output + seq_rs + sync
 
 
 
@@ -134,6 +165,20 @@ def mha_flash_attention_chunked(model_config:ModelConfig, parallelism_config:Par
     layers = []
     query =      [["QKV", (per_node_H*Dq + 2*per_node_Hkv*Dq), chunk_size, D, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM]]
     layers += query
+
+    if model_config.lora_rank > 0:
+        S = chunk_size
+        # LORA for Q
+        # GEMM: [op_name, M_output_features, N_sequence_length, K_input_features, Batch, group_factor, ResidencyInfo, OpType.GEMM]
+        # LORA_A_Q: Output(S, r), Input(S, D), Weight(D, r)
+        layers.append(["LORA_A_Q", model_config.lora_rank, S, D, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM])
+        # LORA_B_Q: Output(S, per_node_H*Dq), Input(S, r), Weight(r, per_node_H*Dq)
+        layers.append(["LORA_B_Q", per_node_H*Dq, S, model_config.lora_rank, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM])
+        # LORA for V
+        # LORA_A_V: Output(S, r), Input(S, D), Weight(D, r)
+        layers.append(["LORA_A_V", model_config.lora_rank, S, D, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM])
+        # LORA_B_V: Output(S, per_node_Hkv*Dq), Input(S, r), Weight(r, per_node_Hkv*Dq)
+        layers.append(["LORA_B_V", per_node_Hkv*Dq, S, model_config.lora_rank, 1, 1, ResidencyInfo.AC_onchip, OpType.GEMM])
 
     if sp > 1:
         seq_all2all = [["Seq A2A", chunk_size, D, 1, 1, sp, CollectiveType.All2All, OpType.Sync]]

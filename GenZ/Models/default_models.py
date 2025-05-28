@@ -71,6 +71,9 @@ class ModelConfig():
         expert_layer_period = 1,
         # Quality of Model
         model_quality: Optional[QualityMetricsCollection] = None,
+        # LORA parameters
+        lora_rank: int = 0,
+        lora_alpha: int = 1,
         **kwargs,
     ):
         self.model = model
@@ -154,6 +157,9 @@ class ModelConfig():
 
         self.ffn_implementation = ffn_implementation
 
+        # LORA parameters
+        self.lora_rank = lora_rank
+        self.lora_alpha = lora_alpha
 
         # Quality of Model
         self.model_quality = model_quality
@@ -249,3 +255,19 @@ MODEL_DICT.add_model_collection(ModelCollection(misc_models))
 MODEL_DICT.add_model_collection(ModelCollection(mistral_models))
 MODEL_DICT.add_model_collection(ModelCollection(meta_models))
 MODEL_DICT.add_model_collection(ModelCollection(nvidia_models))
+
+# Configuration for LORA tests
+lora_test_model_config = ModelConfig(
+    model="lora_test_model",
+    vocab_size=1000,
+    max_model_len=512,
+    hidden_size=128,
+    intermediate_size=256,
+    num_decoder_layers=2,
+    num_attention_heads=4,
+    head_dim=32, # 128 / 4
+    num_key_value_heads=2, # GQA
+    hidden_act="silu",
+    lora_rank=0 # Default LORA rank
+)
+MODEL_DICT.add_model(lora_test_model_config)
