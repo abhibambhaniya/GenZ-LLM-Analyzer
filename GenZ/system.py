@@ -13,7 +13,7 @@ class System(object):
                 frequency=940, bits='bf16',
                 compute_efficiency=1, memory_efficiency=1, comm_efficiency=1,
                 interchip_link_bw = 25, num_nodes = 1, interchip_link_latency=1.9,
-                compute_engine='GenZ',    # GenZ or Scale-sim
+                compute_engine='GenZ',    # GenZ or Scale-sim or real-HW
                 collective_strategy='GenZ',    # GenZ or ASTRA-SIM
                 topology='FullyConnected',
                 parallelism_heirarchy = "TP{1}_EP{1}_PP{1}",
@@ -44,7 +44,7 @@ class System(object):
         self.mxu_shape = mxu_shape
 
         self.compute_engine = compute_engine
-        assert self.compute_engine in ['GenZ', 'Scale-sim'], "Invalid compute_engine. Must be one of: GenZ, Scale-sim"
+        assert self.compute_engine.lower() in ['genz', 'scale-sim', 'real-hw'], "Invalid compute_engine. Must be one of: GenZ, Scale-sim, real-HW"
 
         self.collective_strategy = collective_strategy
         assert self.collective_strategy in ['GenZ', 'ASTRA-SIM'], "Invalid collective_strategy. Must be one of: GenZ, ASTRA-SIM"

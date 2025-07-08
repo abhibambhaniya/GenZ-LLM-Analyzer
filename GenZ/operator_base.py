@@ -80,11 +80,17 @@ class Operator(object):
 
 
     def get_compute_time(self, system):
-        if system.compute_engine == 'GenZ':
+        compute_engine = system.compute_engine.lower()
+        if compute_engine == 'genz':
             return self.get_effective_num_ops(system) * system.get_bit_multiplier(type='C')/system.op_per_sec
-        elif system.compute_engine == 'Scale-sim':
+        elif compute_engine == 'scale-sim':
             from .Scale_Sim.get_scale_sim_time import get_scale_sim_time
             return get_scale_sim_time(op=self, system=system)
+        elif compute_engine == 'real-hw':
+            from .Real_HW.get_real_hw_time import get_real_hw_time
+            return get_real_hw_time(op=self, system=system)
+        else:
+            raise ValueError(f'Invalid compute engine: {compute_engine}. Must be one of: GenZ, Scale-sim, real-HW')
 
 
     def get_effective_num_ops(self, system=None):
