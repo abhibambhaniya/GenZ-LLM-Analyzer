@@ -16,7 +16,7 @@ class System(object):
                 compute_engine='GenZ',    # GenZ or Scale-sim or real-HW
                 collective_strategy='GenZ',    # GenZ or ASTRA-SIM
                 topology='FullyConnected',
-                parallelism_heirarchy = "TP{1}_EP{1}_PP{1}",
+                parallelism_hierarchy = "TP{1}_EP{1}_PP{1}",
                 network_config = None,
                 gear_params = None,
                 ):
@@ -51,7 +51,7 @@ class System(object):
         self.num_nodes = num_nodes
         self.topology = topology
         self.bits = bits
-        self.parallelism_heirarchy = parallelism_heirarchy   ## TP{1}_EP{1}_PP{1}
+        self.parallelism_hierarchy = parallelism_hierarchy   ## TP{1}_EP{1}_PP{1}
         self.network_config = network_config
         if gear_params:
             self.gear_r = gear_params['r']

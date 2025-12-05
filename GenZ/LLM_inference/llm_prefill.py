@@ -14,7 +14,7 @@ def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     system_name = 'A100_40GB_GPU', system_eff=1, bits='bf16', debug= False, model_profilling = False,
     tensor_parallel = 1, pipeline_parallel = 1, expert_parallel = 1,
     collective_strategy='GenZ', network_config=None,
-    parallelism_heirarchy = "TP{1}_EP{1}_PP{1}",
+    parallelism_hierarchy = "TP{1}_EP{1}_PP{1}",
     model_offload = False):
 
     if pipeline_parallel > 1:
@@ -30,7 +30,7 @@ def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
 
     system = get_inference_system(system_name = system_name, bits = bits, 
                                 ceff=system_eff, meff=system_eff, network_config=network_config,
-                                collective_strategy=collective_strategy, parallelism_heirarchy=parallelism_heirarchy)
+                                collective_strategy=collective_strategy, parallelism_hierarchy=parallelism_hierarchy)
     ##################################################################################################
     ### Model Characterization Calculation
     ##################################################################################################
@@ -79,7 +79,7 @@ def prefill_moddeling(model = 'BERT', batch_size = 1, input_tokens = 4096,
     #                                             tensor_parallel=tensor_parallel,
     #                                             pipeline_parallel=pipeline_parallel,
     #                                             expert_parallel=expert_parallel)
-    system.parallelism_heirarchy = parallelism_heirarchy
+    system.parallelism_hierarchy = parallelism_hierarchy
     model_df = get_model_df(model_prefill, system, unit, ub, intermediate_on_chip=True )
     summary_table = get_summary_table(model_df, unit)
     prefill_latency = summary_table[f'Latency ({unit.unit_time})'].values[0]                 # Latency in millisec

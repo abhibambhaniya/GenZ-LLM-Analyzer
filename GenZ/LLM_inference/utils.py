@@ -76,7 +76,7 @@ def get_offload_system(system, total_memory_req, debug):
 
 def get_inference_system(system_name='A100_40GB_GPU', bits='bf16', ceff=1, meff=1,
                         collective_strategy='GenZ', network_config=None,
-                        parallelism_heirarchy = "TP{1}_EP{1}_PP{1}",
+                        parallelism_hierarchy = "TP{1}_EP{1}_PP{1}",
                          **kwargs):
     ##################################################################################################
     ### System Declaration
@@ -98,7 +98,7 @@ def get_inference_system(system_name='A100_40GB_GPU', bits='bf16', ceff=1, meff=
         system_name.compute_efficiency = ceff
         system_name.memory_efficiency = meff
         system_name.collective_strategy = collective_strategy
-        system_name.parallelism_heirarchy = parallelism_heirarchy
+        system_name.parallelism_hierarchy = parallelism_hierarchy
         system_name.network_config = network_config 
         return system_name
     else:
@@ -106,4 +106,4 @@ def get_inference_system(system_name='A100_40GB_GPU', bits='bf16', ceff=1, meff=
 
     return System(unit,frequency=1000 , flops=NUM_FLOPS, off_chip_mem_size=(per_chip_memory*1024), compute_efficiency=ceff, memory_efficiency=meff,
                     offchip_mem_bw=OFFCHIP_MEM_BW, bits=bits, external_mem_bw=OFFLOAD_BW, interchip_link_bw=C2C_BW, interchip_link_latency=C2C_LL, 
-                    collective_strategy=collective_strategy, network_config=network_config, parallelism_heirarchy = parallelism_heirarchy)
+                    collective_strategy=collective_strategy, network_config=network_config, parallelism_hierarchy = parallelism_hierarchy)

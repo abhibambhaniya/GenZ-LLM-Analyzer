@@ -157,7 +157,7 @@ class Operator(object):
                 else:
                     raise ValueError(f'Unknown collective type: {self.collective_type}.')
             elif system.collective_strategy == 'ASTRA-SIM':
-                from .Astra_sim.get_astra_sim_time import get_astrasim_collective_time, get_network_config, merge_parallelism_heirarchy
+                from .Astra_sim.get_astra_sim_time import get_astrasim_collective_time, get_network_config, merge_parallelism_hierarchy
                 "ALLREDUCE", "ALLTOALL", "ALLGATHER", "REDUCESCATTER"
                 collective_convertion = { CollectiveType.AllReduce: 'ALLREDUCE', CollectiveType.All2All: 'ALLTOALL',
                                 CollectiveType.AllGather: 'ALLGATHER', CollectiveType.ReduceScatter: 'REDUCESCATTER', 
@@ -166,28 +166,28 @@ class Operator(object):
                     return max(get_astrasim_collective_time(system=system, collective_type=collective_convertion[self.collective_type],
                                                         collective_size=data_size).values())/1e9
                 else:
-                    parallelism_heirarchy = system.parallelism_heirarchy
+                    parallelism_hierarchy = system.parallelism_hierarchy
                     if self.collective_type == CollectiveType.MessagePass:
                         parallelism = "PP"
                     elif self.collective_type == CollectiveType.AllReduce:
-                        TP_nodes = int(re.search(r'TP\{(\d+)\}', parallelism_heirarchy).group(1))
+                        TP_nodes = int(re.search(r'TP\{(\d+)\}', parallelism_hierarchy).group(1))
                         if self.num_collective_nodes != TP_nodes:
                             # Only EP dimension is used as TP dimension
-                            parallelism_heirarchy = merge_parallelism_heirarchy(parallelism_heirarchy, merge_dim='EP', merge_into='TP')
+                            parallelism_hierarchy = merge_parallelism_hierarchy(parallelism_hierarchy, merge_dim='EP', merge_into='TP')
                         parallelism = "TP"
                     elif self.collective_type == CollectiveType.All2All:
                         parallelism = "EP"
                     elif self.collective_type == CollectiveType.AllGather:
-                        TP_nodes = int(re.search(r'TP\{(\d+)\}', parallelism_heirarchy).group(1))
+                        TP_nodes = int(re.search(r'TP\{(\d+)\}', parallelism_hierarchy).group(1))
                         if self.num_collective_nodes != TP_nodes:
                             # Only EP dimension is used as TP dimension
-                            parallelism_heirarchy = merge_parallelism_heirarchy(parallelism_heirarchy, merge_dim='EP', merge_into='TP')
+                            parallelism_hierarchy = merge_parallelism_hierarchy(parallelism_hierarchy, merge_dim='EP', merge_into='TP')
                         parallelism = "TP"
                     else:
                         raise ValueError(f'Unknown parallelism for collective type: {self.collective_type}.')
 
                     network_config = get_network_config(network_config = system.network_config, 
-                                                        parallelism_heirarchy = parallelism_heirarchy,
+                                                        parallelism_hierarchy = parallelism_hierarchy,
                                                         parallelism = parallelism)
                     if parallelism == "PP":
                             BW = network_config['bandwidth'][0]

@@ -20,36 +20,36 @@ SCRIPT_DIR=os.path.dirname(os.path.realpath(__file__))
 run_file = os.path.join(SCRIPT_DIR, "run.sh")
 ASTRA_SIM_OUTPUT_PATH = os.path.join(SCRIPT_DIR, "astra_output.txt") 
 
-def merge_parallelism_heirarchy(parallelism_heirarchy:str, merge_dim='EP', merge_into='TP') -> str:
+def merge_parallelism_hierarchy(parallelism_hierarchy:str, merge_dim='EP', merge_into='TP') -> str:
     """
-    parallelism_heirarchy: str: A string with the following format: Ex: "TP{x}_EP{y}_PP{z}"
+    parallelism_hierarchy: str: A string with the following format: Ex: "TP{x}_EP{y}_PP{z}"
     merge_dim: str: A string with the following format: Ex: "EP"
     merge_into: str: A string with the following format: Ex: "TP"
     
     The function merges the parallelism dimension 'merge_dim' into 'merge_into' dimension.
-    # Ex1:parallelism_heirarchy = 'TP{2}_EP{4}_PP{2}' , merge_dim = EP, merge_into = TP
+    # Ex1:parallelism_hierarchy = 'TP{2}_EP{4}_PP{2}' , merge_dim = EP, merge_into = TP
     # output = 'TP{8}_PP{2}'
-    # Ex2:parallelism_heirarchy = 'PP{2}_EP{4}_TP{2}' , merge_dim = EP, merge_into = TP
+    # Ex2:parallelism_hierarchy = 'PP{2}_EP{4}_TP{2}' , merge_dim = EP, merge_into = TP
     # output = 'PP{2}_TP{8}'
     
     return: str: A string with the following format: Ex: "TP{x}_EP{y}_PP{z}"
     """
     
     pattern = r'\{(\d+)\}'
-    parallelism_sizes = re.findall(pattern, parallelism_heirarchy)   
-    merge_final_position = re.sub(pattern,'',parallelism_heirarchy ).split('_').index(merge_into)
-    to_merge_dim_position = re.sub(pattern,'',parallelism_heirarchy ).split('_').index(merge_dim)
+    parallelism_sizes = re.findall(pattern, parallelism_hierarchy)   
+    merge_final_position = re.sub(pattern,'',parallelism_hierarchy ).split('_').index(merge_into)
+    to_merge_dim_position = re.sub(pattern,'',parallelism_hierarchy ).split('_').index(merge_dim)
     
     merge_final_size = int(parallelism_sizes[merge_final_position]) * int(parallelism_sizes[to_merge_dim_position])
     
     if to_merge_dim_position == 0:
-        new_parallelism_heirarchy = parallelism_heirarchy[parallelism_heirarchy.index('_') + 1:]
-        new_parallelism_heirarchy = re.sub(f'{merge_into}\{{\d+\}}', f'{merge_into}{{{merge_final_size}}}', new_parallelism_heirarchy)
+        new_parallelism_hierarchy = parallelism_hierarchy[parallelism_hierarchy.index('_') + 1:]
+        new_parallelism_hierarchy = re.sub(f'{merge_into}\{{\d+\}}', f'{merge_into}{{{merge_final_size}}}', new_parallelism_hierarchy)
     else:
-        new_parallelism_heirarchy = re.sub(f'_{merge_dim}\{{\d+\}}','',parallelism_heirarchy ) 
-        new_parallelism_heirarchy = re.sub(f'{merge_into}\{{\d+\}}', f'{merge_into}{{{merge_final_size}}}', new_parallelism_heirarchy)
+        new_parallelism_hierarchy = re.sub(f'_{merge_dim}\{{\d+\}}','',parallelism_hierarchy ) 
+        new_parallelism_hierarchy = re.sub(f'{merge_into}\{{\d+\}}', f'{merge_into}{{{merge_final_size}}}', new_parallelism_hierarchy)
     
-    return new_parallelism_heirarchy
+    return new_parallelism_hierarchy
 
 
 def divide_npus_count(network_config, parallelism_sizes):
@@ -77,30 +77,30 @@ def divide_npus_count(network_config, parallelism_sizes):
         dims.append(current_dims)
     return result, dims
 
-def get_network_config(network_config:dict, parallelism_heirarchy:str, parallelism:str) -> dict:
+def get_network_config(network_config:dict, parallelism_hierarchy:str, parallelism:str) -> dict:
     """
     network_config: dict: A dictionary with the following keys:
             "topology":   ## List of topology (“Ring”, “FullyConnected”, or “Switch”)
             "npus_count": ## List of number of npus per node
             "bandwidth":  ## List of Link Bw in GB/s
             "latency":    ## Link expects latency in ns
-    parallelism_heirarchy: str: A string with the following format: Ex: "TP{x}_EP{y}_PP{z}"
+    parallelism_hierarchy: str: A string with the following format: Ex: "TP{x}_EP{y}_PP{z}"
         In the above example, TP is among the closest nodes, then EP and finally PP accross the last dimension.
     """ 
     assert type(network_config) == dict, "network_config must be a dictionary"
     
     pattern = r'\{(\d+)\}'
-    parallelism_sizes = re.findall(pattern, parallelism_heirarchy)
+    parallelism_sizes = re.findall(pattern, parallelism_hierarchy)
     assert np.prod(network_config["npus_count"]) == np.prod([int(match) for match in parallelism_sizes]), f"Prof of npus_count:{np.prod(network_config['npus_count'])} should be equal to num_nodes:{np.prod([int(match) for match in parallelism_sizes])}"
 
-    assert parallelism in parallelism_heirarchy, "parallelism should be present in parallelism_heirarchy"
+    assert parallelism in parallelism_hierarchy, "parallelism should be present in parallelism_hierarchy"
 
-    # find the parallelism in parallelism_heirarchy, it would be distributed by '_', find the position. 
-    # Ex1:parallelism_heirarchy = 'TP{2}_EP{4}_PP{2}' , parallelism = EP
+    # find the parallelism in parallelism_hierarchy, it would be distributed by '_', find the position. 
+    # Ex1:parallelism_hierarchy = 'TP{2}_EP{4}_PP{2}' , parallelism = EP
     # output = 1
-    # Ex2:parallelism_heirarchy = 'TP{2}_EP{4}_PP{2}' , parallelism = TP
+    # Ex2:parallelism_hierarchy = 'TP{2}_EP{4}_PP{2}' , parallelism = TP
     # output = 0
-    parallelism_position = re.sub(pattern,'',parallelism_heirarchy ).split('_').index(parallelism)
+    parallelism_position = re.sub(pattern,'',parallelism_hierarchy ).split('_').index(parallelism)
     dims, indexes = divide_npus_count(network_config, [int(match) for match in parallelism_sizes])
 
     parallelism_index = indexes[parallelism_position]

@@ -189,6 +189,7 @@ meta_models.update({
     'llama2_13b': llama_13b_config,
     'llama2_70b': llama_70b_config,
     'llama3_8b': llama3_8b_config,
+    'llama3_70b': llama3_70b_config,
     'llama_405b': llama3_405b_config,
     'meta/llama3_405B': llama3_405b_config,
     'meta-llama/Llama-3.2-1B': llama3_2_1b_config,

@@ -18,7 +18,7 @@ def chunked_moddeling(model = 'BERT',
     tensor_parallel = 1, pipeline_parallel = 1,
     expert_parallel = 1,
     collective_strategy='GenZ', network_config=None,
-    parallelism_heirarchy = "TP{1}_EP{1}_PP{1}",
+    parallelism_hierarchy = "TP{1}_EP{1}_PP{1}",
     model_offload = False, ceff = None, meff = None):
 
     ##################################################################################################
@@ -28,7 +28,7 @@ def chunked_moddeling(model = 'BERT',
     system = get_inference_system(system_name = system_name, bits = bits, ceff=system_eff , meff=system_eff,
                                 network_config=network_config, 
                                 collective_strategy=collective_strategy, 
-                                parallelism_heirarchy=parallelism_heirarchy )
+                                parallelism_hierarchy=parallelism_hierarchy )
 
     ##################################################################################################
     ### Model Characterization Calculation

@@ -19,7 +19,7 @@ def spec_prefill_modeling(model = 'meta-llama/Llama-3.1-70B', draft_model = 'met
     tensor_parallel = 1, pipeline_parallel = 1,
     expert_parallel = 1,
     collective_strategy='GenZ', network_config=None,
-    parallelism_heirarchy = "TP{1}_EP{1}_PP{1}",
+    parallelism_hierarchy = "TP{1}_EP{1}_PP{1}",
     model_offload = False, ceff = None, meff = None):
 
     if pipeline_parallel > 1:
@@ -36,7 +36,7 @@ def spec_prefill_modeling(model = 'meta-llama/Llama-3.1-70B', draft_model = 'met
     system = get_inference_system(system_name = system_name, bits = bits, ceff=system_eff , meff=system_eff,
                                 network_config=network_config, 
                                 collective_strategy=collective_strategy, 
-                                parallelism_heirarchy=parallelism_heirarchy )
+                                parallelism_hierarchy=parallelism_hierarchy )
 
     ##################################################################################################
     ### Model Characterization Calculation
@@ -173,7 +173,7 @@ def spec_decode_modeling(model = 'meta-llama/Llama-3.1-70B', draft_model = 'meta
     tensor_parallel = 1, pipeline_parallel = 1,
     expert_parallel = 1,
     collective_strategy='GenZ', network_config=None,
-    parallelism_heirarchy = "TP{1}_EP{1}_PP{1}",
+    parallelism_hierarchy = "TP{1}_EP{1}_PP{1}",
     model_offload = False, ceff = None, meff = None):
 
     if pipeline_parallel > 1:
@@ -192,7 +192,7 @@ def spec_decode_modeling(model = 'meta-llama/Llama-3.1-70B', draft_model = 'meta
     system = get_inference_system(system_name = system_name, bits = bits, ceff=system_eff , meff=system_eff,
                                 network_config=network_config, 
                                 collective_strategy=collective_strategy, 
-                                parallelism_heirarchy=parallelism_heirarchy )
+                                parallelism_hierarchy=parallelism_hierarchy )
 
     ##################################################################################################
     ### Model Characterization Calculation
