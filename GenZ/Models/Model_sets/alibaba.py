@@ -155,6 +155,13 @@ qwen3_4b_config = ModelConfig(model='Qwen/Qwen3-4B',
     intermediate_size=9728, num_decoder_layers=36,
     vocab_size=151936, max_model_len=40960, hidden_act="silu")
 
+# https://huggingface.co/Qwen/Qwen3-8B/blob/main/config.json
+qwen3_8b_config = ModelConfig(model='Qwen/Qwen3-8B',
+    hidden_size=4096, num_attention_heads=32,
+    num_key_value_heads=8, num_ffi = 2, head_dim=128,
+    intermediate_size=12288, num_decoder_layers=36,
+    vocab_size=151936, max_model_len=40960, hidden_act="silu")
+
 # https://huggingface.co/Qwen/Qwen3-14B/blob/main/config.json
 qwen3_14b_config = ModelConfig(model='Qwen/Qwen3-14B',
     hidden_size=5120, num_attention_heads=40,
