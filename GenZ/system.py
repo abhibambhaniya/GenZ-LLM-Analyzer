@@ -19,6 +19,7 @@ class System(object):
                 parallelism_hierarchy = "TP{1}_EP{1}_PP{1}",
                 network_config = None,
                 gear_params = None,
+                system_name = None
                 ):
 
         if unit is None:
@@ -44,10 +45,16 @@ class System(object):
         self.mxu_shape = mxu_shape
 
         self.compute_engine = compute_engine
-        assert self.compute_engine.lower() in ['genz', 'scale-sim', 'real-hw'], "Invalid compute_engine. Must be one of: GenZ, Scale-sim, real-HW"
+        assert self.compute_engine.lower() in ['genz', 'scale-sim', 'real-hw', 'profiled-ops'], "Invalid compute_engine. Must be one of: GenZ, Scale-sim, real-HW"
 
         self.collective_strategy = collective_strategy
-        assert self.collective_strategy in ['GenZ', 'ASTRA-SIM'], "Invalid collective_strategy. Must be one of: GenZ, ASTRA-SIM"
+        assert self.collective_strategy in ['GenZ', 'ASTRA-SIM', 'profiled-ops'], "Invalid collective_strategy. Must be one of: GenZ, ASTRA-SIM, profiled-ops"
+
+        if self.compute_engine == 'profiled-ops':
+            from .db import RuntimeDB
+            self._runtime_db = RuntimeDB(hardware=system_name, gemm_bits=bits, comm_bits=bits)
+
+
         self.num_nodes = num_nodes
         self.topology = topology
         self.bits = bits

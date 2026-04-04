@@ -89,8 +89,10 @@ class Operator(object):
         elif compute_engine == 'real-hw':
             from .Real_HW.get_real_hw_time import get_real_hw_time
             return get_real_hw_time(op=self, system=system)
+        elif compute_engine == 'profiled-ops':
+            return system._runtime_db.get_runtime(op=self, system=system)
         else:
-            raise ValueError(f'Invalid compute engine: {compute_engine}. Must be one of: GenZ, Scale-sim, real-HW')
+            raise ValueError(f'Invalid compute engine: {compute_engine}. Must be one of: GenZ, Scale-sim, real-HW, profiled-ops')
 
 
     def get_effective_num_ops(self, system=None):
@@ -156,6 +158,8 @@ class Operator(object):
                     return get_AG_time(data_size, self.num_collective_nodes, system) / 1000
                 else:
                     raise ValueError(f'Unknown collective type: {self.collective_type}.')
+            elif system.collective_strategy == 'profiled-ops':
+                    return system._runtime_db.get_runtime(op=self) 
             elif system.collective_strategy == 'ASTRA-SIM':
                 from .Astra_sim.get_astra_sim_time import get_astrasim_collective_time, get_network_config, merge_parallelism_hierarchy
                 "ALLREDUCE", "ALLTOALL", "ALLGATHER", "REDUCESCATTER"

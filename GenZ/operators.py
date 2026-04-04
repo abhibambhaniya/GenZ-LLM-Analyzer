@@ -104,9 +104,9 @@ class GEMM(Operator):
 
     def get_tensors(self):
         B, M, N, K = self.dim[:self.get_effective_dim_len()]
-        input_a = (B, K, N)
+        input_a = (B, N, K)
         input_w = (M, K)
-        output = (B, M, N)
+        output = (B, N, M)
         # print(input_a,input_w,output)
         return input_a, input_w, output
 

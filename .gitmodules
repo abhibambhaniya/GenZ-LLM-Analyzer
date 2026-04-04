@@ -1,0 +1,3 @@
+[submodule "GenZ/aiconfigurator"]
+	path = GenZ/aiconfigurator
+	url = https://github.com/ai-dynamo/aiconfigurator.git
