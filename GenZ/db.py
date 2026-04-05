@@ -195,7 +195,7 @@ class RuntimeDB:
             elif  op.collective_type == CollectiveType.All2All:
                 return get_A2A_time(data_size , self.num_collective_nodes, system) / 1000
             elif  op.collective_type == CollectiveType.MessagePass:
-                return self._db.query_p2p( message_bytes = op.communication_data(), database_mode=self.database_mode).latency  / 1000
+                return self._db.query_p2p( message_bytes = op.communication_data(), database_mode=self.database_mode)  / 1000
             elif op.collective_type == CollectiveType.AllGather:
                 return self.query_nccl(
                     op_name="all_gather",
