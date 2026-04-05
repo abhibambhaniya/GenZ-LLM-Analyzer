@@ -96,18 +96,20 @@ class RuntimeDB:
             system=hardware, backend=backend, version=version
         )
 
+        # if self._db is None:
+        #     self.database_mode = DatabaseMode.SOL
         # Load NCCL database separately (shared across backends)
         self._nccl_db: Optional[PerfDatabase] = None
-        try:
-            nccl_version = get_latest_database_version(
-                system=hardware, backend="nccl"
-            )
-            self._nccl_db = get_database(
-                system=hardware, backend="nccl", version=nccl_version
-            )
-        except Exception:
-            # NCCL data may not be available for all hardware
-            pass
+        # try:
+        #     nccl_version = get_latest_database_version(
+        #         system=hardware, backend="nccl"
+        #     )
+        #     self._nccl_db = get_database(
+        #         system=hardware, backend="nccl", version=nccl_version
+        #     )
+        # except Exception:
+        #     # NCCL data may not be available for all hardware
+        #     pass
 
         self.gemm_bits = gemm_bits
         self.comm_bits = comm_bits

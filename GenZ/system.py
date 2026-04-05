@@ -13,8 +13,8 @@ class System(object):
                 frequency=940, bits='bf16',
                 compute_efficiency=1, memory_efficiency=1, comm_efficiency=1,
                 interchip_link_bw = 25, num_nodes = 1, interchip_link_latency=1.9,
-                compute_engine='GenZ',    # GenZ or Scale-sim or real-HW
-                collective_strategy='GenZ',    # GenZ or ASTRA-SIM
+                compute_engine='GenZ',    # GenZ or Scale-sim or real-HW or profiled-ops
+                collective_strategy='GenZ',    # GenZ or ASTRA-SIM or profiled-ops
                 topology='FullyConnected',
                 parallelism_hierarchy = "TP{1}_EP{1}_PP{1}",
                 network_config = None,
@@ -53,6 +53,8 @@ class System(object):
         if self.compute_engine == 'profiled-ops':
             from .db import RuntimeDB
             self._runtime_db = RuntimeDB(hardware=system_name, gemm_bits=bits, comm_bits=bits)
+            self.offchip_mem_bw = self._runtime_db._db.system_spec["gpu"]["mem_bw"]
+            self.off_chip_mem_size = self._runtime_db._db.system_spec["gpu"]["mem_capacity"]
 
 
         self.num_nodes = num_nodes

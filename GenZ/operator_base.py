@@ -125,6 +125,8 @@ class Operator(object):
         return operators_sizes
 
     def get_memory_time(self, system):
+        if system.compute_engine == 'profiled-ops':
+            return 0    ## AIConfigurator accounts for the memory time
         sz_list = self.get_operators_size(system)
         loc_list = self.get_loc_list()
         memory_time = 0
