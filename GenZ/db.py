@@ -149,6 +149,7 @@ class RuntimeDB:
                 return self.query_context_attention(
                     batch_size=B,
                     seq_len=M,
+                    prefix=N-M,
                     num_heads=H,
                     num_kv_heads=Hkv,
                     head_dim=D//Hkv,
@@ -158,7 +159,7 @@ class RuntimeDB:
 
             return self.query_generation_attention(
                 batch_size=B,
-                seq_len=M,
+                seq_len=N,
                 num_heads=H,
                 num_kv_heads=Hkv,
                 head_dim=D//Hkv,
@@ -170,6 +171,7 @@ class RuntimeDB:
                 return self.query_context_attention(
                     batch_size=B,
                     seq_len=M,
+                    prefix=N-M,
                     num_heads=H,
                     num_kv_heads=Hkv,
                     head_dim=D//Hkv,
@@ -179,7 +181,7 @@ class RuntimeDB:
 
             return self.query_generation_attention(
                 batch_size=B,
-                seq_len=M,
+                seq_len=N,
                 num_heads=H,
                 num_kv_heads=Hkv,
                 head_dim=D//Hkv,
@@ -235,6 +237,7 @@ class RuntimeDB:
         self,
         batch_size: int,
         seq_len: int,
+        prefix: int,
         num_heads: int,
         num_kv_heads: int,
         head_dim: int,
@@ -245,7 +248,8 @@ class RuntimeDB:
 
         Args:
             batch_size: Number of sequences in the batch.
-            seq_len: Input sequence length.
+            seq_len: Input sequence length to be computed
+            prefix: Prefix cache length
             num_heads: Number of query attention heads.
             num_kv_heads: Number of key/value heads (GQA).
             head_dim: Dimension per head.
@@ -258,7 +262,7 @@ class RuntimeDB:
         result = self._db.query_context_attention(
             b=batch_size,
             s=seq_len,
-            prefix=0,
+            prefix=prefix,
             n=num_heads,
             n_kv=num_kv_heads,
             head_size=head_dim,
@@ -452,8 +456,7 @@ class RuntimeDB:
     def _to_timing(self, result) -> OperatorTiming:
         """Convert aiconfigurator PerformanceResult to OperatorTiming.
 
-        Aiconfigurator returns latency in milliseconds; we convert to
-        microseconds for the simulator.
+        Aiconfigurator returns latency in milliseconds;
         """
         latency_ms = float(result)
         energy = getattr(result, "energy", None)
