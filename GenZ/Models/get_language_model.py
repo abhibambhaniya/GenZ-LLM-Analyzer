@@ -49,8 +49,9 @@ def save_layers(layers:list, data_path:str, name:str):
     model_path = os.path.join(data_path,"model")
     df = pd.DataFrame(layers, columns=['Name', 'M', 'N', 'D', 'H', 'Z', 'Z', 'T'])
     file_name = name.replace("/", "_") + datetime.now().strftime("%m_%d_%Y_%H_%M_%S") + str(uuid4()) +'.csv'
-    if not os.path.exists(model_path):
-        os.makedirs(model_path)
+    # exist_ok=True to avoid TOCTOU race when multiple worker processes
+    # call save_layers concurrently (ProcessPoolExecutor parallel stage sweep).
+    os.makedirs(model_path, exist_ok=True)
     df.to_csv(os.path.join(model_path, file_name),  header=True, index=None)
     return file_name
 
