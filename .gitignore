@@ -1,5 +1,5 @@
 **/__pycache__
 data/model/*.csv
 venv
-GenZ_LLM_Analyzer.egg-info
+*.egg-info/
 dist/
