@@ -5,7 +5,8 @@ from typing import Optional
 import inspect
 from .model_quality import QualityMetricsCollection
 
-class ModelConfig():
+
+class ModelConfig:
     r"""
     This is the configuration class to store the configuration of a [`Model`]. It is used to instantiate an LLM
     model according to the specified arguments, defining the model architecture.
@@ -32,14 +33,15 @@ class ModelConfig():
         hidden_act (`str` or `function`, *optional*, defaults to `"silu"`):
             The non-linear activation function (function or string) in the decoder.
     """
+
     def __init__(
         self,
-        model = 'dummy',
+        model="dummy",
         vocab_size=32000,
-        max_model_len = 128000,
+        max_model_len=128000,
         hidden_size=4096,
         intermediate_size=11008,
-        num_ffi = 1,    ## Number of feed forward parallel in the first up projection
+        num_ffi=1,  ## Number of feed forward parallel in the first up projection
         num_encoder_layers=0,
         num_decoder_layers=32,
         num_attention_heads=32,
@@ -49,13 +51,13 @@ class ModelConfig():
         sliding_window=None,
         ffn_implementation="default",
         # MoE specific parameters
-        moe_layer_freq = None,
-        num_experts = 1,
-        expert_top_k = 1,
-        moe_intermediate_size = None,
-        n_shared_experts = 0,
-        shared_expert_intermediate_size = None,
-        first_k_dense_replace = None,
+        moe_layer_freq=None,
+        num_experts=1,
+        expert_top_k=1,
+        moe_intermediate_size=None,
+        n_shared_experts=0,
+        shared_expert_intermediate_size=None,
+        first_k_dense_replace=None,
         # Mamba specific parameters
         mamba_d_state=None,
         mamba_d_conv=None,
@@ -65,17 +67,17 @@ class ModelConfig():
         mamba_proj_bias=False,
         # Multi-Type model parameters
         mamba_layer_period=1,
-        attn_layer_offset = 0,
-        attn_layer_period = 1,
-        expert_layer_offset = 0,
-        expert_layer_period = 1,
+        attn_layer_offset=0,
+        attn_layer_period=1,
+        expert_layer_offset=0,
+        expert_layer_period=1,
         # Quality of Model
         model_quality: Optional[QualityMetricsCollection] = None,
         **kwargs,
     ):
         self.model = model
         self.vocab_size = vocab_size
-        self.max_model_len = max_model_len      ## Maximum length of the model
+        self.max_model_len = max_model_len  ## Maximum length of the model
         self.num_decoder_layers = num_decoder_layers
         self.num_encoder_layers = num_encoder_layers
 
@@ -83,7 +85,6 @@ class ModelConfig():
         self.intermediate_size = intermediate_size
         self.num_ffi = num_ffi
         self.hidden_act = hidden_act
-
 
         # Attention Parameters
         self.num_attention_heads = num_attention_heads
@@ -98,23 +99,34 @@ class ModelConfig():
 
         # MoE Parameters
         self.is_moe = num_experts > 1
-        self.moe_layer_freq = moe_layer_freq    ## If n, than every nth value is moe layer.
+        self.moe_layer_freq = (
+            moe_layer_freq  ## If n, than every nth value is moe layer.
+        )
         self.num_experts = num_experts
         self.expert_top_k = expert_top_k
-        self.moe_intermediate_size = moe_intermediate_size if moe_intermediate_size is not None else intermediate_size
+        self.moe_intermediate_size = (
+            moe_intermediate_size
+            if moe_intermediate_size is not None
+            else intermediate_size
+        )
         self.n_shared_experts = n_shared_experts
-        self.shared_expert_intermediate_size = shared_expert_intermediate_size if shared_expert_intermediate_size is not None else intermediate_size
+        self.shared_expert_intermediate_size = (
+            shared_expert_intermediate_size
+            if shared_expert_intermediate_size is not None
+            else intermediate_size
+        )
         self.first_k_dense_replace = first_k_dense_replace
 
         # Mamba Parameters
         self.mamba_d_state = mamba_d_state
         self.mamba_d_conv = mamba_d_conv
         self.mamba_expand = mamba_expand if mamba_expand is not None else 1
-        self.mamba_dt_rank = ceil(self.hidden_size / 16) if mamba_dt_rank == "auto" else mamba_dt_rank
+        self.mamba_dt_rank = (
+            ceil(self.hidden_size / 16) if mamba_dt_rank == "auto" else mamba_dt_rank
+        )
         self.mamba_conv_bias = mamba_conv_bias
         self.mamba_proj_bias = mamba_proj_bias
-        self.is_mamba = (mamba_d_state is not None)
-
+        self.is_mamba = mamba_d_state is not None
 
         # Multi-Type Model Parameters
         self.expert_layer_period = expert_layer_period
@@ -127,7 +139,11 @@ class ModelConfig():
         # print(self.is_mamba, self.is_moe)
         self.layer_type = []
         if self.is_mamba and self.is_moe:
-            self.unique_layers = lcm(self.mamba_layer_period, self.expert_layer_period, self.attn_layer_period)
+            self.unique_layers = lcm(
+                self.mamba_layer_period,
+                self.expert_layer_period,
+                self.attn_layer_period,
+            )
         elif self.is_mamba:
             self.unique_layers = self.mamba_layer_period
         elif self.is_moe:
@@ -135,17 +151,23 @@ class ModelConfig():
         else:
             self.unique_layers = 1
         num_repeats = self.num_decoder_layers / self.unique_layers
-        assert num_repeats.is_integer(), "Number of decoder layers must be divisible by the unique layers"
+        assert num_repeats.is_integer(), (
+            "Number of decoder layers must be divisible by the unique layers"
+        )
         for i in range(self.unique_layers):
             # Determine the attention type
             if self.is_mamba and (i % self.mamba_layer_period == 0):
                 attention_type = "Mamba"
-            elif (i % self.attn_layer_period == self.attn_layer_offset):
+            elif i % self.attn_layer_period == self.attn_layer_offset:
                 attention_type = "MHA-global"
             else:
                 attention_type = "MHA-global"
 
-            if self.is_moe and self.expert_layer_period and (i % self.expert_layer_period == self.expert_layer_offset):
+            if (
+                self.is_moe
+                and self.expert_layer_period
+                and (i % self.expert_layer_period == self.expert_layer_offset)
+            ):
                 layer_type = "MoE"
             else:
                 layer_type = "Dense"
@@ -153,7 +175,6 @@ class ModelConfig():
             self.layer_type.append([attention_type, layer_type])
 
         self.ffn_implementation = ffn_implementation
-
 
         # Quality of Model
         self.model_quality = model_quality
@@ -163,34 +184,40 @@ class ModelConfig():
     @property
     def layers_block_type(self):
         return [
-            "MHA-global" if i % self.attn_layer_period == self.attn_layer_offset else "Mamba"
+            "MHA-global"
+            if i % self.attn_layer_period == self.attn_layer_offset
+            else "Mamba"
             for i in range(self.num_hidden_layers)
         ]
 
     @property
     def layers_num_experts(self):
         return [
-            self.num_experts if i % self.expert_layer_period == self.expert_layer_offset else 1
+            self.num_experts
+            if i % self.expert_layer_period == self.expert_layer_offset
+            else 1
             for i in range(self.num_hidden_layers)
         ]
 
     def get_kv_size(self):
-        return 2*self.num_decoder_layers*self.head_dim*self.num_key_value_heads
+        return 2 * self.num_decoder_layers * self.head_dim * self.num_key_value_heads
 
     def __str__(self):
         return str(vars(self))
+
 
 def get_all_model_configs(file_name):
     current_module = sys.modules[file_name]
     model_configs = {}
     for name, obj in inspect.getmembers(current_module):
         if isinstance(obj, ModelConfig):
-            model_configs[obj.model] = obj
+            model_configs[obj.model.lower()] = obj
             if "/" in obj.model:
-                model_configs[obj.model.split('/')[1]] = obj
+                model_configs[obj.model.split("/")[1].lower()] = obj
     return model_configs
 
-class ModelCollection():
+
+class ModelCollection:
     def __init__(self, models=None):
         if models is not None:
             self.models = models
@@ -232,6 +259,7 @@ class ModelCollection():
 
     def __str__(self):
         return str({name: str(config) for name, config in self.models.items()})
+
 
 from .Model_sets.alibaba import alibaba_models
 from .Model_sets.google import google_models

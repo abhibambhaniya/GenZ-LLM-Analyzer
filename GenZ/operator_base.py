@@ -79,6 +79,10 @@ class Operator(object):
         return  memory_time_offchip, memory_time_onchip
 
 
+    def get_ideal_compute_time(self, system):
+        return self.get_effective_num_ops(system) * system.get_bit_multiplier(type='C')/system.op_per_sec
+ 
+
     def get_compute_time(self, system):
         compute_engine = system.compute_engine.lower()
         if compute_engine == 'genz':
@@ -252,6 +256,7 @@ class Operator(object):
 
     def get_roofline(self, system, unit):
         ideal_complete_offchip_time, ideal_complete_onchip_time = self.get_ideal_memory_time(system=system)
+        ideal_compute_time = self.get_ideal_compute_time(system)
         # x2 for ops -> MAC has 1 multiplication and 1 Addition hence 2.
         num_ops = self.get_effective_num_ops(system) * 2
         num_data = self.get_effective_num_data(system)
@@ -280,7 +285,7 @@ class Operator(object):
         input_a_size, input_w_size, output_size = self.get_operators_size(system)
 
         if exec_time != 0:
-            compute_util, memory_util, comm_util = compute_time/exec_time, memory_time/exec_time, comm_time/exec_time
+            compute_util, memory_util, comm_util = ideal_compute_time/exec_time, ideal_complete_offchip_time/exec_time, comm_time/exec_time
         else:
             compute_util, memory_util, comm_util = 0, 0, 0
 
