@@ -165,7 +165,7 @@ class Operator(object):
                 else:
                     raise ValueError(f'Unknown collective type: {self.collective_type}.')
             elif system.collective_strategy == 'profiled-ops':
-                    return system._runtime_db.get_runtime(op=self) 
+                    return system._runtime_db.get_runtime(op=self, system=system) 
             elif system.collective_strategy == 'ASTRA-SIM':
                 from .Astra_sim.get_astra_sim_time import get_astrasim_collective_time, get_network_config, merge_parallelism_hierarchy
                 "ALLREDUCE", "ALLTOALL", "ALLGATHER", "REDUCESCATTER"

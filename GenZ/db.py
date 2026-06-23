@@ -43,7 +43,7 @@ from aiconfigurator.sdk.common import (
 
 bits_to_gemm_quants = {
     'int8': GEMMQuantMode.int8_wo,
-    'bf16': GEMMQuantMode.float16,
+    'bf16': GEMMQuantMode.bfloat16,
     'int4': GEMMQuantMode.int4_wo,
     'fp8': GEMMQuantMode.fp8,
     'fp4': GEMMQuantMode.nvfp4}
@@ -78,7 +78,7 @@ class RuntimeDB:
         hardware: str,
         backend: str = "vllm",
         version: Optional[str] = None,
-        database_mode: DatabaseMode = DatabaseMode.HYBRID,
+        database_mode: DatabaseMode = DatabaseMode.SOL,
         gemm_bits: str = 'fp8',
         comm_bits: str = 'fp8',
     ):
@@ -213,7 +213,7 @@ class RuntimeDB:
         m: int,
         n: int,
         k: int,
-        quant_mode: GEMMQuantMode = GEMMQuantMode.float16,
+        quant_mode: GEMMQuantMode = GEMMQuantMode.bfloat16,
     ) -> OperatorTiming:
         """Look up GEMM operator runtime.
 
@@ -241,8 +241,8 @@ class RuntimeDB:
         num_heads: int,
         num_kv_heads: int,
         head_dim: int,
-        quant_mode: FMHAQuantMode = FMHAQuantMode.float16,
-        kv_cache_dtype: KVCacheQuantMode = KVCacheQuantMode.float16,
+        quant_mode: FMHAQuantMode = FMHAQuantMode.bfloat16,
+        kv_cache_dtype: KVCacheQuantMode = KVCacheQuantMode.bfloat16,
     ) -> OperatorTiming:
         """Look up prefill (context) attention runtime.
 
@@ -280,7 +280,7 @@ class RuntimeDB:
         num_heads: int,
         num_kv_heads: int,
         head_dim: int = 128,
-        kv_cache_dtype: KVCacheQuantMode = KVCacheQuantMode.float16,
+        kv_cache_dtype: KVCacheQuantMode = KVCacheQuantMode.bfloat16,
     ) -> OperatorTiming:
         """Look up decode (generation) attention runtime.
 
@@ -424,7 +424,7 @@ class RuntimeDB:
         topk: int,
         num_experts: int,
         moe_ep_size: int,
-        quant_mode: MoEQuantMode = MoEQuantMode.float16,
+        quant_mode: MoEQuantMode = MoEQuantMode.bfloat16,
     ) -> OperatorTiming:
         """Look up TRT-LLM All2All communication latency.
 

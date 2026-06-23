@@ -174,7 +174,9 @@ def spec_decode_modeling(model = 'meta-llama/Llama-3.1-70B', draft_model = 'meta
     expert_parallel = 1,
     collective_strategy='GenZ', network_config=None,
     parallelism_hierarchy = "TP{1}_EP{1}_PP{1}",
-    model_offload = False, ceff = None, meff = None):
+    model_offload = False, ceff = None, meff = None,
+    draft_system_config = None
+    ):
 
     if pipeline_parallel > 1:
         ub = max(batch_size // pipeline_parallel, 1)
@@ -214,18 +216,24 @@ def spec_decode_modeling(model = 'meta-llama/Llama-3.1-70B', draft_model = 'meta
     model_draft_created = create_full_decode_model(name=draft_model,
                                             input_sequence_length= input_tokens,
                                             output_gen_tokens= output_tokens,
-                                            tensor_parallel = tensor_parallel,
+                                            tensor_parallel = draft_system_config.get('tp', tensor_parallel),
                                             pipeline_parallel = pipeline_parallel,
                                             expert_parallel=expert_parallel)
 
-    draft_model_df = get_model_df(model_draft_created, system=system, batch_size = ub, intermediate_on_chip=True , beam_merge= True, beam_size= 1, model_characterstics = True)
+    draft_model_df = get_model_df(model_draft_created, system=system, batch_size = min(draft_system_config.get('ub', ub), ub), intermediate_on_chip=True , beam_merge= True, beam_size= 1, model_characterstics = True)
     draft_summary_table = get_summary_table(draft_model_df, unit, model_characterstics = True)
 
     draft_model_weights = draft_summary_table[f'Total Weights ({unit.unit_mem})'].values[0]        ## In MB
     draft_kv_cache = draft_summary_table[f'KV Cache ({unit.unit_mem})'].values[0]                  ## In MB    
-    
-    total_memory_req = full_model_weights + full_model_kv_cache + draft_model_weights + draft_kv_cache
 
+    if draft_system_config is None or draft_system_config == {}:
+        total_memory_req = full_model_weights + full_model_kv_cache + draft_model_weights + draft_kv_cache
+    else:
+        total_memory_req = full_model_weights + full_model_kv_cache
+        draft_memory_req = draft_model_weights + draft_kv_cache
+        if draft_memory_req > draft_system_config['system'].get_off_chip_mem_size() * draft_system_config['pp']:
+           raise ValueError(f"All params would not fit on chip. System Memory Cap:{draft_system_config['system'].get_off_chip_mem_size()/1024} GB , Weights : {draft_model_weights/1024} GB, KV Cache:{draft_kv_cache/1024}. \n System:{system_name}")
+ 
     num_nodes = pipeline_parallel * tensor_parallel * expert_parallel
 
     #################################################################################
@@ -239,9 +247,9 @@ def spec_decode_modeling(model = 'meta-llama/Llama-3.1-70B', draft_model = 'meta
             warnings.warn(f"Some Parameter offloaded, effective Memory BW:{unit.raw_to_unit(system.offchip_mem_bw, type='BW')} ")
             is_offloaded = True
         elif model_profilling:
-            warnings.warn(f"All params would not fit on chip. System Memory Cap:{per_chip_memory/1024} GB , Weights : {model_weights/1024} GB, KV Cache:{kv_cache/1024} ")
+            warnings.warn(f"All params would not fit on chip. System Memory Cap:{per_chip_memory/1024} GB , Weights : {full_model_weights/1024} GB, KV Cache:{full_model_kv_cache/1024} ")
         else:
-            raise ValueError(f"All params would not fit on chip. System Memory Cap:{per_chip_memory/1024} GB , Weights : {model_weights/1024} GB, KV Cache:{kv_cache/1024}. \n System:{system_name}")
+            raise ValueError(f"All params would not fit on chip. System Memory Cap:{per_chip_memory/1024} GB , Weights : {full_model_weights/1024} GB, KV Cache:{full_model_kv_cache/1024}. \n System:{system_name}")
 
     ## for tensor shareding per layer.
     assert pipeline_parallel >= 1, "Pipeline parallel must be >= 1"
@@ -253,14 +261,18 @@ def spec_decode_modeling(model = 'meta-llama/Llama-3.1-70B', draft_model = 'meta
     ##################################################################################################
     ### Model decode times
     ##################################################################################################
+    draft_system = draft_system_config['system'] if draft_system_config else system
+    draft_tp = draft_system_config['tp'] if draft_system_config else tensor_parallel
+    draft_pp = draft_system_config['pp'] if draft_system_config else pipeline_parallel
+
     model_draft_decode = create_full_decode_model(  name=draft_model,
                                             input_sequence_length=input_tokens,
                                             output_gen_tokens = output_tokens ,
-                                            tensor_parallel=tensor_parallel,
-                                            pipeline_parallel=pipeline_parallel,
-                                            expert_parallel=expert_parallel)
+                                            tensor_parallel=draft_tp,
+                                            pipeline_parallel=draft_pp,
+                                            expert_parallel=1)
 
-    model_df = get_model_df(model_draft_decode, system, unit, ub,  intermediate_on_chip=True )
+    model_df = get_model_df(model_draft_decode, draft_system, unit, draft_system_config.get('ub', ub),  intermediate_on_chip=True )
     draft_summary_table = get_summary_table(model_df, unit)
 
     draft_model_decode_latency = draft_summary_table[f'Latency ({unit.unit_time})'].values[0]                 # Latency in millisec

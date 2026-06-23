@@ -132,7 +132,7 @@ def replace_collective_implementation(file_path, new_value):
 
 
 def get_astrasim_collective_time(collective_size, collective_type, system:System=None,
-                                network_config=None) -> dict:
+                                network_config=None, load_imbalance=None) -> dict:
     """
     collective_type: str: Should be one of the following: "ALLREDUCE"/"ALLTOALL"/"ALLGATHER"/"REDUCESCATTER"
     collective_size: int: Size of the collective operation in Bytes
@@ -149,29 +149,44 @@ def get_astrasim_collective_time(collective_size, collective_type, system:System
     assert collective_type in ["ALLREDUCE", "ALLTOALL", "ALLGATHER", "REDUCESCATTER"], \
         "Invalid collective_type. Must be one of: ALLREDUCE, ALLTOALL, ALLGATHER, REDUCESCATTER"
     # Step 1: Create the text file
-    if collective_type == "ALLGATHER":
-        ## For Allgather, astra-sim expects the collective size to be the size of the message sent by each node
-        collective_size = int(collective_size/nodes)
-    os.makedirs(os.path.dirname(txt_file_path), exist_ok=True)
-    with open(txt_file_path, "w+") as txt_file:
-        txt_file.write("MICRO\n1\nDUMMYNAME -1 5 NONE 0 5 NONE 0 5 {} {} 5\n".format(collective_type, collective_size))
+    if collective_type == "ALLTOALL" and load_imbalance is not None:
+        # Step 2: Generate ET trace
+        os.makedirs(os.path.dirname(et_output_path), exist_ok=True)
+
+        # Wait for the subprocess to complete
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = subprocess.run([
+                "/home/abhimanyu/miniconda3/envs/chakra_env/bin/python", "-m", "chakra.src.generator.generator",
+                "--output", et_output_path + "collective_traces",
+                "--num_npus", str(4),
+                "--default_comm_size", str(67108864),
+                "--default_load_imbalance", ' '.join(str(x) for x in [0.1, 0.2, 0.3, 0.4]),
+            ], check=True, stdout=subprocess.PIPE) 
+    else:        
+        if collective_type == "ALLGATHER":
+            ## For Allgather, astra-sim expects the collective size to be the size of the message sent by each node
+            collective_size = int(collective_size/nodes)
+        
+        os.makedirs(os.path.dirname(txt_file_path), exist_ok=True)
+        with open(txt_file_path, "w+") as txt_file:
+            txt_file.write("MICRO\n1\nDUMMYNAME -1 5 NONE 0 5 NONE 0 5 {} {} 5\n".format(collective_type, collective_size))
     
-    # Step 2: Generate ET trace
-    os.makedirs(os.path.dirname(et_output_path), exist_ok=True)
+        # Step 2: Generate ET trace
+        os.makedirs(os.path.dirname(et_output_path), exist_ok=True)
 
 
-    # Wait for the subprocess to complete
-    with contextlib.redirect_stdout(io.StringIO()):
-        result = subprocess.run([
-            "python", "-m", "chakra.src.converter.converter", "Text",
-            "--input", txt_file_path,
-            "--output", et_output_path + "collective_traces",
-            "--num-npus", str(nodes),
-            "--num-passes", "1",
-        ], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # Wait for the subprocess to complete
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = subprocess.run([
+                "python", "-m", "chakra.src.converter.converter", "Text",
+                "--input", txt_file_path,
+                "--output", et_output_path + "collective_traces",
+                "--num-npus", str(nodes),
+                "--num-passes", "1",
+            ], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        if result.stdout:
-            print(result.stdout)
+            if result.stdout:
+                print(result.stdout)
     
     # Step 3: Clean up the generated traces
     os.makedirs(et_cleaned_output_path, exist_ok=True)
@@ -209,7 +224,7 @@ def get_astrasim_collective_time(collective_size, collective_type, system:System
     collective_impl = [topology_to_algorithm[i] for i in network_config['topology']]
     replace_collective_implementation('/home/abhimanyu/synergy3/work/GenZ-LLM-Analyzer/GenZ/Astra_sim/system.json', collective_impl) 
     # Step 6: Run astra-sim
-    result = subprocess.run(f"bash {run_file}>{ASTRA_SIM_OUTPUT_PATH}", shell=True, check=True, stderr=subprocess.PIPE)
+    result = subprocess.run(f"bash {run_file}>{ASTRA_SIM_OUTPUT_PATH}", shell=True, check=True)
     if result.stdout:
         print(result.stdout)
 

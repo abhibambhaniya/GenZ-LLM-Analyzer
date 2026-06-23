@@ -49,7 +49,7 @@ class System(object):
 
         self.collective_strategy = collective_strategy
         assert self.collective_strategy in ['GenZ', 'ASTRA-SIM', 'profiled-ops'], "Invalid collective_strategy. Must be one of: GenZ, ASTRA-SIM, profiled-ops"
-
+        self.system_name = system_name
         if self.compute_engine == 'profiled-ops':
             from .db import RuntimeDB
             self._runtime_db = RuntimeDB(hardware=system_name, gemm_bits=bits, comm_bits=bits)
