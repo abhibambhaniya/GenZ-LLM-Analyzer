@@ -45,12 +45,27 @@ GenZ can help computer architects understand trends which can help in designing 
 pip install genz-llm
 ````
 
-or
+or, to build from source (this repo includes the `aiconfigurator` submodule, used for the Astra-sim backend):
 
 ```sh
-git clone abhibambhaniya/genz.git
-cd genz
+# 1. Install Git LFS (required by the aiconfigurator submodule)
+git lfs install
+
+# 2. Clone the repo with submodules
+git clone --recurse-submodules https://github.com/abhibambhaniya/GenZ-LLM-Analyzer.git
+cd GenZ-LLM-Analyzer
+
+# If you already cloned without --recurse-submodules, initialize it now:
+# git submodule update --init --recursive
+
+# 3. Create/activate the conda environment
+conda create -n genz_env python=3.10 -y
+conda activate genz_env
+
+# 4. Install GenZ and the aiconfigurator submodule
 pip install -r requirements.txt
+pip install -e .
+pip install -e GenZ/aiconfigurator
 ```
 
 ## Examples

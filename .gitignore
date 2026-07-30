@@ -3,3 +3,4 @@ data/model/*.csv
 venv
 *.egg-info/
 dist/
+.DS_Store
