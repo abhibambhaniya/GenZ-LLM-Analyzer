@@ -24,7 +24,7 @@ class Unit(object):
         elif type == 'T':       ## Time
             unit_value = self.unit_dicts[self.unit_time[0]]
         elif type == 'BW':      ## Bandwidth
-            unit_value = self.binary_dicts[self.unit_bw[0]]
+            unit_value = self.unit_dicts[self.unit_bw[0]]
         elif type == 'F':       ## Frequency
             unit_value = self.unit_dicts[self.unit_freq[0]]
         elif type == 'E':       ## Energy

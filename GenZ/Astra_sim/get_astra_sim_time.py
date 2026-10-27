@@ -5,7 +5,6 @@ import os
 import subprocess
 import yaml
 from GenZ.system import System
-from GenZ.unit import Unit
 import numpy as np
 import contextlib
 import io
@@ -205,7 +204,7 @@ def get_astrasim_collective_time(collective_size, collective_type, system:System
         network_config = {
             "topology": [system.topology],    #(“Ring”, “FullyConnected”, or “Switch”)
             "npus_count": [system.num_nodes],
-            "bandwidth": [Unit().raw_to_unit(system.interchip_link_bw, type="BW")],
+            "bandwidth": [system.interchip_link_bw / 2**30],
             "latency": [system.interchip_link_latency*1e9],## AStrasim expects latency in ns 
         }
     else:
