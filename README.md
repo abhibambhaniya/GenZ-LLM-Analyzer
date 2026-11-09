@@ -1,4 +1,4 @@
-# GenZ
+# GenZ (ECHELON)
 Generative LLM Analyzer
 
 Try GenZ without any setup: [GenZ-LLM-Analyzer](https://genz-llm-analyzer.streamlit.app/)
