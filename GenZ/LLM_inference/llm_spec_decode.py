@@ -1,4 +1,4 @@
-from .utils import ModdelingOutput, get_inference_system, get_offload_system
+from .utils import ModelingOutput, get_inference_system, get_offload_system
 from GenZ.unit import Unit
 from GenZ.operators import *
 
@@ -15,7 +15,7 @@ unit = Unit()
 def spec_prefill_modeling(model = 'meta-llama/Llama-3.1-70B', draft_model = 'meta-llama/meta-llama-3.1-8b',
     batch_size = 1, 
     input_tokens = 1024,       # Input context tokens
-    system_name = 'A100_40GB_GPU', system_eff = 1, bits='bf16', debug= False, model_profilling = False,
+    system_name = 'A100_40GB_GPU', system_eff = 1, bits='bf16', debug= False, model_profiling = False,
     tensor_parallel = 1, pipeline_parallel = 1,
     expert_parallel = 1,
     collective_strategy='GenZ', network_config=None,
@@ -80,7 +80,7 @@ def spec_prefill_modeling(model = 'meta-llama/Llama-3.1-70B', draft_model = 'met
             system = get_offload_system(system=system, total_memory_req = total_memory_req , debug=debug)
             warnings.warn(f"Some Parameter offloaded, effective Memory BW:{unit.raw_to_unit(system.offchip_mem_bw, type='BW')} ")
             is_offloaded = True
-        elif model_profilling:
+        elif model_profiling:
             warnings.warn(f"All params would not fit on chip. System Memory Cap:{per_chip_memory/1024} GB , Weights : {model_weights/1024} GB, KV Cache:{kv_cache/1024} ")
         else:
             raise ValueError(f"All params would not fit on chip. System Memory Cap:{per_chip_memory/1024} GB , Weights : {model_weights/1024} GB, KV Cache:{kv_cache/1024}. \n System:{system_name}")
@@ -89,7 +89,7 @@ def spec_prefill_modeling(model = 'meta-llama/Llama-3.1-70B', draft_model = 'met
     assert pipeline_parallel >= 1, "Pipeline parallel must be >= 1"
     assert tensor_parallel >= 1, f"Tensor parallel must be >= 1, {tensor_parallel}"
 
-    if model_profilling:
+    if model_profiling:
         return pd.concat([full_model_df, draft_model_df]), pd.concat([full_summary_table, draft_summary_table])
 
     ##################################################################################################
@@ -152,7 +152,7 @@ def spec_prefill_modeling(model = 'meta-llama/Llama-3.1-70B', draft_model = 'met
     ### Output Generation
     ##################################################################################################
 
-    return ModdelingOutput(
+    return ModelingOutput(
                         Latency=prefill_latency,
                         Throughput=thrpt,
                         Runtime_breakdown=runtime_breakdown,
@@ -169,7 +169,7 @@ def spec_decode_modeling(model = 'meta-llama/Llama-3.1-70B', draft_model = 'meta
     # This gamma parameter in the paper: arxiv.org/pdf/2211.17192
     num_parallel_tokens = 8,    # Number of tokens to be decoded in parallel by the full model.
                                 # This means after num_parallel_tokens decode steps of the draft model, num_parallel_tokens tokens are checked in parallel by the full model.
-    system_name = 'A100_40GB_GPU', system_eff = 1, bits='bf16', debug= False, model_profilling = False,
+    system_name = 'A100_40GB_GPU', system_eff = 1, bits='bf16', debug= False, model_profiling = False,
     tensor_parallel = 1, pipeline_parallel = 1,
     expert_parallel = 1,
     collective_strategy='GenZ', network_config=None,
@@ -246,7 +246,7 @@ def spec_decode_modeling(model = 'meta-llama/Llama-3.1-70B', draft_model = 'meta
             system = get_offload_system(system=system, total_memory_req = total_memory_req , debug=debug)
             warnings.warn(f"Some Parameter offloaded, effective Memory BW:{unit.raw_to_unit(system.offchip_mem_bw, type='BW')} ")
             is_offloaded = True
-        elif model_profilling:
+        elif model_profiling:
             warnings.warn(f"All params would not fit on chip. System Memory Cap:{per_chip_memory/1024} GB , Weights : {full_model_weights/1024} GB, KV Cache:{full_model_kv_cache/1024} ")
         else:
             raise ValueError(f"All params would not fit on chip. System Memory Cap:{per_chip_memory/1024} GB , Weights : {full_model_weights/1024} GB, KV Cache:{full_model_kv_cache/1024}. \n System:{system_name}")
@@ -255,7 +255,7 @@ def spec_decode_modeling(model = 'meta-llama/Llama-3.1-70B', draft_model = 'meta
     assert pipeline_parallel >= 1, "Pipeline parallel must be >= 1"
     assert tensor_parallel >= 1, f"Tensor parallel must be >= 1, {tensor_parallel}"
 
-    if model_profilling:
+    if model_profiling:
         return pd.concat([full_model_df, draft_model_df]), pd.concat([full_summary_table, draft_summary_table])
 
     ##################################################################################################
@@ -338,7 +338,7 @@ def spec_decode_modeling(model = 'meta-llama/Llama-3.1-70B', draft_model = 'meta
     ### Output Generation
     ##################################################################################################
 
-    return ModdelingOutput(
+    return ModelingOutput(
                         Latency=total_latency,
                         Throughput=thrpt,
                         Runtime_breakdown=runtime_breakdown,

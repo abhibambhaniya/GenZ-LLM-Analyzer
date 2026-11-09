@@ -1,5 +1,5 @@
 import numpy as np
-from GenZ.LLM_inference import decode_moddeling, prefill_moddeling, get_best_parallization_strategy, get_inference_system
+from GenZ.LLM_inference import decode_modeling, prefill_modeling, get_best_parallelization_strategy, get_inference_system
 
 def get_minimum_system_size(
         stage='decode', model='llama2_7b', max_batch_size = 1, beam_size = 1,
@@ -9,12 +9,12 @@ def get_minimum_system_size(
         ):
 
     if stage=='prefill':
-        model_df, summary_table = prefill_moddeling(model = model, batch_size = max_batch_size,
-                            input_tokens = input_tokens, model_profilling=True,
+        model_df, summary_table = prefill_modeling(model = model, batch_size = max_batch_size,
+                            input_tokens = input_tokens, model_profiling=True,
                             tensor_parallel = 1, pipeline_parallel = 1, bits=bits, debug=debug)
     elif stage=='decode':
-        model_df, summary_table = decode_moddeling(model = model, batch_size = max_batch_size, Bb = beam_size ,
-                            input_tokens = input_tokens, output_tokens = output_tokens, model_profilling=True,
+        model_df, summary_table = decode_modeling(model = model, batch_size = max_batch_size, Bb = beam_size ,
+                            input_tokens = input_tokens, output_tokens = output_tokens, model_profiling=True,
                             tensor_parallel = 1, pipeline_parallel = 1, bits=bits, debug=debug)
     Total_memory_required = (summary_table.loc[0,'Total Weights (MB)'] + summary_table.loc[0,'KV Cache (MB)'])   ## MBs
     system = get_inference_system(system_name =system_name , bits = bits)
@@ -27,7 +27,7 @@ def get_minimum_system_size(
     ##### RE verifying the memory sizes
     while 1:
         try:    ## Check if model fits
-            _ = get_best_parallization_strategy(stage=stage, model=model, total_nodes=Num_nodes, batch_size = max_batch_size, beam_size = beam_size,
+            _ = get_best_parallelization_strategy(stage=stage, model=model, total_nodes=Num_nodes, batch_size = max_batch_size, beam_size = beam_size,
                         input_tokens = input_tokens, output_tokens = output_tokens,
                         system_name = system_name, bits=bits, debug=debug).sort_values(by='Tokens/s', ascending=False)
             break

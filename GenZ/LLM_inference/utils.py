@@ -2,7 +2,7 @@ from collections import OrderedDict
 from typing import Optional
 from GenZ.unit import Unit
 import warnings
-from GenZ.system import System
+from GenZ.npu import NPU
 import pandas as pd
 from Systems.system_configs import system_configs
 
@@ -35,7 +35,7 @@ class RuntimeBreakdown():
     def to_dict(self):
         return vars(self)
 
-class ModdelingOutput(dict):
+class ModelingOutput(dict):
     Latency: float = 0
     Throughput: float = 0
     Runtime_breakdown: Optional[RuntimeBreakdown] = None
@@ -48,12 +48,12 @@ def get_offload_system(system, total_memory_req, debug):
     """Create a new system with offloaded memory connections
 
     Args:
-        system (System): System Definition without offload
+        system (NPU): NPU Definition without offload
         total_memory_req (float): Memory required for the model weights and activations in MB
         debug (bool): Debug flag for printing
 
     Returns:
-        System: System Definition with offload
+        NPU: NPU Definition with offload
     """
     total_device_memory = unit.raw_to_unit(system.off_chip_mem_size, type='M')/1024 ## GB
     total_memory_req = total_memory_req/1024 ## GB
@@ -93,7 +93,7 @@ def get_inference_system(system_name='A100_40GB_GPU', bits='bf16', ceff=1, meff=
             per_chip_memory = system_name.get('Memory_size',2000)
             C2C_BW = system_name.get('ICN',150)
             C2C_LL = system_name.get('ICN_LL',1)
-    elif isinstance(system_name, System):
+    elif isinstance(system_name, NPU):
         system_name.bits = bits
         system_name.compute_efficiency = ceff
         system_name.memory_efficiency = meff
@@ -104,6 +104,6 @@ def get_inference_system(system_name='A100_40GB_GPU', bits='bf16', ceff=1, meff=
     else:
         raise TypeError(f'System should be weight str or dict with Flops,Memory, ICN values: System_name: {system_name}')
 
-    return System(unit,frequency=1000 , flops=NUM_FLOPS, off_chip_mem_size=(per_chip_memory*1024), compute_efficiency=ceff, memory_efficiency=meff,
+    return NPU(unit,frequency=1000 , flops=NUM_FLOPS, off_chip_mem_size=(per_chip_memory*1024), compute_efficiency=ceff, memory_efficiency=meff,
                     offchip_mem_bw=OFFCHIP_MEM_BW, bits=bits, external_mem_bw=OFFLOAD_BW, interchip_link_bw=C2C_BW, interchip_link_latency=C2C_LL, 
                     collective_strategy=collective_strategy, network_config=network_config, parallelism_hierarchy = parallelism_hierarchy)

@@ -2,7 +2,7 @@ import numpy as np
 from operator import mul
 from math import ceil
 from GenZ.unit import Unit
-from GenZ.system import System
+from GenZ.npu import NPU
 from GenZ.Models import OpType, CollectiveType
 from GenZ.collective_times import get_AR_time, get_A2A_time, get_message_pass_time, get_AG_time
 import re
@@ -204,7 +204,7 @@ class Operator(object):
                             lat = network_config['latency'][0]
                             # TODO : There is a bug with astrasim when num_nodes = 2
                             # Using GenZ for now.
-                            temp_sys = System(num_nodes=2, topology='FullyConnected', interchip_link_bw=BW, interchip_link_latency=lat)
+                            temp_sys = NPU(num_nodes=2, topology='FullyConnected', interchip_link_bw=BW, interchip_link_latency=lat)
                             # pipe_time = max(get_astrasim_collective_time(system=temp_sys,
                             #                                     collective_type="ALLTOALL",
                             #                                     collective_size=data_size/2).values())/1e6
@@ -212,7 +212,7 @@ class Operator(object):
                             if len(network_config['npus_count']) > 1:   ## PP over more than 1 dimension, we need average time.
                                 # Num hops: (dim[0]-1)*dim[1] + dim[1]-1
                                 first_dim_time = pipe_time * (network_config['npus_count'][0]-1) * network_config['npus_count'][1] 
-                                temp_sys = System(num_nodes=2, topology='FullyConnected',
+                                temp_sys = NPU(num_nodes=2, topology='FullyConnected',
                                                 interchip_link_bw=network_config['bandwidth'][1], interchip_link_latency=network_config['latency'][1]) 
                                 # second_dim_time = max(get_astrasim_collective_time(system=temp_sys,
                                 #                             collective_type="ALLTOALL",

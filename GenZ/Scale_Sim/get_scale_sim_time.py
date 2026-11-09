@@ -3,7 +3,7 @@ import warnings
 import os
 import subprocess
 import yaml
-from GenZ.system import System
+from GenZ.npu import NPU
 from GenZ.unit import Unit
 from GenZ.operator_base import Operator
 import numpy as np
@@ -12,9 +12,9 @@ import io
 import re
 import pandas as pd
 
-def get_scale_sim_time(op:Operator,  system: System):
+def get_scale_sim_time(op:Operator,  system: NPU):
     # Get the time taken by Scale-sim to simulate the system
-    # system: System object
+    # system: NPU object
     # returns: time taken by Scale-sim to simulate the system
     # Note: This function is a wrapper around the Scale-sim simulator
     # and requires the Scale-sim simulator to be installed on the system

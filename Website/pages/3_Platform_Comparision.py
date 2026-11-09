@@ -5,7 +5,7 @@ import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 import warnings
-from GenZ import decode_moddeling, prefill_moddeling, get_configs
+from GenZ import decode_modeling, prefill_modeling, get_configs
 import pandas as pd
 from tqdm import tqdm
 import time
@@ -60,12 +60,12 @@ def generate_system_comparision(graph_type, system_list,
     mem_size_data = []
     for system in system_list:
         try:
-            prefill_outputs = prefill_moddeling(model = model, batch_size = batch_size,
+            prefill_outputs = prefill_modeling(model = model, batch_size = batch_size,
                                     input_tokens = input_tokens,
                                     system_name = system, system_eff = system['eff'],
                                     bits=quantization,
                                     tensor_parallel = system['nodes'], debug=False)
-            decode_outputs = decode_moddeling(model = model, batch_size = batch_size, Bb = beam_size ,
+            decode_outputs = decode_modeling(model = model, batch_size = batch_size, Bb = beam_size ,
                                     input_tokens = input_tokens, output_tokens = output_tokens,
                                     system_name = system, system_eff=system['eff'],
                                     bits=quantization,
@@ -73,11 +73,11 @@ def generate_system_comparision(graph_type, system_list,
             data.append([system['name'],  prefill_outputs['Latency'],  decode_outputs['Latency'], prefill_outputs['Latency'] + decode_outputs['Latency']*output_tokens, decode_outputs['Throughput']])
         except:
             # ValueError
-            decode_outputs, decode_summary_table = decode_moddeling(model = model, batch_size = batch_size, Bb = beam_size ,
+            decode_outputs, decode_summary_table = decode_modeling(model = model, batch_size = batch_size, Bb = beam_size ,
                             input_tokens = input_tokens, output_tokens = output_tokens,
                             system_name = system, system_eff=system['eff'],
                             bits=quantization,
-                            debug=False, model_profilling=True)
+                            debug=False, model_profiling=True)
             total_memory = int(system.get('Memory_size'))*1024  ## per device memory
             memory_req =  decode_summary_table['Total Weights (MB)'].values[0] + decode_summary_table['KV Cache (MB)'].values[0]
 

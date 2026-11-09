@@ -4,7 +4,7 @@ import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 import warnings
-from GenZ import decode_moddeling, prefill_moddeling, get_configs
+from GenZ import decode_modeling, prefill_modeling, get_configs
 import pandas as pd
 from tqdm import tqdm
 import time
@@ -50,13 +50,13 @@ def generate_demand_curve(system_box, system_eff, num_nodes_slider,
             if batch_size <= batch_slider:
                 model_name = get_configs(model).model
                 try:
-                    prefill_outputs = prefill_moddeling(model = model, batch_size = batch_size,
+                    prefill_outputs = prefill_modeling(model = model, batch_size = batch_size,
                                             input_tokens = input_token_slider,
                                             system_name = system_box, system_eff = system_eff,
                                             bits=quantization_box,
                                             tensor_parallel = num_nodes_slider, debug=False)
                     data.append([model_name,'Prefill',batch_size, prefill_outputs['Latency'], prefill_outputs['Throughput']])
-                    decode_outputs = decode_moddeling(model = model, batch_size = batch_size, Bb = beam_size ,
+                    decode_outputs = decode_modeling(model = model, batch_size = batch_size, Bb = beam_size ,
                                             input_tokens = input_token_slider, output_tokens = output_token_slider,
                                             system_name = system_box, system_eff=system_eff,
                                             bits=quantization_box,
@@ -64,10 +64,10 @@ def generate_demand_curve(system_box, system_eff, num_nodes_slider,
                     data.append([model_name,'Decode',batch_size,  decode_outputs['Latency'], decode_outputs['Throughput']])
                 except:
                     # ValueError
-                    decode_outputs, decode_summary_table = decode_moddeling(model = model, batch_size = batch_size, Bb = beam_size ,
+                    decode_outputs, decode_summary_table = decode_modeling(model = model, batch_size = batch_size, Bb = beam_size ,
                                             input_tokens = input_token_slider, output_tokens = output_token_slider,
                                             system_name = system_box, system_eff = system_eff,
-                                            bits=quantization_box, model_profilling=True)
+                                            bits=quantization_box, model_profiling=True)
                     total_memory = int(system_box.get('Memory_size'))*1024  ## per device memory
                     memory_req =  decode_summary_table['Total Weights (MB)'].values[0] + decode_summary_table['KV Cache (MB)'].values[0]
 

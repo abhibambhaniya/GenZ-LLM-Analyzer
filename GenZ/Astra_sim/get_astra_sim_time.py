@@ -4,7 +4,7 @@ warnings.filterwarnings("ignore", message="UserWarning: Protobuf gencode version
 import os
 import subprocess
 import yaml
-from GenZ.system import System
+from GenZ.npu import NPU
 from GenZ.unit import Unit
 import numpy as np
 import contextlib
@@ -131,7 +131,7 @@ def replace_collective_implementation(file_path, new_value):
 # Example usage
 
 
-def get_astrasim_collective_time(collective_size, collective_type, system:System=None,
+def get_astrasim_collective_time(collective_size, collective_type, system: NPU=None,
                                 network_config=None, load_imbalance=None) -> dict:
     """
     collective_type: str: Should be one of the following: "ALLREDUCE"/"ALLTOALL"/"ALLGATHER"/"REDUCESCATTER"
