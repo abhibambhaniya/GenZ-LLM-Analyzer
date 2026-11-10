@@ -16,7 +16,7 @@ import sys
 import os
 from GenZ.operator_base import Operator
 from GenZ.Models import OpType, CollectiveType
-from GenZ.system import System
+from GenZ.npu import NPU
 
 # Make the aiconfigurator submodule importable without pip install.
 _SUBMODULE_SRC = os.path.join(os.path.dirname(__file__), "aiconfigurator", "src")
@@ -119,12 +119,12 @@ class RuntimeDB:
         """List all available hardware/backend/version combinations."""
         return get_supported_databases()
 
-    def get_runtime(self, op: Operator, system: System) -> float:
+    def get_runtime(self, op: Operator, system: NPU) -> float:
         """Look up runtime for a given operator.
 
         Args:
             op: Operator to look up.
-            system: System configuration.
+            system: NPU configuration.
         Returns:
             OperatorTiming with latency in seconds.
         """

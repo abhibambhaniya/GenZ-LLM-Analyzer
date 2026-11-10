@@ -1,4 +1,4 @@
-from .utils import ModdelingOutput, get_inference_system, get_offload_system
+from .utils import ModelingOutput, get_inference_system, get_offload_system
 from GenZ.unit import Unit
 from GenZ.operators import *
 
@@ -11,10 +11,10 @@ from math import ceil
 
 unit = Unit()
 
-def chunked_moddeling(model = 'BERT',
+def chunked_modeling(model = 'BERT',
     prefill_kv_sizes = [(1024, 511)],                 # [(prefill_past_kv, num_prefill)],
     decode_kv_sizes =  [1600, 1601, 1602],            # [decode_past_kv]*num_decodes,
-    system_name = 'A100_40GB_GPU', system_eff = 1, bits='bf16', debug= False, model_profilling = False,
+    system_name = 'A100_40GB_GPU', system_eff = 1, bits='bf16', debug= False, model_profiling = False,
     tensor_parallel = 1, pipeline_parallel = 1,
     expert_parallel = 1,
     collective_strategy='GenZ', network_config=None,
@@ -60,7 +60,7 @@ def chunked_moddeling(model = 'BERT',
             system = get_offload_system(system=system, total_memory_req = total_memory_req/pipeline_parallel , debug=debug)
             warnings.warn(f"Some Parameter offloaded, effective Memory BW:{unit.raw_to_unit(system.offchip_mem_bw, type='BW')} ")
             is_offloaded = True
-        elif model_profilling:
+        elif model_profiling:
             warnings.warn(f"All params would not fit on chip. System Memory Cap:{per_chip_memory/1024} GB , Weights : {model_weights/1024} GB, KV Cache:{kv_cache/1024} ")
         else:
             raise ValueError(f"All params would not fit on chip. System Memory Cap:{per_chip_memory/1024} GB , Weights : {model_weights/1024} GB, KV Cache:{kv_cache/1024}. \n System:{system_name}")
@@ -69,7 +69,7 @@ def chunked_moddeling(model = 'BERT',
     assert pipeline_parallel >= 1, "Pipeline parallel must be >= 1"
     assert tensor_parallel >= 1, f"Tensor parallel must be >= 1, {tensor_parallel}"
 
-    if model_profilling:
+    if model_profiling:
         return model_df, summary_table
 
     ##################################################################################################
@@ -107,7 +107,7 @@ def chunked_moddeling(model = 'BERT',
     ### Output Generation
     ##################################################################################################
 
-    return ModdelingOutput(
+    return ModelingOutput(
                         Latency=chunked_latency,
                         Throughput=thrpt,
                         Runtime_breakdown=runtime_breakdown,

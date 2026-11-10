@@ -36,8 +36,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/abhibambhaniya/GenZ-LLM-Analyzer"
-Issues = "https://github.com/abhibambhaniya/GenZ-LLM-Analyzer/issues"
+Homepage = "https://github.com/astra-sim/GenZ-LLM-Analyzer"
+Issues = "https://github.com/astra-sim/GenZ-LLM-Analyzer/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]

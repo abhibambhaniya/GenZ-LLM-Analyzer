@@ -1,17 +1,17 @@
 from .LLM_inference import (
-    ModdelingOutput,
+    ModelingOutput,
     get_inference_system,
     get_offload_system,
-    decode_moddeling,
-    prefill_moddeling,
-    chunked_moddeling,
+    decode_modeling,
+    prefill_modeling,
+    chunked_modeling,
     get_minimum_system_size,
     factors,
-    get_various_parallization,
-    get_best_parallization_strategy,
+    get_various_parallelization,
+    get_best_parallelization_strategy,
     get_pareto_optimal_performance,
 )
-from .system import System
+from .npu import NPU
 from .unit import Unit
 from .analyse_model import get_model_df, get_summary_table, simplify_df, get_runtime_breakdown
 from .collective_times import get_AR_time, get_message_pass_time
@@ -27,3 +27,5 @@ from .Models import (
     create_full_chunked_model,
 )
 from .parallelism import ParallelismConfig
+from . import _deprecated
+_deprecated.install()

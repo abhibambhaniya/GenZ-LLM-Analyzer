@@ -5,7 +5,7 @@ import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 import warnings
-from GenZ import decode_moddeling, prefill_moddeling, get_configs
+from GenZ import decode_modeling, prefill_modeling, get_configs
 import pandas as pd
 from tqdm import tqdm
 import time

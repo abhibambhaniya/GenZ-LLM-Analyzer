@@ -4,7 +4,7 @@ def get_AR_time(data, numNodes, system):
     Args:
         data (int): Message size(Bytes) per node to complete all reduce.
         num_AR_nodes (int): Number of nodes among which all-reduce is performed
-        system (System object): Object of class System
+        system (NPU object): Object of class NPU
 
     Returns:
         time(float): Total time(msec) to complete the All-Reduce
@@ -23,7 +23,7 @@ def get_AG_time(data, numNodes, system):
     Args:
         data (int): Message size(Bytes) per node to complete all gather.
         num_AG_nodes (int): Number of nodes among which all-gather is performed
-        system (System object): Object of class System
+        system (NPU object): Object of class NPU
 
     Returns:
         time(float): Total time(msec) to complete the All-Gather
@@ -41,7 +41,7 @@ def get_message_pass_time(data, system):
 
     Args:
         data (int): Message size(Bytes) per node to pass from 1 decide to next.
-        system (System object): Object of class System
+        system (NPU object): Object of class NPU
 
     Returns:
         time(float): Total time(msec) to pass the Message from 1 node to next
@@ -58,7 +58,7 @@ def get_A2A_time(data, numNodes, system):
     Args:
         data (int): Total message size (Bytes) per node to be exchanged in all-to-all.
         num_A2A_nodes (int): Number of nodes participating in the all-to-all operation.
-        system (System object): Object of class System
+        system (NPU object): Object of class NPU
 
     Returns:
         time (float): Total time (msec) to complete the All-to-All operation
